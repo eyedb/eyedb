@@ -17,3 +17,6 @@ m4/java/ltversion.m4
 m4/java/lt~obsolete.m4
 missing
 py-compile
+src/java/src/org/eyedb/dbm/DBM.odl
+src/java/src/org/eyedb/syscls/syscls.odl
+src/java/src/org/eyedb/utils/utils.odl
