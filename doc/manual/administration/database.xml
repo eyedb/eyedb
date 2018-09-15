@@ -1,0 +1,826 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd"
+[
+<!ENTITY eyedb "EyeDB">
+<!ENTITY eyedbadmin "<command>eyedbadmin</command>">
+]
+>
+
+<book>
+  <title>EyeDB Administration Guide</title>
+
+  <chapter id="database">
+    <title>Database administration</title>
+    
+    <para>
+      This chapter covers the database administration commands used for:
+      <itemizedlist>
+	<listitem><para>creating and deleting databases</para></listitem>
+	<listitem><para>getting information on databases</para></listitem>
+	<listitem><para>moving, copying, renaming databases</para></listitem>
+	<listitem><para>importing and exporting databases</para></listitem>
+      </itemizedlist>
+    </para>
+
+    <para>
+      All these operations are performed using the &eyedbadmin; command and its <command>database</command> topic.
+    </para>
+
+    <section>
+      <title>Creating and deleting a database</title>
+
+      <section>
+	<title>Creating a database</title>
+
+	<para>
+	  Creating a database is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>database create</command>
+	    <arg choice="opt" rep="repeat">options</arg>
+	    <arg choice="plain"><replaceable>database</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Options are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--dbfile=<replaceable>file</replaceable></arg>
+		</cmdsynopsis>
+		specifies the database file (a file, usually with <filename>.dbs</filename> extension, that stores the database structure.
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--filedir=<replaceable>directory</replaceable></arg>
+		</cmdsynopsis> 
+		specifies the directory that will contains the database data files
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--max-object-count=<replaceable>count</replaceable></arg>
+		</cmdsynopsis>
+		specifies the maximum number of objects that can be store in the database
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  <xref linkend="eyedbadmin-database-create"/> shows several examples of database creation.
+	</para>
+
+	<example id="eyedbadmin-database-create">
+	  <title>&eyedbadmin; database create</title>
+	  <screen>
+# create database 'test1'
+<userinput>eyedbadmin database create test1</userinput>
+# create database 'test2' giving the database file
+<userinput>eyedbadmin database create --dbfile=/var/tmp/test2.dbs test2</userinput>
+<userinput>ls -l /var/tmp/test2.dbs</userinput>
+-rw------- 1 francois francois 250696 2009-03-13 11:55 /var/tmp/test2.dbs
+# create database 'test3' giving the database files directory
+<userinput>mkdir /var/tmp/test3</userinput>
+<userinput>eyedbadmin database create --filedir=/var/tmp/test3 test3</userinput>
+<userinput>ls -l /var/tmp/test3</userinput>
+total 1504
+-rw------- 1 francois francois  8471424 2009-03-13 11:57 test3.dat
+-rw------- 1 francois francois   250696 2009-03-13 11:57 test3.dbs
+-rw------- 1 francois francois    70000 2009-03-13 11:57 test3.dmp
+-rw------- 1 francois francois        0 2009-03-13 11:57 test3.lck
+-rw------- 1 francois francois    61440 2009-03-13 11:57 test3.omp
+-rw------- 1 francois francois 67108864 2009-03-13 11:57 test3.shm
+	  </screen>
+	</example>
+
+	<para>
+	</para>
+
+      </section>
+
+      <section>
+	<title>Deleting a database</title>
+
+	<para>
+	  Deleting a database is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <arg choice="plain">database delete</arg>
+	    <arg choice="plain" rep="repeat"><replaceable>database</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  This command has no options (except the &eyedbadmin; command standard options).
+	</para>
+
+	<example id="eyedbadmin-database-delete">
+	  <title>&eyedbadmin; database delete</title>
+	  <screen>
+# delete database 'test1'
+<userinput>eyedbadmin database delete test1</userinput>
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Listing databases</title>
+
+	<para>
+	  Obtaining a list of existing databases or obtaining information on a specific database is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>database list</command>
+	    <arg choice="opt" rep="repeat">options</arg>
+	    <arg choice="plain" rep="repeat"><arg choice="opt">~</arg><replaceable>database</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Options are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--dbname</arg>
+		</cmdsynopsis>
+		lists database names
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--dbid</arg>
+		</cmdsynopsis>
+		lists database identifier
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--dbfile</arg>
+		</cmdsynopsis>
+		lists database file
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis><arg choice="plain">--max-object-count</arg></cmdsynopsis>
+		lists database max object count
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--datafiles</arg>
+		</cmdsynopsis>
+		lists database datafiles
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--defaccess</arg>
+		</cmdsynopsis>
+		lists database default access
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--useraccess</arg>
+		</cmdsynopsis>
+		lists user database accesses
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--stats</arg>
+		</cmdsynopsis>
+		lists database statistics
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--all</arg>
+		</cmdsynopsis>
+		lists all database info
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain" rep="repeat"><arg choice="opt">~</arg><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		database(s) to list (~ means regular expression)
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  <xref linkend="eyedbadmin-database-list"/> shows several examples of database listing.
+	</para>
+
+	<example id="eyedbadmin-database-list">
+	  <title>&eyedbadmin; database list</title>
+	  <screen>
+# list all databases
+<userinput>eyedbadmin database list</userinput>
+Database Name
+  test
+Database Identifier
+  2
+Database File
+  /home/francois/projects/eyedb/install/var/lib/eyedb/db/test.dbs
+Max Object Count
+  10000000
+Datafiles
+  Datafile #0
+    Name      DEFAULT
+    Dataspace #0
+    File      test.dat
+    Maxsize   ~2048Mb
+    Slotsize  16b
+    Server Access read/write
+Default Access
+  NO_DBACCESS_MODE
+Database Access
+  User Name  francois
+  Access Mode ADMIN_DBACCESS_MODE
+Database Name
+  EYEDBDBM
+....
+### output truncated for readability
+# list only database names
+<userinput>eyedbadmin database list --dbname</userinput>
+test
+EYEDBDBM
+test3
+test2
+# list non existing database
+<userinput>eyedbadmin database list --dbname foo</userinput>
+Database 'foo' not found
+# list statistics for a given database
+<userinput>eyedbadmin database list --stats test</userinput>
+Statistics
+  Maximum Object Number 10000000
+  Object Number         2574
+  Maximum Slot Count    134217728
+  Busy Slot Count       532202
+  Maximum Size          2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+  Busy Slot Size        8515232b, ~8315Kb, ~8Mb
+  Disk Size Used        76007288b, ~74225Kb, ~72Mb
+  Disk Block Size Used  10452992b, ~10208Kb, ~10Mb
+  Used                  0.40%
+# list database default access right
+<userinput>eyedbadmin database list --defaccess test</userinput>
+NO_DBACCESS_MODE
+# list with regular expression (note shell quoting)
+<userinput>eyedbadmin database list --dbname '~test*'</userinput>
+test
+test3
+test2
+# list with another regular expression (note shell quoting)
+<userinput>eyedbadmin database list --dbname --dbfile '~test[0-9]'</userinput>
+test3
+/var/tmp/test3/test3.dbs
+test2
+/var/tmp/test2.dbs
+	  </screen>
+	</example>
+
+
+      </section>
+
+      <section>
+	<title>Setting database default access rights</title>
+	
+	<para>
+	  Database access rights are defined at two levels:
+	  <itemizedlist>
+	    <listitem><para>default database access, applying for all &eyedb; users</para></listitem>
+	    <listitem><para>per user database access, applying only for specified user</para></listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Setting default access right is done use the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <arg choice="plain">database defaccess</arg>
+	    <arg choice="plain"><replaceable>database</replaceable></arg>
+	    <arg choice="plain"><replaceable>mode</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Allowed values for <replaceable>mode</replaceable> are:
+	  <itemizedlist>
+	    <listitem><para><command>r</command>: read-only</para></listitem>
+	    <listitem><para><command>rw</command>: read/write</para></listitem>
+	    <listitem><para><command>rx</command>: read/execute</para></listitem>
+	    <listitem><para><command>rwx</command>: read/write/execute</para></listitem>
+	    <listitem><para><command>admin</command>: administrate</para></listitem>
+	    <listitem><para><command>no</command>: access forbiden</para></listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-database-defaccess">
+	  <title>&eyedbadmin; database defaccess</title>
+	  <screen>
+# list database default access right
+<userinput>eyedbadmin database list --defaccess test</userinput>
+NO_DBACCESS_MODE
+# set default access right to read-only
+<userinput>eyedbadmin database defaccess test r</userinput>
+# list database default access right
+<userinput>eyedbadmin database list --defaccess test</userinput>
+READ_DBACCESS_MODE
+# set default access right to read/write
+<userinput>eyedbadmin database defaccess test rw</userinput>
+# list database default access right
+<userinput>eyedbadmin database list --defaccess test</userinput>
+READ_WRITE_DBACCESS_MODE
+	  </screen>
+	</example>
+
+	<note>
+	  <para>Only an &eyedb; user that has the <command>admin</command> database access for a given database can set a default database access for this database. The user that has created the database has automatically the <command>admin</command> database access.
+	  </para>
+	</note>
+
+      </section>
+
+    </section>
+
+    <section>
+      <title>Renaming, copying and moving a database</title>
+
+      <para>
+	Renaming, copying and moving a database cannot be simply done by renaming the files that are associated with the database, because &eyedb; maintains databases informations in a database itself. Specific commands are therefore required to rename, copy and move a database.
+      </para>
+
+      <section>
+	<title>Renaming a database</title>
+
+	<para>
+	  Renaming a database is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <arg choice="plain">database rename</arg>
+	    <arg choice="plain"><replaceable>database</replaceable></arg>
+	    <arg choice="plain"><replaceable>new_database</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		name of database to rename
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain"><replaceable>new_database</replaceable></arg>
+		</cmdsynopsis>
+		new database name
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-database-rename">
+	  <title>&eyedbadmin; database rename</title>
+	  <screen>
+<userinput>eyedbadmin database list test</userinput> 
+Database Name
+  test
+Database Identifier
+  2
+Database File
+  /home/francois/projects/eyedb/install/var/lib/eyedb/db/test.dbs
+Max Object Count
+  10000000
+Datafiles
+  Datafile #0
+    Name      DEFAULT
+    Dataspace #0
+    File      test.dat
+    Maxsize   ~2048Mb
+    Slotsize  16b
+    Server Access read/write
+Default Access
+  READ_WRITE_DBACCESS_MODE
+Database Access
+  User Name  francois
+  Access Mode ADMIN_DBACCESS_MODE
+<userinput>eyedbadmin database rename test newtest</userinput>
+<userinput>eyedbadmin database list newtest</userinput>
+Database Name
+  newtest
+Database Identifier
+  2
+Database File
+  /home/francois/projects/eyedb/install/var/lib/eyedb/db/test.dbs
+Max Object Count
+  10000000
+Datafiles
+  Datafile #0
+    Name      DEFAULT
+    Dataspace #0
+    File      test.dat
+    Maxsize   ~2048Mb
+    Slotsize  16b
+    Server Access read/write
+Default Access
+  READ_WRITE_DBACCESS_MODE
+Database Access
+  User Name  francois
+  Access Mode ADMIN_DBACCESS_MODE
+	  </screen>
+	</example>
+
+	<tip>
+	  <title>Database renaming and database file names</title>
+	  <para>
+	    <xref linkend="eyedbadmin-database-rename"/> shows that renaming a database does <emphasis>not</emphasis> rename the database files. Rename the database data files is done using the <command>eyedbadmin datafile rename</command> command described in <xref linkend="eyedbadmin-datafile-rename"/>.
+	  </para>
+	</tip>
+
+      </section>
+
+      <section>
+	<title>Copying a database</title>
+
+	<para>
+	  Copying a database is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>database copy</command>
+	    <arg choice="opt" rep="repeat">options</arg>
+	    <arg choice="plain"><replaceable>database</replaceable>
+	    </arg><arg choice="plain"><replaceable>new_database</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Options are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--dbfile=<replaceable>file</replaceable></arg>
+		</cmdsynopsis> 
+		specifies the database file (a file, usually with <filename>.dbs</filename> extension, that stores the database structure.
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--filedir=<replaceable>directory</replaceable></arg>
+		</cmdsynopsis> 
+		specifies the directory that will contains the database data files
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		name of database to copy
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain"><replaceable>new_database</replaceable></arg>
+		</cmdsynopsis>
+		new database name
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-database-copy">
+	  <title>&eyedbadmin; database copy</title>
+	  <screen>
+<userinput>eyedbadmin database list test3</userinput>
+Database Name
+  test3
+Database Identifier
+  4
+Database File
+  /var/tmp/test3/test3.dbs
+Max Object Count
+  10000000
+Datafiles
+  Datafile #0
+    Name      DEFAULT
+    Dataspace #0
+    File      test3.dat
+    Maxsize   ~2048Mb
+    Slotsize  16b
+    Server Access read/write
+Default Access
+  NO_DBACCESS_MODE
+Database Access
+  User Name  francois
+  Access Mode ADMIN_DBACCESS_MODE
+<userinput>mkdir /var/tmp/test3copy</userinput>
+<userinput>eyedbadmin database copy --filedir=/var/tmp/test3copy test3 test3copy</userinput>
+<userinput>eyedbadmin database list test3copy</userinput>
+Database Name
+  test3copy
+Database Identifier
+  4
+Database File
+  /var/tmp/test3copy/test3copy.dbs
+Max Object Count
+  10000000
+Datafiles
+  Datafile #0
+    Name      DEFAULT
+    Dataspace #0
+    File      /var/tmp/test3copy/test3copy.dat
+    Maxsize   ~2048Mb
+    Slotsize  16b
+    Server Access read/write
+Default Access
+  NO_DBACCESS_MODE
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Moving a database</title>
+
+	<para>
+	  Moving a database is a different operation than renaming a database: moving a database means moving the database files to a new directory, without changing the database name.
+	</para>
+
+	<para>
+	  Moving a database is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>database move</command>
+	    <arg choice="opt" rep="repeat">options</arg>
+	    <arg choice="plain"><replaceable>database</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Options are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--dbfile=<replaceable>file</replaceable></arg>
+		</cmdsynopsis>
+		specifies the database file (a file, usually with <filename>.dbs</filename> extension, that stores the database structure
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--filedir=<replaceable>directory</replaceable></arg>
+		</cmdsynopsis>
+		specifies the directory that will contains the database data files. This option is <emphasis>mandatory</emphasis>.
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		name of database to move
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-database-move">
+	  <title>&eyedbadmin; database move</title>
+	  <screen>
+<userinput>eyedbadmin database list test2</userinput>
+Database Name
+  test2
+Database Identifier
+  3
+Database File
+  /var/tmp/test2.dbs
+Max Object Count
+  10000000
+Datafiles
+  Datafile #0
+    Name      DEFAULT
+    Dataspace #0
+    File      test2.dat
+    Maxsize   ~2048Mb
+    Slotsize  16b
+    Server Access read/write
+Default Access
+  NO_DBACCESS_MODE
+Database Access
+  User Name  francois
+  Access Mode ADMIN_DBACCESS_MODE
+<userinput>mkdir /var/tmp/test2</userinput>
+<userinput>eyedbadmin database move --filedir=/var/tmp/test2 test2</userinput>
+<userinput>eyedbadmin database list test2</userinput>
+Database Name
+  test2
+Database Identifier
+  3
+Database File
+  /var/tmp/test2/test2.dbs
+Max Object Count
+  10000000
+Datafiles
+  Datafile #0
+    Name      DEFAULT
+    Dataspace #0
+    File      test2.dat
+    Maxsize   ~2048Mb
+    Slotsize  16b
+    Server Access read/write
+Default Access
+  NO_DBACCESS_MODE
+	  </screen>
+	</example>
+
+      </section>
+
+    </section>
+
+    <section>
+      <title>Exporting and importing a database</title>
+
+      <para>
+	Database export and import is used to make a copy of a database content in a single file. It can be used to backup a database or to copy a database between computers that do not share file systems.
+      </para>
+
+      <section>
+	<title>Exporting a database</title>
+
+	<para>
+	  Exporting a database is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>database export</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>file</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		name of database to export
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>file</replaceable></arg>
+		</cmdsynopsis>
+		file for export (- means export to standard output)
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-database-export">
+	  <title>&eyedbadmin; database export</title>
+	  <screen>
+<userinput>eyedbadmin database export test2 /var/tmp/test2.dump</userinput>
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Importing a database</title>
+
+	<para>
+	  Importing a database is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>database import</command>
+	    <arg choice="opt" rep="repeat">options</arg>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>file</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Options are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--filedir=<replaceable>directory</replaceable></arg>
+		</cmdsynopsis>
+		specifies the directory that will contains the database files
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--mthdir=<replaceable>directory</replaceable></arg>
+		</cmdsynopsis>
+		specifies the directory that will contains the database methods
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--list</arg>
+		</cmdsynopsis>
+		list only, do not import
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		name of database to import
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>file</replaceable></arg>
+		</cmdsynopsis>
+		file for import (- means import from standard output)
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-database-import">
+	  <title>&eyedbadmin; database import</title>
+	  <screen>
+<userinput>eyedbadmin database import test2 /var/tmp/test2.dump</userinput>
+	  </screen>
+	</example>
+
+
+      </section>
+
+    </section>
+
+  </chapter>
+
+<!--
+;;; Local Variables: ***
+;;; eval: (load-file "../docbook-common/emacs-macro") ***
+;;; End: ***
+-->
+
+</book>

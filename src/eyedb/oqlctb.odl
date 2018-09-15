@@ -1,0 +1,438 @@
+/* 
+   EyeDB Object Database Management System
+   Copyright (C) 1994-1999,2004,2005 SYSRA
+   
+   EyeDB is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+   
+   EyeDB is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+   
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA 
+*/
+
+/*
+   Author: Eric Viara <viara@sysra.com>
+*/
+
+// ---------------------------------------------------------------------------
+//
+// Classes contribution for OQL
+//
+// ---------------------------------------------------------------------------
+
+enum database_open_mode [OqlCtbDatabaseOpenMode] {
+  DBREAD [DBRead]      = 0x2,
+  DBRW [DBRW]        = 0x4,
+
+  DBADMIN [DBAdmin]     = 0x10,
+  DBOPENLOCAL [DBOpenLocal] = 0x20
+};
+
+enum lock_mode [OqlCtbLockMode] {
+  DEFAULT_LOCK [DefaultLock],
+  LOCK_N [LockN], /* no lock */
+  LOCK_X [LockX], /* exclusive */
+  LOCK_SX [LockSX], /* shared/exclusive */
+  LOCK_S [LockS], /* shared */
+  LOCK_P [LockP] /* private */
+};
+
+enum transaction_mode [OqlCtbTransactionMode] {
+  TRANSACTION_OFF [TransactionOff] = 1,  /* no rollback is possible */
+  TRANSACTION_ON [TransactionOn]
+};
+
+enum transaction_lockmode [OqlCtbTransactionLockMode] {
+  READS_WRITES [ReadSWriteS] = 1, /* read shared; write shared */
+  READS_WRITESX [ReadSWriteSX], /* read shared; write shared/exclusive */  
+  READS_WRITEX [ReadSWriteX],  /* read shared; write exclusive */  
+  READSX_WRITESX [ReadSXWriteSX], /* read shared/exclusive; write shared/exclusive */
+  READSX_WRITEX [ReadSXWriteX], /* read shared/exclusive; write exclusive */
+  READX_WRITEX [ReadXWriteX],  /* read exclusive; write exclusive */
+  READN_WRITES [ReadNWriteS],  /* read no lock; write shared */
+  READN_WRITESX [ReadNWriteSX], /* read no lock; write shared/exclusive */
+  READN_WRITEX [ReadNWriteX], /* read no lock; write exclusive */
+  READN_WRITEN [ReadNWriteN], /* read no lock; write no lock */
+  DATABASEX [DatabaseX] /* database exclusive */
+};
+
+enum recovery_mode [OqlCtbRecoveryMode] {
+  RECOVERY_OFF [RecoveryOff] = 3, /* prevents from remote client failure */
+  RECOVERY_PARTIAL [RecoveryPartial], /* plus prevents from local client and server failure */
+  RECOVERY_FULL [RecoveryFull]     /* plus prevents from OS failure */
+};
+
+enum tostring_flags [OqlCtbToStringFlags] {
+  MTIME_TRACE [MTimeTrace] = 0x0001,
+  CTIME_TRACE [CTimeTrace] = 0x0002,
+  CMTIME_TRACE [CMTimeTrace]  = 0x0003,
+  POINTER_TRACE [PointerTrace] = 0x0004,
+  COMPOID_TRACE [CompOidTrace] = 0x0008,
+  NATIVE_TRACE [NativeTrace] = 0x0010,
+  CONTENTS_TRACE [ContentsTrace] = 0x0020,
+  INHATTR_TRACE [InhAttrTrace] = 0x0040,
+  INHEXEC_TRACE [InhExecTrace] = 0x0080,
+  EXECBODY_TRACE [ExecBodyTrace] = 0x0100,
+  SYSEXEC_TRACE [SysExecTrace] = 0x0200,
+  NOSCOPE_TRACE [NoScopeTrace] = 0x0400,
+  FULLRECURS_TRACE [FullRecursTrace] = 0x1000
+};
+
+native object {
+
+  instance_method<client, called_from=OQL> oid getOid();
+  instance_method<client, called_from=OQL> object *getObject();
+
+  instance_method<client, called_from=OQL> string toString();
+  instance_method<client, called_from=OQL> string toString(in int flags);
+
+  instance_method<client, called_from=OQL> database *getDatabase();
+  instance_method<client, called_from=OQL> void setDatabase(in database *);
+
+  instance_method<client, called_from=OQL> dataspace *getDataspace();
+
+  instance_method<client, called_from=OQL> void setDataspace(in dataspace *);
+  instance_method<client, called_from=OQL> void move(in dataspace *);
+
+  instance_method<client, called_from=OQL> void store();
+
+  instance_method<client, called_from=OQL> object *clone();
+
+  instance_method<client, called_from=OQL> int64 getCTime();
+  instance_method<client, called_from=OQL> int64 getMTime();
+
+  instance_method<client, called_from=OQL> string getStringCTime();
+  instance_method<client, called_from=OQL> string getStringMTime();
+
+  instance_method<client, called_from=OQL> bool isRemoved();
+  instance_method<client, called_from=OQL> bool isModify();
+
+  instance_method<client, called_from=OQL> void setLock(in lock_mode mode);
+  instance_method<client, called_from=OQL>
+    void setLock(in lock_mode mode, out int rmode);
+  instance_method<client, called_from=OQL> void getLock(out lock_mode rmode);
+};
+
+native #class {
+  instance_method<client, called_from=OQL> dataspace *getDefaultInstanceDataspace();
+  instance_method<client, called_from=OQL> void setDefaultInstanceDataspace(in dataspace *);
+  instance_method<client, called_from=OQL> void moveInstances(in dataspace *);
+};
+
+enum MapType [OqlCtbMapType] {
+  BITMAP_TYPE [BitmapType],
+  LINKMAP_TYPE [LinkmapType]
+};
+
+enum DatType [OqlCtbDatType] {
+  LOGICAL_OID_TYPE [LogicalOidType] = 0x100,
+  PHYSICAL_OID_TYPE [PhysicalOidType]
+};
+
+class datafile [OqlCtbDatafile] {
+
+  short id;
+  short dspid;
+  dataspace *dsp;
+  string file;
+  string name;
+  MapType mtype;
+  int maxsize;
+  int slotsize;
+  DatType dtype;
+
+  %C++{
+    Datafile *xdatfile;
+    virtual void userInitialize();
+    virtual void userCopy(const Object &);
+  %}
+};
+
+class dataspace [OqlCtbDataspace] {
+  short id;
+  string name;
+  datafile *datafiles[];
+
+  %C++{
+    Dataspace *xdataspace;
+    virtual void userInitialize();
+    virtual void userCopy(const Object &);
+  %}
+};
+
+native #index {
+  instance_method<client, called_from=OQL> int getCount();
+  instance_method<client, called_from=OQL> dataspace *getDefaultDataspace();
+  instance_method<client, called_from=OQL> void setDefaultDataspace(in dataspace *);
+  instance_method<client, called_from=OQL> void move(in dataspace *);
+
+  instance_method<client, called_from=OQL> string
+    getImplementation(in bool local);
+  instance_method<client, called_from=OQL> string getStats();
+  instance_method<client, called_from=OQL> string getStats(in bool full);
+
+  instance_method<client, called_from=OQL>
+    string simulate(in int idxtype, in string #hints, in bool full);
+  instance_method<client, called_from=OQL>
+    void reimplement(in string #hints);
+  instance_method<client, called_from=OQL>
+    oid reimplement(in int idxtype, in string #hints);
+};
+
+native collection {
+
+  instance_method<client, called_from=OQL> int getCount();
+  instance_method<client, called_from=OQL> string getName();
+  instance_method<client, called_from=OQL> void setName(in string name);
+  instance_method<client, called_from=OQL> bool isIn(in oid obj);
+  instance_method<client, called_from=OQL> oid[] getElements(in oid obj);
+
+  instance_method<client, called_from=OQL> bool isLiteral();
+  instance_method<client, called_from=OQL> bool isPureLiteral();
+  instance_method<client, called_from=OQL> bool isLiteralObject();
+
+  instance_method<client, called_from=OQL> void setLiteralObject();
+
+  instance_method<client, called_from=OQL> oid getLiteralOid();
+
+  instance_method<client, called_from=OQL> dataspace *getDefaultDataspace();
+  instance_method<client, called_from=OQL> void setDefaultDataspace(in dataspace *);
+  instance_method<client, called_from=OQL> void moveElements(in dataspace *);
+
+  instance_method<client, called_from=OQL> string
+    getImplementation(in bool local);
+  instance_method<client, called_from=OQL> string getImplStats();
+  instance_method<client, called_from=OQL> string getImplStats(in bool full);
+
+  instance_method<client, called_from=OQL>
+    string simulate(in int idxtype, in string #hints, in bool full);
+  instance_method<client, called_from=OQL>
+    void reimplement(in int idxtype, in string #hints);
+};
+
+native set {
+
+  instance_method<client, called_from=OQL> void addTo(in oid obj);
+  instance_method<client, called_from=OQL> void suppress(in oid obj);
+};
+
+native bag {
+
+  instance_method<client, called_from=OQL> void addTo(in oid obj);
+  instance_method<client, called_from=OQL> void suppress(in oid obj);
+};
+
+native array {
+
+  instance_method<client, called_from=OQL> void setInAt(in int pos, in oid obj);
+  instance_method<client, called_from=OQL> void append(in oid obj);
+  instance_method<client, called_from=OQL> void suppressAt(in int);
+  instance_method<client, called_from=OQL> oid  retrieveAt(in int);
+};
+
+class eyedb [OqlCtbEyedb] {
+
+  class_method<client, called_from=OQL> string getConfigValue(in string name);
+
+  class_method<client, called_from=OQL> string getVersion();
+  class_method<client, called_from=OQL> int getVersionNumber();
+  class_method<client, called_from=OQL> string getCompilationTime();
+
+  class_method<client, called_from=OQL> string getArchitecture();
+};
+
+class connection [OqlCtbConnection] {
+
+  instance_method<client, called_from=OQL> void open();
+  instance_method<client, called_from=OQL>
+    void open(in string host, in string port);
+  instance_method<client, called_from=OQL> void close();
+
+  %C++{
+    Connection *conn;
+    virtual void userInitialize();
+    virtual void userCopy(const Object &);
+    %}
+};
+
+class database [OqlCtbDatabase] {
+  string dbname;
+  int dbid;
+  string dbmdb;
+
+  instance_method<client, called_from=OQL>
+    void open(in connection *conn, in int mode);
+
+  instance_method<client, called_from=OQL>
+    void open(in connection *conn, in int mode,
+	      in string userauth, in string passwdauth);
+
+  instance_method<client, called_from=OQL> void open(in int mode);
+  instance_method<client, called_from=OQL>
+    void open(in int mode,
+	      in string userauth, in string passwdauth);
+
+  instance_method<client, called_from=OQL> void close();
+
+  class_method<client, called_from=OQL> bool isAutoPersistMode();
+  class_method<client, called_from=OQL> void setAutoPersistMode(in bool);
+
+  instance_method<client, called_from=OQL> bool isDefaultDatabase();
+  instance_method<client, called_from=OQL> void setDefaultDatabase();
+
+  instance_method<client, called_from=OQL> void create();
+  instance_method<client, called_from=OQL>
+    void create(in string userauth, in string passwdauth);
+
+  instance_method<client, called_from=OQL> void destroy();
+  instance_method<client, called_from=OQL>
+    void destroy(in string userauth, in string passwdauth);
+
+  instance_method<client, called_from=OQL> void rename(in string newname);
+  instance_method<client, called_from=OQL>
+    void rename(in string newname,
+		in string userauth, in string passwdauth);
+
+  instance_method<client, called_from=OQL> connection *getConnection();
+  instance_method<client, called_from=OQL> int getOpenMode();
+
+  instance_method<client, called_from=OQL> bool getCommitOnClose();
+  instance_method<client, called_from=OQL> void setCommitOnClose(in bool);
+
+  instance_method<client, called_from=OQL> int getVersionNumber();
+  instance_method<client, called_from=OQL> string getVersion();
+
+  instance_method<client, called_from=OQL> void removeObject(in oid);
+
+  instance_method<client, called_from=OQL> void uncacheObject(in object *);
+  instance_method<client, called_from=OQL> void uncacheObject(in oid);
+
+  instance_method<client, called_from=OQL> void transactionBegin();
+  instance_method<client, called_from=OQL>
+    void transactionBegin(in int trsmode, in int lockmode,
+			  in int recovmode, in int _magorder,
+			  in int ratioalrt, in int wait_timeout);
+
+  instance_method<client, called_from=OQL> void transactionCommit();
+  instance_method<client, called_from=OQL> void transactionAbort();
+ 
+  instance_method<client, called_from=OQL> bool isInTransaction();
+
+  instance_method<client, called_from=OQL> datafile [] getDatafiles();
+  instance_method<client, called_from=OQL> datafile *getDatafile(in string name);
+  instance_method<client, called_from=OQL> datafile *getDatafile(in short id);
+
+  instance_method<client, called_from=OQL> dataspace [] getDataspaces();
+  instance_method<client, called_from=OQL> dataspace *getDataspace(in string name);
+  instance_method<client, called_from=OQL> dataspace *getDataspace(in short id);
+
+  instance_method<client, called_from=OQL> dataspace *getDefaultDataspace();
+  instance_method<client, called_from=OQL> void setDefaultDataspace(in dataspace *);
+
+  instance_method<client, called_from=OQL> void moveObjects(in oid obj[],
+							    in dataspace *);
+
+  instance_method<client, called_from=OQL>
+     void updateSchema(in string odlfile, in string package);
+
+  instance_method<client, called_from=OQL>
+     void updateSchema(in string odlfile, in string package,
+		       in string schname, in string db_prefix);
+
+  instance_method<client, called_from=OQL>
+     void updateSchema(in string odlfile, in string package,
+		       in string schname, in string db_prefix,
+		       in string cpp_cmd, in string cpp_flags);
+
+  instance_method<client, called_from=OQL>
+     void setObjectLock(in oid _oid, in lock_mode mode);
+  instance_method<client, called_from=OQL>
+     void setObjectLock(in oid _oid, in lock_mode mode,
+			out lock_mode rmode);
+  instance_method<client, called_from=OQL>
+    void getObjectLock(in oid _oid, out lock_mode rmode);
+
+  %C++{
+    Database *xdb;
+    virtual void userInitialize();
+    virtual void userCopy(const Object &);
+    %}
+};
+
+class math [OqlCtbMath] {
+
+  class_method<client, called_from=OQL> double acos (in double);
+  class_method<client, called_from=OQL> double asin (in double);
+  class_method<client, called_from=OQL> double atan (in double);
+  class_method<client, called_from=OQL> double atan2 (in double, in double);
+  class_method<client, called_from=OQL> double cos (in double);
+  class_method<client, called_from=OQL> double sin (in double);
+  class_method<client, called_from=OQL> double tan (in double);
+
+  class_method<client, called_from=OQL> double cosh (in double);
+  class_method<client, called_from=OQL> double sinh (in double);
+  class_method<client, called_from=OQL> double tanh (in double);
+
+  class_method<client, called_from=OQL> double exp (in double);
+  class_method<client, called_from=OQL> double log (in double);
+  class_method<client, called_from=OQL> double log10 (in double);
+
+  class_method<client, called_from=OQL> double pow (in double, in double);
+  class_method<client, called_from=OQL> double sqrt (in double);
+
+  class_method<client, called_from=OQL> double ceil (in double);
+  class_method<client, called_from=OQL> double fabs (in double);
+  class_method<client, called_from=OQL> double floor (in double);
+  class_method<client, called_from=OQL> double fmod (in double, in double);
+  class_method<client, called_from=OQL> double erf (in double);
+  class_method<client, called_from=OQL> double erfc (in double);
+  class_method<client, called_from=OQL> double gamma (in double);
+  class_method<client, called_from=OQL> double hypot (in double, in double);
+  class_method<client, called_from=OQL> int isnan (in double);
+  class_method<client, called_from=OQL> double j0 (in double);
+  class_method<client, called_from=OQL> double j1 (in double);
+  class_method<client, called_from=OQL> double jn (in int, in double);
+  class_method<client, called_from=OQL> double lgamma (in double);
+  class_method<client, called_from=OQL> double y0 (in double);
+  class_method<client, called_from=OQL> double y1 (in double);
+  class_method<client, called_from=OQL> double yn (in int, in double);
+
+  class_method<client, called_from=OQL> double acosh (in double);
+  class_method<client, called_from=OQL> double asinh (in double);
+  class_method<client, called_from=OQL> double atanh (in double);
+  class_method<client, called_from=OQL> double cbrt (in double);
+  class_method<client, called_from=OQL> double logb (in double);
+  class_method<client, called_from=OQL> double nextafter (in double, in double);
+  class_method<client, called_from=OQL> double remainder (in double, in double);
+  class_method<client, called_from=OQL> double scalb (in double, in double);
+
+  class_method<client, called_from=OQL> double expm1 (in double);
+  class_method<client, called_from=OQL> int ilogb (in double);
+  class_method<client, called_from=OQL> double log1p (in double);
+  class_method<client, called_from=OQL> double rint (in double);
+};
+
+class oql {
+
+// 26/05/01: a few examples
+#if 0
+ instmethod<client, called_from=OQL> ostring ostring() %oql{
+   return ostring::ostring();
+ %}
+
+ instmethod<client, called_from=OQL> ostring ostring(in string s) %oql{
+   return ostring::ostring(s);
+ %}
+
+ instmethod<client, called_from=OQL> ostring ostring(in ostring s) %oql{
+   return ostring::ostring(s);
+ %}
+#endif
+};

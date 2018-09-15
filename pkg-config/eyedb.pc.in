@@ -1,0 +1,14 @@
+bindir=@bindir@
+sbindir=@sbindir@
+eyedb_arch_libs=@EYEDB_ARCH_LIBS@
+includedir=@includedir@
+libdir=@libdir@
+version=@EYEDB_VERSION@
+
+Name: EyeDB
+Description: Object Oriented Database Management System
+Version: ${version} 
+Requires:
+Libs:-L${libdir} -leyedb -leyedbrpcfe -leyedbsm -leyedbutils ${eyedb_arch_libs}
+Cflags: -I${includedir} 
+

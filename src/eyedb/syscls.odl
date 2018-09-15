@@ -1,0 +1,943 @@
+/* 
+   EyeDB Object Database Management System
+   Copyright (C) 1994-1999,2004,2005 SYSRA
+   
+   EyeDB is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+   
+   EyeDB is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+   
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA 
+*/
+
+/*
+   Author: Eric Viara <viara@sysra.com>
+*/
+
+
+//
+//
+// syscls.odl
+//
+// All system classes which are part of eyedb kernel, but that are not
+// defined in the native mode:
+//
+//  executable (method, trigger)
+//  constraint (key, notnull, checkconstraint)
+//  class variables
+//  index
+//  protection
+//
+//
+
+#define INDEX
+
+class attribute_component [AttributeComponent] {
+  string name;
+  string attrpath;
+  class *class_owner;
+  bool #propagate;
+  %C++{
+    virtual Status m_trace(FILE *, int, unsigned int, const RecMode *) const;
+    Status checkUnique(const char *, const char *);
+    Status find(Database *db, const Class *cls,
+		AttributeComponent *&);
+    virtual AttributeComponent *xclone(Database *, const Class *);
+    std::string makeAttrpath(const Class *cls);
+    void userInitialize();
+    void userCopy(const Object &);
+    void userGarbage();
+    virtual int getInd() const;
+    %}
+};
+
+class attribute_component_set [AttributeComponentSet] {
+  string attrname;
+  set<attribute_component *> comps;
+  class *class_owner;
+  %C++{
+    void userInitialize();
+    void userCopy(const Object &);
+    void userGarbage();
+
+    Status find(const char *, Index *&);
+    Status find(const char *, NotNullConstraint *&);
+    Status find(const char *, UniqueConstraint *&);
+    Status find(const char *, CollAttrImpl *&);
+    Status find(const char *, CardinalityConstraint_Test *&);
+    Status getAttrComponents(const Class *, LinkedList &);
+    Status hasIndex(bool &has_index, std::string &idx_str);
+
+  private:
+    struct Cache {
+      unsigned int comp_count;
+      unsigned int comp_alloc;
+      struct Comp {
+	char *attrpath;
+	AttributeComponent *comp;
+	Comp();
+	~Comp();
+      } *comps;
+      Cache();
+      void add(AttributeComponent *);
+      void getComponents(const char *, int, LinkedList &);
+      AttributeComponent *find(const char *attrpath);
+      ~Cache();
+    };
+
+    Status makeCache();
+    void invalidateCache();
+
+    Cache *index_cache, *notnull_cache, *unique_cache, *card_cache, *collimpl_cache;
+    friend class Attribute;
+    %}
+};
+
+// ---------------------------------------------------------------------------
+//
+// Class & Agregat Components
+//
+// ---------------------------------------------------------------------------
+
+class class_component [ClassComponent] {
+  class *class_owner;
+  string name;
+
+  %C++{
+    virtual Status check(Class *) const;
+    virtual Bool   isInherit() const;
+    virtual Status m_trace(FILE *, int, unsigned int, const RecMode *) const;
+    virtual int getInd() const;
+    virtual Status make(Class *);
+    virtual Status realize(const RecMode* = NoRecurs);
+    virtual Status remove(const RecMode* = NoRecurs);
+    virtual Status realize_for_update();
+    virtual Status remove_for_update();
+    %}
+};
+
+class agregat_class_component [AgregatClassComponent] extends class_component {
+};
+
+class class_variable [ClassVariable]  extends class_component {
+  string vname;
+  object *val;
+
+  %C++{
+    Status check(Class *) const;
+    Bool   isInherit() const;
+    Status m_trace(FILE *, int, unsigned int, const RecMode *) const;
+    int getInd() const;
+    Status m_trace(FILE *, int, unsigned int, const RecMode *);
+    %}
+};
+
+// ---------------------------------------------------------------------------
+//
+// Indexes
+//
+// ---------------------------------------------------------------------------
+
+class #index [Index] extends attribute_component {
+  oid idx_oid;
+  short dspid;
+  bool is_string;
+  int impl_hints[];
+
+  %C++{
+    Index(Database *, const char *, const char *);
+    virtual   Status realize(const RecMode* = NoRecurs);
+    virtual   Status remove(const RecMode* = NoRecurs);
+    virtual   Status s_trace(FILE *, Bool, unsigned int flags = 0) const;
+    Idx    *idx;
+    Status makeDataspace(Database *db, const Dataspace *&) const;
+
+    void userInitialize();
+    void userCopy(const Object &);
+    void userGarbage();
+    Status move(const Dataspace *) const;
+    short get_dspid() const;
+    Bool compareHints(Index *idx);
+    int getInd() const;
+
+    // utility methods
+    Status getCount(unsigned int &count);
+    Status getStats(std::string &, Bool dspImpl = True,
+		    Bool full = False, const char *indent = "");
+    Status getStats(IndexStats *&stats);
+    Status simulate(const IndexImpl &, std::string &,
+		    Bool dspImpl = True, Bool full = False,
+		    const char *indent = "");
+    Status simulate(const IndexImpl &, IndexStats *&stats);
+
+    Status reimplement(const IndexImpl &, Index *&);
+    virtual Status setImplementation(const IndexImpl *) {return Success;}
+    virtual Status getImplementation(IndexImpl *&, Bool remote = False) const {return 0;}
+    Status getDefaultDataspace(const Dataspace *&) const;
+    Status setDefaultDataspace(const Dataspace *);
+    Status getObjectLocations(ObjectLocationArray &);
+    virtual Status report(eyedbsm::DbHandle *sedbh, const Oid &idxoid);
+    %}
+};
+
+class #hashindex [HashIndex] extends #index {
+  be_method_C *hash_method;
+  int key_count;
+
+  %C++{
+    HashIndex(Database *, Class *, const char *attrpath,
+	      Bool propagate, Bool is_string,
+	      const Dataspace * = 0, int key_count = 0,
+	      BEMethod_C * = 0,
+	      const int *impl_hints = 0, int impl_hints_cnt = 0);
+    HashIndex(Database *, Class *, const char *attrpath,
+	      Bool propagate, Bool is_string,
+	      const IndexImpl *idximpl);
+    static Status make(Database *, Class *, const char *attrpath,
+		       Bool propagate, Bool is_string,
+		       const char *hints, HashIndex *&);
+    Status setImplementation(const IndexImpl *);
+    Status getImplementation(IndexImpl *&, Bool remote = False) const;
+    virtual AttributeComponent *xclone(Database *, const Class *);
+    Status check(Class *) const;
+    Status make(Class *);
+    Status realize(const RecMode* = NoRecurs);
+    Status remove(const RecMode* = NoRecurs);
+    Status s_trace(FILE *, Bool, unsigned int flags = 0) const;
+    Status m_trace(FILE *, int, unsigned int, const RecMode *) const;
+    Bool compareHashMethod(HashIndex *idx);
+    const char *genName() const;
+    virtual Status report(eyedbsm::DbHandle *sedbh, const Oid &idxoid);
+    %}
+};
+
+class #btreeindex [BTreeIndex] extends #index {
+  int degree;
+
+  %C++{
+    BTreeIndex(Database *, Class *,
+	       const char *attrpath, Bool propagate, Bool is_string,
+	       const Dataspace * = 0, int degree = 0,
+	       const int *impl_hints = 0, int impl_hints_cnt = 0);
+    BTreeIndex(Database *, Class *,  const char *pathattr,
+	       Bool propagate, Bool is_string,
+	       const IndexImpl *idximpl);
+    static Status make(Database *, Class *, const char *attrpath,
+		       Bool propagate, Bool is_string,
+		       const char *hints, BTreeIndex *&);
+    Status setImplementation(const IndexImpl *);
+    Status getImplementation(IndexImpl *&, Bool remote = False) const;
+    virtual AttributeComponent *xclone(Database *, const Class *);
+    Status check(Class *) const;
+    Status realize(const RecMode* = NoRecurs);
+    Status remove(const RecMode* = NoRecurs);
+    Status s_trace(FILE *, Bool, unsigned int flags = 0) const;
+    Status m_trace(FILE *, int, unsigned int, const RecMode *) const;
+    const char *genName() const; 
+    virtual Status report(eyedbsm::DbHandle *sedbh, const Oid &idxoid);
+    %}
+};
+
+// ---------------------------------------------------------------------------
+//
+// Collection implementation
+//
+// ---------------------------------------------------------------------------
+
+enum index_type [IndexType] {
+  HASH_INDEX_TYPE [HashIndexType] = 0x20,
+    BTREE_INDEX_TYPE [BTreeIndexType] = 0x40
+    };
+
+class collection_attribute_implementation [CollAttrImpl] extends attribute_component {
+  int impl_type;
+  short dspid;
+  int key_count_or_degree;
+  be_method_C *hash_method;
+  int impl_hints[];
+
+  %C++{
+
+    CollAttrImpl(Database *, Class *, const char *attrpath,
+		 Bool propagate, const Dataspace * = 0,
+		 CollImpl::Type impl_type = CollImpl::HashIndex,
+		 int key_count_or_degree = 0,
+		 BEMethod_C * = 0,
+		 const int *impl_hints = 0, int impl_hints_cnt = 0);
+    CollAttrImpl(Database *, Class *, const char *attrpath,
+		 Bool propagate, const IndexImpl *idximpl);
+
+    Status makeDataspace(Database *db, const Dataspace *&) const;
+    static Status make(Database *, Class *, const char *attrpath,
+		       Bool propagate,
+		       CollImpl::Type impl_type, const char *hints,
+		       CollAttrImpl *&);
+    Status getImplementation(Database *, const CollImpl *&);
+    virtual AttributeComponent *xclone(Database *, const Class *);
+    Status realize(const RecMode* = NoRecurs);
+    Status remove(const RecMode* = NoRecurs);
+    Status s_trace(FILE *, Bool, unsigned int flags = 0) const;
+    Status m_trace(FILE *, int, unsigned int, const RecMode *) const;
+    const char *genName() const;
+    int getInd() const;
+
+    void userInitialize();
+    void userCopy(const Object &);
+    void userGarbage();
+
+    const Dataspace *dsp;
+    CollImpl *collimpl;
+    %}
+};
+
+// ---------------------------------------------------------------------------
+//
+// Executables
+//
+// ---------------------------------------------------------------------------
+
+enum executable_lang [ExecutableLang] {
+  C_LANG [C_LANG] = 0x1,
+    OQL_LANG [OQL_LANG] = 0x2,
+    SYSTEM_EXEC [SYSTEM_EXEC] = 0x100
+    };
+
+enum argtype_type [ArgType_Type] {
+  ANY_TYPE [ANY_TYPE] = 0,
+    VOID_TYPE [VOID_TYPE],
+    INT16_TYPE [INT16_TYPE],
+    INT32_TYPE [INT32_TYPE],
+    INT64_TYPE [INT64_TYPE],
+    STRING_TYPE [STRING_TYPE],
+    CHAR_TYPE [CHAR_TYPE],
+    FLOAT_TYPE [FLOAT_TYPE],
+    OID_TYPE [OID_TYPE],
+    OBJ_TYPE [OBJ_TYPE],
+    RAW_TYPE [RAW_TYPE],
+    BYTE_TYPE [BYTE_TYPE],
+    ARRAY_TYPE [ARRAY_TYPE] = 0x0100,
+    IN_ARG_TYPE [IN_ARG_TYPE] = 0x1000,
+    OUT_ARG_TYPE [OUT_ARG_TYPE] = 0x2000,
+    INOUT_ARG_TYPE [INOUT_ARG_TYPE] = 0x3000 // IN_ARG_TYPE | OUT_ARG_TYPE
+    };
+
+class argtype [ArgType] {
+  argtype_type #type;
+  string clname;
+  %C++{
+    Bool operator==(const ArgType &) const;
+
+    Bool operator!=(const ArgType &) const;
+    static ArgType *make(Schema *m, const char *s);
+    static int getBasicType(const char *s);
+    void declare(FILE *, Schema *, const char *name);
+    void init(FILE *, Schema *, const char *prefix, const char *name,
+	      const char *indent);
+    void ret(FILE *, Schema *, const char *prefix, const char *name);
+    const char *getCType(Schema *) const;
+    void getCPrefix(FILE *fd, Schema *, const char *prefix,
+		    const char *name, Bool fullcast) const;
+    %}
+};
+
+enum executable_localisation [ExecutableLocalisation] {
+  BACKEND [BACKEND] = 1,
+    FRONTEND [FRONTEND],
+    STATIC_EXEC [STATIC_EXEC] = 0x100
+    };
+
+enum executable_type [ExecutableType] {
+  METHOD_C_TYPE [METHOD_C_TYPE]       = 0x02,
+    METHOD_OQL_TYPE [METHOD_OQL_TYPE]   = 0x12,
+    TRIGGER_C_TYPE [TRIGGER_C_TYPE]     = 0x08,
+    TRIGGER_OQL_TYPE [TRIGGER_OQL_TYPE] = 0x18
+    };
+
+#define TriggerBEFORE 0x01
+#define TriggerAFTER  0x02
+
+#define TriggerCREATE 0x10
+#define TriggerUPDATE 0x20
+#define TriggerLOAD   0x40
+#define TriggerREMOVE 0x80
+
+#define MK(X,W) ((X)|(W))
+
+enum trigger_type [TriggerType] {
+  TRIGGER_CREATE_BEFORE [TriggerCREATE_BEFORE]
+    = MK(TriggerCREATE, TriggerBEFORE),
+
+    TRIGGER_CREATE_AFTER [TriggerCREATE_AFTER]
+    = MK(TriggerCREATE, TriggerAFTER),
+
+    TRIGGER_UPDATE_BEFORE [TriggerUPDATE_BEFORE]
+    = MK(TriggerUPDATE, TriggerBEFORE),
+
+    TRIGGER_UPDATE_AFTER [TriggerUPDATE_AFTER]
+    = MK(TriggerUPDATE, TriggerAFTER),
+
+    TRIGGER_LOAD_BEFORE [TriggerLOAD_BEFORE]  
+    = MK(TriggerLOAD,   TriggerBEFORE),
+
+    TRIGGER_LOAD_AFTER [TriggerLOAD_AFTER]   
+    = MK(TriggerLOAD,   TriggerAFTER),
+
+    TRIGGER_REMOVE_BEFORE [TriggerREMOVE_BEFORE]
+    = MK(TriggerREMOVE, TriggerBEFORE),
+
+    TRIGGER_REMOVE_AFTER [TriggerREMOVE_AFTER] 
+    = MK(TriggerREMOVE, TriggerAFTER)
+    };
+
+class signature [Signature] {
+  argtype rettype;
+  int nargs;
+  argtype types [];
+  %C++{
+    Bool operator ==(const Signature &) const;
+    Bool operator !=(const Signature &) const;
+    const char *getArg(int i);
+    static const char *getPrefix(const char *prefix, int i);
+    static Bool isVoid(const ArgType *type);
+    void listArgs(FILE *, Schema *);
+    void declArgs(FILE *, Schema *);
+    void initArgs(FILE *, Schema *, const char *prefix, const char *preret,
+		  const char *indent);
+    void setArgs(FILE *, Schema *, int type, const char *prefix,
+		 const char *preret, const char *indent);
+    void retArgs(FILE *, Schema *, const char *prefix, const char *preret,
+		 const char *indent);
+    %}
+};
+ 
+class executable [Executable] {
+  string exname; /* executable name, limited to 64 chars */
+  executable_lang lang;
+  executable_localisation loc;
+  signature sign;
+  string intname; /* internal name including signature */
+  string extref_body; /* external reference or body */
+
+  %C++{
+    void initExec(const char *exname,
+		  ExecutableLang lang,
+		  Bool isSystem,
+		  ExecutableLocalisation loc,
+		  Signature *sign, Class * = 0);
+    static const char *makeInternalName(const char *exname,
+					const Signature *sign,
+					Bool isClassMethod,
+					const char *clname = 0);
+    const char *_getPrototype(const Class *, Bool scope) const;
+    static const char *makeExtRef(const char *extref);
+    static const char *getSOTag();
+    static const char *getSOFile(const char *extref);
+    static void *_dlopen(const char *extref);
+    int isStaticExec() const;
+    void *dl;
+    void userInitialize();
+    void userCopy(const Object &);
+    virtual Status execCheck();
+    Status checkRealize(const char *, const char *, void **);
+    static Status checkRealize(const char *extref, const char *intname,
+			       void **pdl, void **pcsym);
+    %}
+
+  constraint <notnull> on exname;
+};
+
+class agregat_class_executable [AgregatClassExecutable] extends agregat_class_component {
+  executable ex; // because no multiple inheritance
+
+#ifdef INDEX
+  index <propagate=off> on ex.exname;
+  index <propagate=off> on ex.intname;
+#endif
+};
+
+class #method [Method] extends agregat_class_executable {
+  %C++{
+    virtual Status applyTo(Database *, Object *, ArgArray &,
+			   Argument &retarg, Bool checkArgs);
+    Status realize(const RecMode* = NoRecurs);
+    Status remove(const RecMode* = NoRecurs);
+
+    static Status get(Database *, Class *, const char *name,
+		      const Signature *, Bool isClassMethod,
+		      Method * &);
+
+    static Status getSignature(Database *, Class *,
+			       const char *sign_str, Signature *&,
+			       char *&fname);
+
+    static Status get(Database *, Class *,
+		      const char *sign_str, Bool isClassMethod,
+		      Method * &);
+
+    const char *getPrototype(Bool scope = True) const;
+
+    Status check(Class *) const;
+    Bool   isInherit() const;
+    Status m_trace(FILE *, int, unsigned int, const RecMode *) const;
+    int getInd() const;
+    virtual Status execCheck();
+    %}
+
+#ifdef INDEX
+  index <propagate=off> on ex.exname;
+  index <propagate=off> on ex.intname;
+#endif
+};
+
+class fe_method [FEMethod] extends #method {
+#ifdef INDEX
+  index <propagate=off> on ex.exname;
+  index <propagate=off> on ex.intname;
+#endif
+};
+
+class fe_method_C [FEMethod_C] extends fe_method {
+  %C++{
+    Status (*csym)(Database *, FEMethod_C *, Object *,
+		   ArgArray &array, Argument &retarg);
+    FEMethod_C(Database *, Class *, const char *name,
+	       Signature *, Bool isClassMethod,
+	       Bool isSystem, const char *extref);
+    Status execCheck();
+    Status applyTo(Database *, Object *, ArgArray &, Argument &retarg, Bool checkArgs);
+    void userInitialize();
+    void userCopy(const Object &);
+    %}
+#ifdef INDEX
+  index <propagate=off> on ex.exname;
+  index <propagate=off> on ex.intname;
+#endif
+};
+
+class be_method [BEMethod] extends #method {
+#ifdef INDEX
+  index <propagate=off> on ex.exname;
+  index <propagate=off> on ex.intname;
+#endif
+};
+
+class be_method_C [BEMethod_C] extends be_method {
+  %C++{
+    Status (*csym)(Database *, BEMethod *, Object *,
+		   ArgArray &array, Argument &retarg);
+    BEMethod_C(Database *, Class *, const char *name,
+	       Signature *, Bool isClassMethod,
+	       Bool isSystem, const char *extref);
+    Status execCheck();
+    Status applyTo(Database *, Object *, ArgArray &, Argument &retarg, Bool checkArgs);
+    %}
+#ifdef INDEX
+  index <propagate=off> on ex.exname;
+  index <propagate=off> on ex.intname;
+#endif
+};
+
+class be_method_OQL [BEMethod_OQL] extends be_method {
+
+  %C++{
+    BEMethod_OQL(Database *, Class *, const char *name,
+		 Signature *, Bool isClassMethod,
+		 Bool isSystem, const char *body);
+
+    Status execCheck();
+    Status setBody(const char *);
+    Status applyTo(Database *, Object *, ArgArray &,
+		   Argument &retarg, Bool checkArgs);
+
+    static std::string makeExtrefBody(const Class *cls, const char *oql,
+				      const char *fname,
+				      char *typnames[],
+				      char *varnames[],
+				      unsigned int param_cnt,
+				      std::string &oqlConstruct);
+    Status runtimeInit();
+
+    Bool isRTInitialized;
+    char **varnames;
+    int param_cnt;
+    char *funcname;
+    char *body;
+    char *fullBody;
+    char *tmpbuf;
+    void *entry;
+
+    void userInitialize();
+    void userGarbage();
+    void userCopy(const Object &);
+    %}
+#ifdef INDEX
+  index <propagate=off> on ex.exname;
+  index <propagate=off> on ex.intname;
+#endif
+};
+
+class #trigger [Trigger] extends agregat_class_executable {
+  trigger_type #type;
+  int light;
+  char suffix[16];
+  %C++{
+    Trigger(Database *, Class *, TriggerType,
+	    ExecutableLang, Bool isSystem, const char *suffix,
+	    Bool light, const char *extref);
+    Status (*csym)(TriggerType, Database *, const Oid &,
+		   Object *);
+    Status apply(const Oid &, Object *);
+    Status realize(const RecMode* = NoRecurs);
+    Status remove(const RecMode* = NoRecurs);
+    const char *getPrototype(Bool scope = True) const;
+    const char *getCSym() const;
+    static const char *getStrTriggerType(TriggerType);
+    Bool   isInherit() const;
+    Status m_trace(FILE *, int, unsigned int, const RecMode *) const;
+    int getInd() const;
+
+    static std::string makeExtrefBody(const Class *cls, const char *oql,
+				      const char *fname,
+				      std::string &oqlConstruct);
+    Status runtimeInit();
+
+    Bool isRTInitialized;
+    char *funcname;
+    char *body;
+    char *fullBody;
+    char *tmpbuf;
+    void *entry;
+
+    void userInitialize();
+    void userGarbage();
+    void userCopy(const Object &);
+    %}
+
+#ifdef INDEX
+  index <propagate=off> on ex.exname;
+  index <propagate=off> on ex.intname;
+#endif
+};
+
+// ---------------------------------------------------------------------------
+//
+// Constraint Classes
+//
+// ---------------------------------------------------------------------------
+
+class unique_constraint [UniqueConstraint] extends attribute_component {
+  %C++{
+    UniqueConstraint(Database *, Class *, const char *attrpath,
+		     Bool propagate);
+    Status m_trace(FILE *, int, unsigned int, const RecMode *) const;
+    Status realize(const RecMode* = NoRecurs);
+    Status remove(const RecMode* = NoRecurs);
+    virtual AttributeComponent *xclone(Database *, const Class *);
+    const char *genName() const; 
+    int getInd() const;
+    %}
+};
+
+class notnull_constraint [NotNullConstraint] extends attribute_component {
+  %C++{
+    NotNullConstraint(Database *, Class *, const char *attrpath,
+		      Bool propagate);
+    Status m_trace(FILE *, int, unsigned int, const RecMode *) const;
+    Status realize(const RecMode* = NoRecurs);
+    Status remove(const RecMode* = NoRecurs);
+    virtual AttributeComponent *xclone(Database *, const Class *);
+    const char *genName() const; 
+    int getInd() const;
+    %}
+};
+
+class cardinality_description [CardinalityDescription] {
+  int bottom;
+  int bottom_excl;
+  int top;
+  int top_excl;
+  %C++{
+    const char *getString(Bool = True) const;
+    Bool compare(CardinalityDescription *);
+    %}
+};
+
+class cardinality_constraint [CardinalityConstraint] extends agregat_class_component {
+  string attrname;
+  cardinality_description card_desc;
+
+  %C++{
+    CardinalityConstraint(Database *, Class *,
+			  const char *attrname, int, int, int, int);
+    Status check(Class *) const;
+    const char *genName() const;
+    Bool   isInherit() const;
+    Status make(Class *);
+    Status m_trace(FILE *, int, unsigned int, const RecMode *) const;
+    int getInd() const;
+    static int maxint;
+    %}
+};
+
+// ---------------------------------------------------------------------------
+//
+// Classes for component propagation tests
+//
+// _Test suffix will disapear
+//
+// ---------------------------------------------------------------------------
+
+class cardinality_constraint_test [CardinalityConstraint_Test] extends attribute_component {
+  cardinality_description card_desc;
+
+  %C++{
+    CardinalityConstraint_Test(Database *, Class *,
+			       const char *attrpath,
+			       int, int, int, int);
+    Status realize(const RecMode* = NoRecurs);
+    Status remove(const RecMode* = NoRecurs);
+    const char *genName() const;
+    Status m_trace(FILE *, int, unsigned int, const RecMode *) const;
+    static int maxint;
+    int getInd() const;
+    %}
+};
+
+// ---------------------------------------------------------------------------
+//
+// Protection Classes
+//
+// ---------------------------------------------------------------------------
+
+enum protection_mode [ProtectionMode] {
+  PROT_READ [ProtRead] = 0x100,
+    PROT_RW [ProtRW] = 0x101
+    };
+      
+class protection_user [ProtectionUser] {
+  object *user;
+  protection_mode mode;
+};
+
+class protection [Protection] {
+  string name;
+  protection_user pusers[];
+  oid poid;
+
+  %C++{
+    Status realize(const RecMode* = NoRecurs);
+    Status remove(const RecMode* = NoRecurs);
+    %}
+};
+
+// ---------------------------------------------------------------------------
+//
+// Internal Classes
+//
+// ---------------------------------------------------------------------------
+
+class unreadable_object [UnreadableObject] {
+  %C++{
+    Status trace_realize(FILE*, int, unsigned int, const RecMode *) const;
+    static Bool isUnreadableObject(const Object *);
+    static Bool isUnreadableObject(const Class *);
+    %}
+};
+
+// ---------------------------------------------------------------------------
+//
+// Schema Flexibility Classes
+//
+// ---------------------------------------------------------------------------
+
+enum class_update_type [ClassUpdateType] {
+  ADD_ATTR [ADD_ATTR],
+    RMV_ATTR [RMV_ATTR],
+    CNV_ATTR [CNV_ATTR],
+    MIG_ATTR [MIG_ATTR],
+    RMV_CLASS [RMV_CLASS]
+    };
+
+enum attribute_convert_type [AttributeConvertType] {
+  // numeric conversions
+  INT16_TO_INT16 [INT16_TO_INT16],
+    INT16_TO_INT32 [INT16_TO_INT32],
+    INT16_TO_INT64 [INT16_TO_INT64],
+    INT16_TO_FLOAT [INT16_TO_FLOAT],
+    INT16_TO_BYTE [INT16_TO_BYTE],
+    INT16_TO_CHAR [INT16_TO_CHAR],
+    INT16_TO_ENUM [INT16_TO_ENUM],
+
+    INT32_TO_INT32 [INT32_TO_INT32],
+    INT32_TO_INT16 [INT32_TO_INT16],
+    INT32_TO_INT64 [INT32_TO_INT64],
+    INT32_TO_FLOAT [INT32_TO_FLOAT],
+    INT32_TO_BYTE [INT32_TO_BYTE],
+    INT32_TO_CHAR [INT32_TO_CHAR],
+    INT32_TO_ENUM [INT32_TO_ENUM],
+
+    INT64_TO_INT64 [INT64_TO_INT64],
+    INT64_TO_INT16 [INT64_TO_INT16],
+    INT64_TO_INT32 [INT64_TO_INT32],
+    INT64_TO_FLOAT [INT64_TO_FLOAT],
+    INT64_TO_BYTE [INT64_TO_BYTE],
+    INT64_TO_CHAR [INT64_TO_CHAR],
+    INT64_TO_ENUM [INT64_TO_ENUM],
+  
+    FLOAT_TO_FLOAT [FLOAT_TO_FLOAT],
+    FLOAT_TO_INT16 [FLOAT_TO_INT16],
+    FLOAT_TO_INT32 [FLOAT_TO_INT32],
+    FLOAT_TO_INT64 [FLOAT_TO_INT64],
+    FLOAT_TO_BYTE [FLOAT_TO_BYTE],
+    FLOAT_TO_CHAR [FLOAT_TO_CHAR],
+    FLOAT_TO_ENUM [FLOAT_TO_ENUM],
+  
+    CHAR_TO_CHAR [CHAR_TO_CHAR],
+    CHAR_TO_INT16 [CHAR_TO_INT16],
+    CHAR_TO_INT32 [CHAR_TO_INT32],
+    CHAR_TO_INT64 [CHAR_TO_INT64],
+    CHAR_TO_FLOAT [CHAR_TO_FLOAT],
+    CHAR_TO_BYTE [CHAR_TO_BYTE],
+    CHAR_TO_ENUM [CHAR_TO_ENUM],
+  
+    BYTE_TO_BYTE [BYTE_TO_BYTE],
+    BYTE_TO_INT16 [BYTE_TO_INT16],
+    BYTE_TO_INT32 [BYTE_TO_INT32],
+    BYTE_TO_INT64 [BYTE_TO_INT64],
+    BYTE_TO_FLOAT [BYTE_TO_FLOAT],
+    BYTE_TO_CHAR [BYTE_TO_CHAR],
+    BYTE_TO_ENUM [BYTE_TO_ENUM],
+  
+    ENUM_TO_ENUM [ENUM_TO_ENUM],
+    ENUM_TO_INT16 [ENUM_TO_INT16],
+    ENUM_TO_INT32 [ENUM_TO_INT32],
+    ENUM_TO_INT64 [ENUM_TO_INT64],
+    ENUM_TO_FLOAT [ENUM_TO_FLOAT],
+    ENUM_TO_CHAR [ENUM_TO_CHAR],
+    ENUM_TO_BYTE [ENUM_TO_BYTE],
+
+    // string conversions
+    CHAR_TO_STRING [CHAR_TO_STRING],
+    STRING_TO_CHAR [STRING_TO_CHAR],
+    INT16_TO_STRING [INT16_TO_STRING],
+    STRING_TO_INT16 [STRING_TO_INT16],
+    INT32_TO_STRING [INT32_TO_STRING],
+    STRING_TO_INT32 [STRING_TO_INT32],
+    INT64_TO_STRING [INT64_TO_STRING],
+    STRING_TO_INT64 [STRING_TO_INT64],
+    FLOAT_TO_STRING [FLOAT_TO_STRING],
+    STRING_TO_FLOAT [STRING_TO_FLOAT],
+    BYTE_TO_STRING [BYTE_TO_STRING],
+    STRING_TO_BYTE [STRING_TO_BYTE],
+
+    // collection conversions
+    SET_TO_BAG [SET_TO_BAG],
+    SET_TO_ARRAY [SET_TO_ARRAY],
+    SET_TO_LIST [SET_TO_LIST],
+  
+    BAG_TO_SET [BAG_TO_SET],
+    BAG_TO_ARRAY [BAG_TO_ARRAY],
+    BAG_TO_LIST [BAG_TO_LIST],
+  
+    ARRAY_TO_BAG [ARRAY_TO_BAG],
+    ARRAY_TO_SET [ARRAY_TO_SET],
+    ARRAY_TO_LIST [ARRAY_TO_LIST],
+  
+    LIST_TO_BAG [LIST_TO_BAG],
+    LIST_TO_ARRAY [LIST_TO_ARRAY],
+    LIST_TO_SET [LIST_TO_SET],
+  
+    // class conversion
+    CLASS_TO_CLASS [CLASS_TO_CLASS],
+  
+    // user conversions
+    USER_CNV [USER_CNV],
+
+    // no data conversion
+    NIL_CNV [NIL_CNV]
+    };
+
+class class_conversion [ClassConversion] {
+
+  class_update_type updtype;
+  attribute_convert_type cnvtype;
+
+  // class name
+  string clsname;
+  // attribute name
+  string attrname;
+  // attribute num
+  int attrnum;
+  
+  // old class
+  oid oid_o; // entry point (indexed)
+  // new class
+  oid oid_n;
+
+  // relative old class
+  oid roid_o;
+
+  // if updtype == CNV_ATTR, sync update ?
+  int sync;
+
+  // with_check, concerns:
+  //   <coll>_TO_SET
+  //   <numeric>_TO_ENUM
+  int with_check;
+
+  // conversion details:
+  // concerning STRING_TO_STRING
+  int src_dim;
+  int dest_dim;
+
+  // offset details
+  int offset_o;
+  int offset_n;
+  int size_o;
+  int size_n;
+
+  BEMethod_C *cnv_mth;
+
+  %C++{
+    struct Context {
+      const Class *cls;
+      ObjectArray obj_arr;
+      Context *next;
+      Context();
+      ~Context();
+    };
+
+    const Class *cls_;
+    const Attribute *attr_;
+    static Status getClass_(Database *, const Oid &ocloid,
+			    const Class *&,
+			    ClassConversion::Context *&,
+			    Bool class_to_class = False);
+    static Status convert(Database *, const ClassConversion::Context *,
+			  Data in_idr, Size in_size);
+    Status convert(Database *db, Data in_idr, Size &in_size);
+    static Size computeSize(ClassConversion::Context *conv_ctx,
+			    Size start_size);
+    void computeSize(Size &cur_size);
+
+    static void init();
+    static void _release();
+
+    void userInitialize();
+    void userCopy(const Object &);
+    void userGarbage();
+    %}
+
+#ifdef INDEX
+  index <propagate=off> on clsname;
+  index <propagate=off> on oid_o;
+  index <propagate=off> on oid_n;
+#endif
+};

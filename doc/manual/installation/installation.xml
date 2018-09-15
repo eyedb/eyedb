@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd"
+[
+<!ENTITY eyedb "EyeDB">
+]
+>
+
+<book>
+  <title>EyeDB Installation Guide</title>
+
+  <bookinfo>
+    <author>
+      <firstname>François</firstname>
+      <surname>Déchelle</surname>
+    </author>
+    <address>
+      <email>francois@dechelle.net</email>
+    </address>
+    <pubdate>2009</pubdate>
+    <copyright>
+      <year>2009</year>
+      <holder>Sysra, Inc.</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This document is distributed under the terms of the Creative Commons BY-SA 3.0 unported Licence.
+      </para>
+      <para>
+	<ulink url="http://creativecommons.org/licenses/by-sa/3.0/"/>
+      </para>
+    </legalnotice>
+  </bookinfo>
+
+  <preface>
+    <title>Introduction</title>
+
+    <para>
+      This manual describes how to compile and install &eyedb; from the source code distribution. If you are using a packaged distribution such as a RPM or a Debian package, please refer to the distribution instructions instead of this manual.
+    </para>
+
+  </preface>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="compiling.xml" xpointer="compiling-eyedb"/>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="installing.xml" xpointer="installing-eyedb"/>
+
+</book>

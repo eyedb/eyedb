@@ -1,0 +1,9 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+top_builddir=@top_builddir@
+srcdir=@srcdir@
+
+DATABASE='bugs_odl_remove_schema'
+
+$top_builddir/src/eyedb/eyedbodl -u -d $DATABASE --rmsch

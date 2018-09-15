@@ -1,0 +1,18 @@
+These testcases show several OQL triggers bugs:
+
+- bug 1: OQL trigger update_before crashes if updating same object
+Testcase script is: test_oql_trigger_crash.sh
+- bug 2: OQL trigger update_after shows same values
+Testcase script is: test_oql_update_trigger_same_values.sh \
+- bug 3: OQL trigger load_before crashes
+Testcase script is: test_oql_load_before_trigger_crash.sh \
+- bug 4: OQL trigger load_after prints bizarre message
+Testcase script is: test_oql_load_after_trigger_message.sh 
+(this testcase is marked as 'PASS' by 'make check', but in fact fails)
+
+See bug tracker:
+https://sourceforge.net/tracker/?func=detail&aid=2816419&group_id=127988&atid=710190
+
+To reproduce the bugs:
+make check    # will run the testcases (shell scripts)
+

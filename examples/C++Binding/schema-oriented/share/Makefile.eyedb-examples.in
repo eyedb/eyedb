@@ -1,0 +1,24 @@
+prefix=@prefix@
+include @datadir@/@PACKAGE@/Makefile.eyedb
+
+CXXFLAGS += $(EYEDB_CXXFLAGS) $(EYEDB_CPPFLAGS)
+LDFLAGS += ${EYEDB_LDFLAGS}
+LDLIBS += ${EYEDB_LDLIBS}
+
+all: person.o personstubsfe.o personstubsbe.o
+
+init:
+	sh init.sh
+.PHONY: init
+
+person.o: person.cc
+personstubsfe.o: personstubsfe.cc
+personstubsbe.o: personstubsbe.cc
+
+person.cc personstubsfe.cc personstubbe.cc : schema.odl
+	$(EYEDB_ODL) --gencode=C++ --package=person $<
+
+clean::
+	rm -f *.o personinit* person.h person.cc person*-skel* person*stubs* \
+	Makefile.person
+

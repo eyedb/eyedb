@@ -1,0 +1,10 @@
+prefix=@prefix@
+include @datadir@/@PACKAGE@/Makefile.eyedb
+
+all: PersonTest.class
+
+PersonTest.class: PersonTest.java
+	CLASSPATH=$(EYEDB_CLASSPATH):.:../share @JAVAC@ $^
+
+clean:
+	rm -f *.class

@@ -1,0 +1,882 @@
+/* 
+   EyeDB Object Database Management System
+   Copyright (C) 1994-1999,2004,2005 SYSRA
+   
+   EyeDB is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+   
+   EyeDB is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+   
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA 
+*/
+
+/*
+   Author: Eric Viara <viara@sysra.com>
+*/
+
+/*
+ * stdlib.oql
+ *
+ * Standard OQL Variables and Functions
+ *
+ */
+
+//
+// minimal and maximal integer values
+//
+
+oql$maxint := 0x7FFFFFFFFFFFFFFF;
+oql$minint := 0x8000000000000000;
+
+//oql$subtree$index$force := true;
+
+//
+// minimal and maximal float values
+//
+
+// oql$maxfloat := 1.79769313486231570e+308;
+// oql$minfloat := 4.94065645841246544e-324;
+
+nulloid := 0:0:0:oid;
+NULLOID := 0:0:0:oid;
+
+//
+// type predicat functions
+//
+
+define is_int(x)    as (typeof x == "integer");
+define is_char(x)   as (typeof x == "char");
+define is_float(x)  as (typeof x == "float");
+define is_string(x) as (typeof x == "string");
+define is_oid(x)    as (typeof x == "oid");
+define is_object(x) as (typeof x == "object");
+define is_num(x)    as (is_int(x) || is_float(x) || is_char(x));
+define is_bool(x)   as (typeof x == "bool");
+define is_bag(x)    as (typeof x == "bag");
+define is_set(x)    as (typeof x == "set");
+define is_array(x)  as (typeof x == "array");
+define is_list(x)   as (typeof x == "list");
+define is_coll(x)   as (is_list(x) || is_array(x) || is_set(x) || is_bag(x));
+define is_struct(x) as (typeof x == "struct");
+define is_empty(x)  as (typeof x == "nil");
+
+//
+// void(x): evaluates argument and returns nil
+//
+
+define void(x) as (x, nil);
+
+function assert(|cond) {
+  r := eval cond;
+  if (!r)
+    throw "assertion failed: '" + cond + "'";
+}
+
+function assert_msg(|cond, msg) {
+  r := eval cond;
+  if (!r)
+    throw "assertion failed: '" + msg + "'";
+}
+
+//
+// min(l): returns the minimal integer in a collection
+//
+
+function min(l) {
+  msg := "function min(" + (string l) + "): ";
+  if (!is_coll(l))
+    throw msg + "collection expected";
+
+  m := oql$maxint;
+
+  for (x in l) {
+    if (x != null) {
+      if (!is_num(x))
+	throw (msg + "numeric expected");
+      if (x < m) 
+	m := x;
+    }
+  }
+
+  return m;
+}
+
+//
+// max(l): returns the maximal integer in a collection
+//
+
+function max(l) {
+  msg := "function max(" + (string l) + "): ";
+  if (!is_coll(l))
+    throw msg + "collection expected";
+  m := oql$minint;
+  for (x in l) {
+    if (x != null) {
+      if (!is_num(x))
+	throw (msg + "numeric expected");
+      if (x > m)
+	m := x;
+    }
+  }
+  return m;
+}
+
+//
+// first(l): returns the first element in a list or array
+//
+
+function first(l) {
+  if (!is_coll(l)) // if (!is_list(l) && !is_array(l))
+    throw "function first: collection expected";
+
+  start := 0;
+  f := nil;
+  for (x in l)
+    if (start == 0) {
+      start := 1;
+      f := x;
+      break;
+    }
+  return f;
+}
+
+car := &first;
+
+//
+// last(l): returns the last element in a list or array
+//
+
+function last(l) {
+  if (!is_coll(l)) // if (!is_list(l) && !is_array(l))
+    throw "function last: list or array expected";
+
+  f := nil;
+  for (x in l)
+    f := x;
+  return f;
+}
+
+//
+// cdr(l): returns all elements in a collection except the first one
+//
+
+function cdr(l) {
+  if (!is_coll(l)) // if (!is_list(l) && !is_array(l))
+    throw "function cdr: list or array expected";
+
+  r := list();
+  n := 0;
+  for (x in l) {
+    if (n != 0)
+      r += x;
+    n++;
+  }
+  return r;
+}
+
+//
+// getn(l, n): returns all elements in a collection
+//
+
+function getn(l, n) {
+   rl := list();
+   cnt := 0;
+
+   for (x in l) {
+     if (cnt++ >= n)
+       break;
+     rl += x;
+   }
+
+   return rl;
+}
+
+//
+// getrange(l, f, nb): returns all elements in a collection from element from
+//
+// identical to l[f:f+nb]
+//
+
+function getrange(l, f, nb) {
+  if (!is_list(l) && !is_array(l))
+    throw "function getrange: list or array expected";
+
+   rl := list();
+   cnt := 0;
+
+   max := f + nb;
+
+   for (x in l) {
+     if (cnt >= max)
+       break;
+
+     if (cnt >= f)
+       rl += x;
+
+     cnt++;
+   }
+
+   return rl;
+}
+
+//
+// count(l): returns element count of a collection
+//
+
+function count(l) {
+  if (typeof l == "nil")
+    return 0;
+  if (!is_coll(l))
+    throw "function count: collection expected, got " + typeof(l);
+  return l[!];
+}
+
+//
+// interval(x, y): constructs an integer list bounded by 'x' and 'y'
+//
+
+function interval(x, y) {
+  n := x-1;
+  l := list();
+  while (n++ < y)
+    l += n;
+  return l;
+}
+
+//
+// sum(l): returns the sum of collection elements
+//
+
+function sum(l) {
+  if (!is_coll(l))
+    throw "function sum: collection expected";
+  n := 0;
+  for (x in l)
+    n += x;
+  return n;
+}
+
+//
+// avg(l): returns the average of collection elements
+//
+
+function avg(l) {
+  if (!is_coll(l))
+    throw "function avg: collection expected";
+  return float(sum(l))/count(l);
+}
+
+//
+// is_in(l, z): returns true in element 'z' is in collection 'l'
+//
+
+function is_in(l, z) {
+  for (x in l)
+    if (x == z)
+      return true;
+
+  return false;
+}
+
+//
+// distinct(l): returns distinct elements in a collection
+//
+
+function distinct(l) {
+  if (is_list(l)) ll := list();
+  else if (is_bag(l)) ll := bag();
+  else if (is_array(l)) ll := array();
+  else if (is_set(l)) ll := set();
+  else throw "function distinct: collection expected";
+
+  for (x in l)
+    if (!is_in(ll, x))
+      ll += x;
+
+  return ll;
+}
+
+//
+// flatten(l): full recursive flatten function
+//
+
+function flatten(l) {
+  if (!is_coll(l))
+    return l;
+  ll := list();
+  for (x in l)
+    if (is_coll(x))
+      ll += flatten(x);
+    else
+      ll += x;
+
+  return ll;
+}
+
+//
+// flatten1(l): 1-level recursive flatten function
+//
+
+function flatten1(l) {
+  if (!is_coll(l))
+    return l;
+
+  ll := list();
+  for (x in l)
+    ll += x;
+  return ll;
+}
+    	
+//
+// tolower(s): returns lower case string
+//
+
+function tolower(s) {
+
+  n := 0;
+  x := "";
+  delta := 'a' - 'A';
+
+  while (s[n] != '\000') {
+    if (s[n] >= 'A' && s[n] <= 'Z')
+      x += string(char(s[n] + delta));
+    else
+      x += string(s[n]);
+    n++;
+  }
+
+  return x;
+}
+
+//
+// toupper(s): returns upper cased string
+//
+
+function toupper(s) {
+
+  n := 0;
+  x := "";
+  delta := 'A' - 'a';
+
+  while (s[n] != '\000') {
+    if (s[n] >= 'a' && s[n] <= 'z')
+      x += string(char(s[n] + delta));
+    else x += string(s[n]);
+    n++;
+  }
+
+  return x;
+}
+
+//
+// tocap(s): returns capitalized word string
+//
+
+function tocap(s) {
+
+  n := 1;
+  x := "";
+  delta := 'A' - 'a';
+
+  s := tolower(s);
+
+  if (s[0] >= 'a' && s[0] <= 'z')
+    x += string(char(s[0] + delta));
+
+  while (s[n] != '\000') {
+    if (s[n] == '_')
+      x += string(char(s[++n] + delta));
+    else
+      x += string(s[n]);
+    n++;
+  }
+
+  return x;
+}
+
+//
+// Collection Conversion Functions
+//
+
+//
+// General Conversion Functions
+//
+
+function toset(l) {
+  if (!is_coll(l))
+    throw ("function toset: collection expected, got " + typeof(l));
+
+  if (!is_set(l)) {
+    s := set();
+    for (x in l)
+      s += x;
+    return s;
+  }
+
+  return l;
+}
+
+function tolist(l) {
+  if (!is_coll(l))
+    throw ("function tolist: collection expected, got " +  typeof(l));
+
+  if (!is_list(l)) {
+    s := list();
+    for (x in l)
+      s += x;
+    return s;
+  }
+
+  return l;
+}
+
+function tobag(l) {
+  if (!is_coll(l))
+    throw ("function tobag: collection expected, got " +  typeof(l));
+
+  if (!is_bag(l)) {
+    s := bag();
+    for (x in l)
+      s += x;
+    return s;
+  }
+
+  return l;
+}
+
+function toarray(l) {
+  if (!is_coll(l))
+    throw ("function toarray: collection expected, got " +  typeof(l));
+
+  if (!is_array(l)) {
+    s := array();
+    for (x in l)
+      s += x;
+    return s;
+  }
+
+  return l;
+}
+
+//
+// toset family Conversion Functions
+//
+
+function listtoset(l) {
+  if (!is_list(l))
+    throw ("function listtoset: list expected, got " + typeof(l));
+  return toset(l);
+}
+
+function bagtoset(l) {
+  if (!is_bag(l))
+    throw ("function bagtoset: bag expected, got " + typeof(l));
+  return toset(l);
+}
+
+function arraytoset(l) {
+  if (!is_array(l))
+    throw ("function arraytoset: array expected, got " + typeof(l));
+  return toset(l);
+}
+
+
+//
+// tobag family Conversion Functions
+//
+
+function listtobag(l) {
+  if (!is_list(l))
+    throw ("function listtobag: list expected, got " + typeof(l));
+  return tobag(l);
+}
+
+function settobag(l) {
+  if (!is_set(l))
+    throw ("function settobag: set expected, got " + typeof(l));
+  return tobag(l);
+}
+
+function arraytobag(l) {
+  if (!is_array(l))
+    throw ("function arraytobag: array expected, got " + typeof(l));
+  return tobag(l);
+}
+
+//
+// tolist family Conversion Functions
+//
+
+function bagtolist(l) {
+  if (!is_bag(l))
+    throw ("function bagtolist: bag expected, got " + typeof(l));
+  return tolist(l);
+}
+
+function settolist(l) {
+  if (!is_set(l))
+    throw ("function settolist: set expected, got " + typeof(l));
+  return tolist(l);
+}
+
+function arraytolist(l) {
+  if (!is_array(l))
+    throw ("function arraytolist: array expected, got " + typeof(l));
+  return tolist(l);
+}
+
+//
+// toarray family Conversion Functions
+//
+
+function bagtoarray(l) {
+  if (!is_bag(l))
+    throw ("function bagtoarray: bag expected, got " + typeof(l));
+  return toarray(l);
+}
+
+function settoarray(l) {
+  if (!is_set(l))
+    throw ("function settoarray: set expected, got " + typeof(l));
+  return toarray(l);
+}
+
+function listtoarray(l) {
+  if (!is_list(l))
+    throw ("function listtoarray: list expected, got " + typeof(l));
+  return toarray(l);
+}
+
+//
+// strlen(s): same as s[!]
+//
+
+function strlen(s) {
+  len := 0;
+  while (s[len] != '\000')
+    len++;
+  return len;
+}
+
+//
+// substring(str, f, len)
+//
+
+function substring(str, f, len) {
+  s := "";
+  n := 0;
+  max := str[!] - f;
+  while (n < len && n < max) {
+    s += string(str[n+f]);
+    n++;
+  }
+
+  return s;
+}
+
+//
+// forone(l, fpred, data): returns true if and only if the function 'fpred'
+// returns true for at least one element 'x' in list 'l'
+//
+
+function forone(l, fpred, data) {
+  for (x in l)
+    if (fpred(x, data)) return true;
+  return false;
+}
+	
+//
+// forone(l, fpred, data): returns true if and only if the function 'fpred'
+// returns true for all elements 'x' in list 'l'
+//
+
+function forall(l, fpred, data) {
+  for (x in l)
+    if (!fpred(x, data)) return false;
+  return true;
+}
+	
+//
+// delete_from(cls): delete all instances of class 'cls'
+//
+
+function delete_from(|cls) {
+  for (x in (eval "select " + cls))
+    delete x;
+}
+
+//
+// delete_(coll): delete contents of collection coll
+//
+
+function delete_(coll) {
+  for (x in coll)
+    delete x;
+}
+
+//
+// get_from(cls): returns all instances of class 'cls'
+//
+
+function get_from(|cls) {
+  eval "select " + cls;
+}
+
+//
+// generates an unused global symbol
+//
+
+function gensym() {
+  prefix := "::oql#_#_#";
+  for (i := 0; ; i++) {
+    varname := prefix + string(i);
+    if (!(eval "isset " + varname)) {
+      eval varname + " := 0";
+      return ident(varname);
+    }			
+  }		
+}
+
+//
+// expression-like for-each function
+//
+
+function foreach_expr(|x, |coll, |expr, colltyp ? "list") {
+  varname := "_#_#_R_#_#_";
+
+  statement := "push " + varname + " := " + colltyp + "(); " +
+    "for (" + x + " in " + coll + ") " +
+    "{" + varname + " += " + expr + ";}" +
+    "pop " + varname;
+
+  return eval statement;
+}
+
+//
+// expression-like for-C function
+//
+
+function for_expr(|start, |cond, |end, |expr, colltyp ? "list") {
+  varname := "_#_#_R_#_#_";
+
+  statement := "push " + varname + " := " + colltyp + "(); " +
+    "for (" + start + "; " + cond + "; " + end + ")" +
+    "{" + varname + " += " + expr + ";}" +
+    "pop " + varname;
+   
+   return eval statement;
+}
+
+//
+// expression-like while-C function
+//
+
+function while_expr(|cond, |expr, colltyp ? "list") {
+  varname := "_#_#_R_#_#_";
+
+  statement := "push " + varname + " := " + colltyp + "(); " +
+    "while (" + cond + ")" +
+    "{" + varname + " += " + expr + ";}" +
+    "pop " + varname;
+   
+   return eval statement;
+}
+
+//
+// expression-like do/while-C function
+//
+
+function do_while_expr(|expr, |cond, colltyp ? "list") {
+  varname := "_#_#_R_#_#_";
+
+  statement := "push " + varname + " := " + colltyp + "(); " +
+    "do {" + varname + " += " + expr + ";}" +
+    "while (" + cond + ");" +
+    "pop " + varname;
+  
+   return eval statement;
+}
+
+function extentof(|classname) {
+  return (select one class.name = classname).extent;
+}
+
+function countof(|classname) {
+  return (select one class.name = classname).extent.count;
+}
+
+function objectcount(db := oql$db) {
+     objcnt := 0;
+     db->transactionBegin();
+     for (cl in (select <db> x from class x where
+                 x.type != "system" and x.name !~ "<"))
+        objcnt += cl.extent.count;
+     db->transactionCommit();
+     return objcnt;
+}
+
+//
+// this function does not work
+//
+
+function for_(|x1, |x2, |x3, |x4 ? "__empty__") {
+  if (x4 == "\"__empty__\"")
+    return foreach_expr(x1, x2, x3);
+  return for_expr(x1, x2, x3, x4);
+}
+
+function ifempty(x, y) {
+  if (is_empty(x)) 
+    return y;
+  return x;
+}
+
+function null_ifempty(x) {
+  return ifempty(x, null);
+}
+
+function getone(x) {
+  if (is_empty(x)) 
+    return null;
+  return first(flatten(x));
+}
+
+//
+// database and transaction management
+//
+
+function open_db(db_name_or_id, strmode, user := null, passwd := null) {
+
+  if (strmode == "r")
+    mode := DBREAD;
+  else if (strmode == "rw")
+    mode := DBRW;
+  else if (strmode == "rlocal")
+    mode := DBREAD|DBOPENLOCAL;
+  else if (strmode == "rwlocal")
+    mode := DBRW|DBOPENLOCAL;
+  else
+    throw "invalid open mode: r, rw, rlocal or rwlocal expected, got " +
+      strmode;
+
+  if (is_int(db_name_or_id))
+    db := new<> database(dbid : db_name_or_id);
+  else
+    db := new<> database(dbname : db_name_or_id);
+
+  if (user == null)
+    db.open(oql$db.getConnection(), mode);
+  else
+    db.open(oql$db.getConnection(), mode, user, passwd);
+
+  return db;
+}
+
+function set_default(db) {
+  db->setDefaultDatabase();
+}
+
+function begin(db := oql$db) {
+  db->transactionBegin();
+}
+
+function begin_params(trsmode, lockmode, recovmode, magorder, ratioalrt, wait_timeout, db := oql$db) {
+  db->transactionBegin(trsmode, lockmode, recovmode, magorder, ratioalrt, wait_timeout);
+}
+
+function commit(db := oql$db) {
+  db->transactionCommit();
+}
+
+function abort(db := oql$db) {
+  db->transactionAbort();
+}
+
+//
+// miscellaneous
+//
+
+function print_function(f) {
+  print "function " + (bodyof f) + "\n";
+}
+
+function print_functions() {
+  cnt := 0;
+  for (f in oql$functions) {
+    if (cnt > 0) print "\n";
+    print_function(f);
+    cnt++;
+  }
+}
+
+function print_variable(v) {
+   print string(v) + " = " + string(eval string(v)) + ";\n";
+}
+
+function print_variables() {
+  for (v in oql$variables) {
+    print_variable(v);
+    cnt++;
+  }
+}
+
+function print_classes(system := false) {
+  if (system)
+    l := (select list(x, x.name) from class x order by x.name);
+  else
+    l :=  (select list(x, x.name) from class x where x.type = "user" and x.name !~ "<" order by x.name);
+
+  for (c in l) {
+    cls := c[0];
+    clsname := c[1];
+    print "class " + clsname;
+    if (cls.parent != NULL && (system || cls.parent.type != "system"))
+       print " extends " + cls.parent.name;
+    print "\n";
+  }
+}
+
+function print_obj(o, flags := 0) {
+   print o->toString(flags);
+}
+
+function print_objs(l, flags := 0) {
+   for (o in l)
+     print_obj(o, flags);
+}
+
+//
+// contents_ expression
+//
+
+function contents_(coll) {
+  r := list();
+  for (x in coll) {
+   for (s in contents(x)) 
+     r += s;
+  }
+
+  return r;
+};
+
+function println(s) {
+  print(s+"\n");
+}
+
+function bench(cmd) {
+  t0 := time_stamp::local_time_stamp();
+  r := eval cmd;
+  t1 := time_stamp::local_time_stamp();
+  us := t1->substract(t0).usecs;
+  println("Elapsed time: " + string(us/1000.) + " ms");
+  return r;
+}
+
+;

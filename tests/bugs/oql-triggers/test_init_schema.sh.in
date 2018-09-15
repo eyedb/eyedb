@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+top_builddir=@top_builddir@
+srcdir=@srcdir@
+
+DATABASE='bugs_oql_triggers'
+SCHEMA=$srcdir/schema.odl
+
+$top_builddir/eyedbadmin database delete $DATABASE
+$top_builddir/eyedbadmin database create $DATABASE
+$top_builddir/eyedbodl --update --database=$DATABASE $SCHEMA

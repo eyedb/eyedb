@@ -1,0 +1,265 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+<!ENTITY eyedb-options "<command>eyedb-options</command>">
+]>
+
+<refentry id="eyedb-common-options">
+  <refentryinfo>
+    <date>March 2007</date>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>eyedb-options</refentrytitle>
+    <manvolnum>1</manvolnum>
+    <refmiscinfo>EyeDB database</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>&eyedb-options;</refname>
+    <refpurpose>EyeDB commands common options</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>EyeDB command</command>
+      <arg choice="opt">options</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>OPTIONS</title>
+    <variablelist>
+      <varlistentry>
+	<term>
+	  <option>-U</option>, <option>--user=</option><group><arg><replaceable>user</replaceable></arg><arg>@</arg></group>
+	</term>
+	<listitem>
+	  <para>Use the specified user name when connecting to the database server. If argument is '@', use the Unix user name as EyeDB user name.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>-P</option>, <option>--passwd=<optional><replaceable>passwd</replaceable></optional></option>
+	</term>
+	<listitem>
+	  <para>Use the specified password when connecting to the database server. If a password is not supplied, it will be read interactively. Note that specifying a password on the command line is unsecure as it can be read using the /proc entry.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--host=<replaceable>host</replaceable></option>
+	</term>
+	<listitem>
+	  <para>Connect to the database server running on the specified host</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--port=<replaceable>port</replaceable></option>
+	</term>
+	<listitem>
+	  <para>Connect to the database server listening on specified port</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--inet</option>
+	</term>
+	<listitem>
+	  <para>Connect to the database server using a TCP/IP socket. The host name and the port number are taken from the configuration file.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--dbm=<replaceable>dbmfile</replaceable></option>
+	</term>
+	<listitem>
+	  <para>Use specified EYEDBDBM database file.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--conf=<replaceable>conffile</replaceable></option>
+	</term>
+	<listitem>
+	  <para>Use the specified client configuration file.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--server-conf=<replaceable>conffile</replaceable></option>
+	</term>
+	<listitem>
+	  <para>Use the specified server configuration file. This is usefull only when connecting to the database server in 'local' mode.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--smd-port=<replaceable>port</replaceable></option>
+	</term>
+	<listitem>
+	  <para>Connect to the EyeDB Storage Manager using the specified port. This is usefull only when connecting to the database server in 'local' mode.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--maximum-server-memory-size=<replaceable>size</replaceable></option>
+	</term>
+	<listitem>
+	  <para>Set the server maxiumum memory size in Mb.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--logdev=<replaceable>logfile</replaceable></option>
+	</term>
+	<listitem>
+	  <para>Use the specified log file as log output.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--logmask=<replaceable>mask</replaceable></option>
+	</term>
+	<listitem>
+	  <para>Use the specified log mask when logging.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--logdate=<group><arg>on</arg><arg>off</arg></group></option>
+	</term>
+	<listitem>
+	  <para>If 'on', display date in output log. Default is ??.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--logtimer=<group><arg>on</arg><arg>off</arg></group></option>
+	</term>
+	<listitem>
+	  <para>If 'on', display control timer in output log. Default is ??.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--logpid=<group><arg>on</arg><arg>off</arg></group></option>
+	</term>
+	<listitem>
+	  <para>If 'on', display process PID in output log. Default is ??.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--logprog=<group><arg>on</arg><arg>off</arg></group></option>
+	</term>
+	<listitem>
+	  <para>If 'on', display program name in output log. Default is ??.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--error-policy=<replaceable>value</replaceable></option>
+	</term>
+	<listitem>
+	  <para>Use the specified control error policy for error management. Value can be : 
+	  <variablelist>
+	    <varlistentry>
+	      <term>status</term>
+	      <listitem>print status</listitem>
+	    </varlistentry>
+	    <varlistentry>
+	      <term>exception</term>
+	      <listitem>raise an exception</listitem>
+	    </varlistentry>
+	    <varlistentry>
+	      <term>abort</term>
+	      <listitem>abort program</listitem>
+	    </varlistentry>
+	    <varlistentry>
+	      <term>stop</term>
+	      <listitem>stop</listitem>
+	    </varlistentry>
+	    <varlistentry>
+	      <term>echo</term>
+	      <listitem>echo</listitem>
+	    </varlistentry>
+	  </variablelist>
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--trans-def-mag=<replaceable>magorder</replaceable></option>
+	</term>
+	<listitem>
+	  <para>Set the default transaction magnitude order.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--arch</option>
+	</term>
+	<listitem>
+	  <para>Display the client architecture.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>-v, --version</option>
+	</term>
+	<listitem>
+	  <para>Display the version.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--help-logmask</option>
+	</term>
+	<listitem>
+	  <para>Display logmask usage.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+	  <option>--help-eyedb-options</option>
+	</term>
+	<listitem>
+	  <para>Display this message.</para>
+	</listitem>
+      </varlistentry>
+
+
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>eyedb-tools(1), eyedb-config(1)
+    </para>
+  </refsect1>
+
+</refentry>

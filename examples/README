@@ -1,0 +1,186 @@
+
+                                   EyeDB examples README
+
+
+EyeDB examples are organized in the following directories:
+- GettingStarted/ : self-contained simple example with a schema, C++ and Java code
+- C++Binding/ : examples using the EyeDB C++ API
+- JavaBinding/ : examples using the EyeDB Java API
+- JavaBinding/J2EE : example of a web application using the EyeDB Java API, JSP and servlets
+
+
+GettingStarted
+==============
+
+This directory contains a simple schema and two simple programs using the EyEDB C++ and Java APIs.
+
+To run the C++ and Java examples in the GettingStarted/ directory:
+
+1) compile them with 'make check'
+
+2) run the init.sh script with 'make init'
+This script creates the database 'person_g' and insert a few objects.
+NOTE: this must be done only once.
+
+3) run the 'persontest' C++ program with:
+./persontest person_g
+
+4) run the 'PersonTest Java program using the eyedbjrun script:
+CLASSPATH=. eyedbjrun PersonTest person_g
+
+'eyedbjrun' is a script that calls the Java virtual machine and passes the right options (for instance to define the hostname and the TCP port used to connect to the EyEDB server). 'eyedbjrun' is located in the binaries installation directory.
+
+5) check the database using eyedboql:
+% eyedboql -d person_g
+? select Person->lastname;
+= bag(NULL, NULL, NULL, "poppins", "poppins", "travolta", "stuart", "wayne", "wayne", "baby2", "baby3", "baby1")
+? select Person->firstname;
+= bag("john", "john", "john", "mary", "mary", "mary", "baby2", "baby2", "baby3", "baby3", "baby1", "baby1")
+? \quit
+%
+
+
+C++Binding
+==========
+
+This directory contains C++ programs that use the EyEDB C++ API. This API is described in EyeDB 'C++ Binding' manual.
+
+To run the C++ examples in the C++Binding/ directory:
+
+1) compile them with 'make check'
+
+2) run the init.sh script located in C++Binding/schema-oriented/share with 'make init'
+This script creates the database 'person_c' and insert a few objects.
+NOTE: this must be done only once.
+
+3) run the programs
+
+To run the examples, cd to the following directories and run the indicated commands:
+
+DIRECTORY               COMMANDS
+-------------------------------------------------------
+generic/query           ./query person_c "select Person"
+                        ./query person_c "select Person.name ~ \"j\""
+                        ./query person_c "select Person.age"
+-------------------------------------------------------
+generic/store           ./store person_c raymond 32
+                        ./store person_c titou 2
+-------------------------------------------------------
+schema-oriented/query   ./query person_c "select Person"
+                        ./query person_c "select Person.name ~ \"j\""
+-------------------------------------------------------
+schema-oriented/store   ./store person_c nadine 32 raymond
+-------------------------------------------------------
+schema-oriented/methods ./methods person_c john 12
+                         NOTE THAT for this directory, you need to copy
+                         the *.so files to EyeDB dynamic objects directory:
+                         cp *.so $EYEDBROOT/etc/so
+-------------------------------------------------------
+schema-oriented/admin   ./admin
+-------------------------------------------------------
+
+
+JavaBinding
+===========
+
+This directory contains Java programs that use the EyEDB Java API. This API is described in EyeDB 'Java Binding' manual.
+
+To run the Java examples in the JavaBinding/ directory:
+
+1) compile them with 'make check'
+
+2) run the init.sh script located in JavaBinding/schema-oriented/share with 'make init'
+This script creates the database 'person_j' and insert a few objects.
+NOTE: this must be done only once.
+
+3) run the programs
+
+To run the examples, cd to the following directories and run the indicated commands:
+
+DIRECTORY                   RUNNING EXAMPLES
+----------------------------------------------------------------
+generic/applet            open the applet.html page in a Java enabled browser
+----------------------------------------------------------------
+generic/appli/basic       CLASSPATH=. eyedbjrun Basic person_j
+----------------------------------------------------------------
+generic/appli/query       CLASSPATH=. eyedbjrun Query person_j <any valid query>
+                          for instance:
+                          CLASSPATH=. eyedbjrun Query person_j "select Person"
+----------------------------------------------------------------
+generic/appli/store       CLASSPATH=. eyedbjrun Store person_j <name> <age>
+----------------------------------------------------------------
+generic/appli/collections CLASSPATH=. eyedbjrun Collections person_j <prefix>
+----------------------------------------------------------------
+generic/appli/schema      CLASSPATH=. eyedbjrun SchemaDump person_j
+----------------------------------------------------------------
+schema-oriented/store     CLASSPATH=.:../share/person.jar eyedbjrun PersonTest person_j <prefix>
+----------------------------------------------------------------
+
+
+
+J2EE application
+================
+
+This example shows a simple web application build using JSP and servlets, and the EyeDB Java API. The application allows to create, view, edit, delete objects in an EyeDB database. The database schema is simple, with 2 classes and a many-to-one relationship.
+
+The example can be run using either the Eclipse J2EE plugin, or directly using a Tomcat installation.
+
+Running with Eclipse
+--------------------
+
+* Prerequisites
+
+To run the example with Eclipse, the J2EE Standard Tools (JST) plugin must be installed and configured. Refer to the Eclipse documentation (http://www.eclipse.org/webtools/jst/main.php) for more information on how to install this plugin and configure it with an application server.
+
+The example uses the JSP Standard Tag Library (JSTL). You must first download an implementation of the JSTL, for example Apache Jakarta implementation (http://jakarta.apache.org/taglibs/index.html).
+
+* Eclipse configuration
+
+In order to allow Eclipse to run the eyedbodl tool, the Eclipse configuration must be updated to add a string substitution variable as follow:
+- go to Eclipse menu 'Preferences'
+- select Run/Debug->String substitution
+- click on "New" button
+- enter the following values:
+Name: EYEDB_INSTALLDIR
+Value: EyeDB toplevel installation directory (you can select it using the "Browse" button of the dialog)
+Description: EyeDB installation directory (this is not mandatory, just for documentation purpose)
+- click on "Ok"
+
+Eclipse must also be configured to access the EyeDB Java binding jar, and the JSTL jars:
+- Edit the Project properties (right click on the 'EyeDB J2EE example' project and select 'Properties'),
+- Select tab J2EE Module Dependencies
+- Click on "Add External JARs…", select EyeDB Java binding JAR
+- Repeat previous step to add JSTL implementation JARs (for Jakarta implementation, this means 2 jars: jstl.jar and standard.jar)
+- Click on "Apply" then "OK"
+
+The added libraries can be seen in project Properties > Java Build Path > Libraries > Web App Libraries.
+
+* Starting EyeDB, creating the database
+
+Once Eclipse configured, EyeDB must be started and the database must be created (refer to 'EyeDB Getting Started' for more information):
+% eyedbctl start
+% eyedbadmin database create testj2ee
+% eyedbodl -u -d testj2ee schema.odl
+
+The name of the EyeDB database is defined in web application deployment descriptor and can be changed here if necessary.
+
+The ODL schema for the database is located in examples/JavaBinding/J2EE/schema.odl in the EyeDB source tree.
+
+* Running the application
+
+Once this configuration step completed, you can open the Eclipse project named 'EyeDB J2EE example' located in subdirectory examples/JavaBinding/J2EE of the EyeDB source tree.
+
+To run the application:
+- start the server: click on tab "Servers", right click on the appropriate server and select "Start"
+- open the application menu: in the project, right click on "menu.jsp" under WebContent, select "Run As"->"Run on Server"
+
+A simple web page with 4 items ("List all persons", "Create a person", "List all cars" and "Create a car") should be displayed.
+
+
+Running with Tomcat
+-------------------
+
+To run the application with Tomcat, a WAR file must first be build. The simplest way to build this WAR file is to use Eclipse and to export the 'EyeDB J2EE Example' project as a WAR file. To do this, right click on the project, select Export->WAR file, choose the file name (which will be also the name of the web application) and click on "Finish".
+
+To deploy the WAR file, start Tomcat, use Tomcat manager to deploy the generated WAR file. Once deployed, the application will appear in Tomcat web applications list. Clicking on the application path will direct to the application menu.jsp page.
+

@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+  <!ENTITY eyedbconsadmin "<command>eyedbconsadmin</command>">
+]>
+
+<refentry id="eyedbconsadmin">
+  <refentryinfo>
+    <date>March 2007</date>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>eyedbconsadmin</refentrytitle>
+    <manvolnum>1</manvolnum>
+    <refmiscinfo>EyeDB database</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>&eyedbconsadmin;</refname>
+    <refpurpose>client for administering EyeDB databases</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      &eyedbconsadmin;
+      <arg choice="req"><replaceable>subcommand</replaceable></arg> 
+      <arg choice="opt"><replaceable>common-options</replaceable></arg> 
+      <arg choice="opt"><replaceable>subcommand-options</replaceable></arg> 
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <para>&eyedbconsadmin; is a client for performing administrative operations on EyeDB databases.</para>
+
+    <para>&eyedbconsadmin; accepts the following sub-commands:
+    <variablelist>
+      <varlistentry>
+	<term><command>dbmcreate</command></term>
+	<listitem>
+	  <para>See <command>eyedbdbmcreate(1)</command></para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>dbcreate</command></term>
+	<listitem>
+	  <para>See <command>eyedbdbcreate(1)</command></para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>dbdelete</command></term>
+	<listitem>
+	  <para>See <command>eyedbdbdelete(1)</command></para>
+	</listitem>
+      </varlistentry>
+
+    </variablelist>
+    </para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>Exit status</title>
+  </refsect1>
+
+  <refsect1>
+    <title>Examples</title>
+  </refsect1>
+
+  <refsect1>
+    <title>See also</title>
+  </refsect1>
+
+  <refsect1>
+    <title>Authors</title>
+  </refsect1>
+
+</refentry>

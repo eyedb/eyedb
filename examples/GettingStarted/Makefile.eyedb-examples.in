@@ -1,0 +1,33 @@
+prefix=@prefix@
+include @datadir@/@PACKAGE@/Makefile.eyedb
+
+CXXFLAGS += $(EYEDB_CXXFLAGS) $(EYEDB_CPPFLAGS)
+LDFLAGS += ${EYEDB_LDFLAGS}
+LDLIBS += ${EYEDB_LDLIBS}
+
+all: persontest PersonTest.class
+
+persontest.o: person.h
+
+person.o: person.cc
+
+persontest: person.o persontest.o
+	$(CXX) $(LDFLAGS) -Wl,-R$(EYEDB_LIBDIR) -o $@ $^ $(LDLIBS)
+
+person.cc person.h: schema.odl
+	$(EYEDB_ODL) --gencode=C++ --package=person $<
+
+person/Database.java: schema.odl
+	$(EYEDB_ODL) --gencode=Java --package=person --output-dir=person $<
+
+PersonTest.class: PersonTest.java person/Database.java
+	CLASSPATH=$(EYEDB_CLASSPATH):. @JAVAC@ *.java person/*.java
+
+init:
+	sh init.sh schema.odl
+.PHONY: init
+
+clean:
+	rm -f *.o person.h person.cc person*-skel* person*stubs* Makefile.person
+	rm -f *.class person/*.java
+

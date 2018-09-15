@@ -1,0 +1,326 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+  <!ENTITY eyedbctl "<command>eyedbctl</command>">
+]>
+
+<refentry id="eyedbctl">
+  <refentryinfo>
+    <date>March 2007</date>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>eyedbctl</refentrytitle>
+    <manvolnum>8</manvolnum>
+    <refmiscinfo>eyedb database</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>&eyedbctl;</refname>
+    <refpurpose>command purpose</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <code><![CDATA[usage: eyedbctl [-h|--help|-v|--version] [start|stop|status] [-f] [--creating-dbm] [-U <user>|@|--user=<user>|@] [-P [<passwd>]|--passwd[=<passwd>]] [--listen=[<host>:]<port>] [--granted-dbm=<dbmfiles>] [--default-dbm=<dbmfile>] [--conf=<conffile>] [--server-conf=<conffile>] [--smd-port=<port>] [--default-file-mask=<mask>] [--default-file-group=<group>] [--maximum-server-memory-size=<size>] [--logdev=<logfile>] [--logmask=<mask>] [--logdate=on|off] [--logtimer=on|off] [--logpid=on|off] [--logprog=on|off] [--error-policy=<value>] [--trans-def-mag=<magorder>] [--arch] [-v|--version] [--help-logmask] [--help-eyedb-options]]]></code>
+      eyedbctl
+<arg choice="optional">-h|--help|-v|--version</arg>
+<arg choice="optional">start|stop|status</arg>
+<arg choice="optional">-f</arg>
+<arg choice="optional">--creating-dbm</arg>
+<arg choice="optional">-U<replaceable>user</replaceable>|@|--user=<replaceable>user</replaceable>|@</arg>
+<arg choice="optional">-P</arg>
+<arg choice="optional"><replaceable>passwd</replaceable></arg>
+<arg choice="optional">|--passwd</arg>
+<arg choice="optional">=<replaceable>passwd</replaceable></arg>
+<arg choice="optional">--listen=</arg>
+<arg choice="optional"><replaceable>host</replaceable>:</arg>
+<arg choice="optional"><replaceable>port</replaceable></arg>
+<arg choice="optional">--granted-dbm=<replaceable>dbmfiles</replaceable></arg>
+<arg choice="optional">--default-dbm=<replaceable>dbmfile</replaceable></arg>
+<arg choice="optional">--conf=<replaceable>conffile</replaceable></arg>
+<arg choice="optional">--server-conf=<replaceable>conffile</replaceable></arg>
+<arg choice="optional">--smd-port=<replaceable>port</replaceable></arg>
+<arg choice="optional">--default-file-mask=<replaceable>mask</replaceable></arg>
+<arg choice="optional">--default-file-group=<replaceable>group</replaceable></arg>
+<arg choice="optional">--maximum-server-memory-size=<replaceable>size</replaceable></arg>
+<arg choice="optional">--logdev=<replaceable>logfile</replaceable></arg>
+<arg choice="optional">--logmask=<replaceable>mask</replaceable></arg>
+<arg choice="optional">--logdate=on|off</arg>
+<arg choice="optional">--logtimer=on|off</arg>
+<arg choice="optional">--logpid=on|off</arg>
+<arg choice="optional">--logprog=on|off</arg>
+<arg choice="optional">--error-policy=<replaceable>value</replaceable></arg>
+<arg choice="optional">--trans-def-mag=<replaceable>magorder</replaceable></arg>
+<arg choice="optional">--arch</arg>
+<arg choice="optional">-v|--version</arg>
+<arg choice="optional">--help-logmask</arg>
+<arg choice="optional">--help-eyedb-options</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <para>&eyedbctl; ...</para>
+  </refsect1>
+
+  <refsect1>
+    <title>Options</title>
+
+    <variablelist>
+
+      <varlistentry>
+	<term><arg choice="optional">-h|--help|-v|--version</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">start|stop|status</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">-f</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--creating-dbm</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">-U<replaceable>user</replaceable>|@|--user=<replaceable>user</replaceable>|@</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">-P</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional"><replaceable>passwd</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">|--passwd</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">=<replaceable>passwd</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--listen=</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional"><replaceable>host</replaceable>:</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional"><replaceable>port</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--granted-dbm=<replaceable>dbmfiles</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--default-dbm=<replaceable>dbmfile</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--conf=<replaceable>conffile</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--server-conf=<replaceable>conffile</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--smd-port=<replaceable>port</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--default-file-mask=<replaceable>mask</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--default-file-group=<replaceable>group</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--maximum-server-memory-size=<replaceable>size</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--logdev=<replaceable>logfile</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--logmask=<replaceable>mask</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--logdate=on|off</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--logtimer=on|off</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--logpid=on|off</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--logprog=on|off</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--error-policy=<replaceable>value</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--trans-def-mag=<replaceable>magorder</replaceable></arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--arch</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">-v|--version</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--help-logmask</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><arg choice="optional">--help-eyedb-options</arg></term>
+	<listitem>
+	  <para>option_description</para>
+	</listitem>
+      </varlistentry>
+
+    </variablelist>
+
+  </refsect1>
+
+<refsect1>
+  <title>Environment</title>
+  See eyedb-options(7)
+</refsect1>
+
+<refsect1>
+  <title>Exit status</title>
+</refsect1>
+
+<refsect1>
+  <title>Examples</title>
+</refsect1>
+
+<refsect1>
+  <title>See also</title>
+</refsect1>
+
+<refsect1>
+  <title>Bugs</title>
+</refsect1>
+
+<refsect1>
+  <title>Authors</title>
+</refsect1>
+
+</refentry>

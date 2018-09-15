@@ -1,0 +1,1526 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd"
+[
+<!ENTITY eyedb "EyeDB">
+<!ENTITY eyedbadmin "<command>eyedbadmin</command>">
+<!ENTITY eyedbctl "<command>eyedbctl</command>">
+<!ENTITY eyedbodl "<command>eyedbodl</command>">
+<!ENTITY eyedboql "<command>eyedboql</command>">
+]
+>
+
+<book lang="en">
+  <title>
+    <phrase>
+      EyeDB Getting started
+    </phrase>
+  </title>
+  <bookinfo>
+    <author>
+      <firstname>François</firstname>
+      <surname>Déchelle</surname>
+      <email>francois@dechelle.net</email>
+    </author>
+    <author>
+      <firstname>Eric</firstname>
+      <surname>Viara</surname>
+      <email>viara@sysra.com</email>
+    </author>
+    <pubdate>2009</pubdate>
+    <copyright>
+      <year>1994-2009</year>
+      <holder>Sysra, Inc.</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This document is distributed under the terms of the Creative Commons BY-SA 3.0 unported Licence.
+      </para>
+      <para>
+	<ulink url="http://creativecommons.org/licenses/by-sa/3.0/"/>
+      </para>
+    </legalnotice>
+  </bookinfo>
+
+  <dedication>
+    <note>
+      <title>TODO</title>
+      <para>
+	<itemizedlist>
+	  <listitem><para>do something...</para></listitem>
+	</itemizedlist>
+      </para>
+    </note>
+  </dedication>
+
+
+  <chapter id="introduction">
+    <title>Introduction</title>
+    
+    <para>
+      We will introduce &eyedb; by going through some simple operations such as creating a database, defining an ODL schema, creating and updating objects, querying objects with OQL, adding indexes and constraints, and then writing simple C++ and Java client programs.
+    </para>
+
+    <para>
+      We assume that &eyedb; has been correctly installed on your computer. Refer to the installation guide for installation information.
+    </para>
+
+  </chapter>
+
+  <chapter id="server-management">
+    <title>&eyedb; server</title>
+
+    <section>
+      <title>Checking server status</title>
+
+      <para>
+	In the following sections, we assume that you are running all the &eyedb; tools under the same Unix user as the one used when installing &eyedb;, in order not to be forced to create a new &eyedb; user and give this new user the necessary authorizations to create a database. In case this assumption is not valid, please refer to the administration guide for further information about creating a user and assigning a user database creation permission.
+      </para>
+
+      <para>
+	For any &eyedb; operation, a server must run on your computer. To check if a server is running, use the following command:
+	<informalexample>
+	  <screen>
+	    <userinput>eyedbctl status</userinput>
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	If a server is running, this command will print a message like:
+	<informalexample>
+	  <screen>
+EyeDB Server running since Mon Dec 10 13:42:51 2007
+
+  Version       V2.8.4
+  Date          Dec 10 2007 12:51:35
+  Architecture  x86_64-unknown-linux-gnu
+  Program Pid   8778
+  Running Under eyedb
+
+  Listening on  localhost:6240
+                localhost:/var/lib/eyedb/pipes/eyedbd
+  Datafile Directory /share
+
+  No Clients connected.
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	If no server is running, it will print an error message such as:
+	<informalexample>
+	  <screen>
+No EyeDB Server is running on localhost:6240
+	  </screen>
+	</informalexample>
+      </para>
+
+    </section>
+    
+    <section>
+      <title>Starting and stopping server</title>
+
+      <para>
+	To start a server, just launch the following command:
+	<informalexample>
+	  <screen>
+$ <userinput>eyedbctl start</userinput>
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	This command will print a message like:
+	<informalexample>
+	  <screen>
+Starting EyeDB Server
+ Version      V2.8.4
+ Compiled     Dec 10 2007 12:51:35
+ Architecture x86_64-unknown-linux-gnu
+ Program Pid  8785
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	Then, you may try again <command>eyedbctl status</command>.
+      </para>
+
+      <para>
+	Stopping the server is done using the &eyedbctl; <command>stop</command> command:
+	<informalexample>
+	  <screen>
+$ <userinput>eyedbctl stop</userinput>
+Killing EyeDB Server Pid 30282
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	If you get into trouble at this step, refer to the installation and to the administration manuals.
+      </para>
+
+    </section>
+
+  </chapter>
+
+  <chapter id="databases">
+    <title>Databases</title>
+
+    <section>
+      <title>Creating a database</title>
+
+      <para>
+	The next step is to create a database to perform our tests.
+      </para>
+
+      <para>
+	Before creating a database, you can check that you are authorized to perform this operation, using the &eyedbadmin; command, as in:
+	<informalexample>
+	  <screen>
+$ <userinput>eyedbadmin user list</userinput>
+name      : "francois" [strict unix user]
+sysaccess : SUPERUSER_SYSACCESS_MODE
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	If you are running the &eyedbadmin; command under the same Unix user as the one used when installing &eyedb;, the command output will be a message like the one above, showing that you have superuser priviledge and are thus allowed to create a database.
+      </para>
+
+      <para>
+	Creating a database is performed using the &eyedbadmin; tool, as in (<command>foo</command> is the name of the database):
+	<informalexample>
+	  <screen>
+$ <userinput>eyedbadmin database create foo</userinput>
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	Similarly, deleting a database is performed using the &eyedbadmin; tool, as in:
+	<informalexample>
+	  <screen>
+$ <userinput>eyedbadmin database delete foo</userinput>
+	  </screen>
+	</informalexample>
+	where  foo is  the  name  of  the  database.
+      </para>
+
+      <para>
+	Checking available databases is done through:
+	<informalexample>
+	  <screen>
+$ <userinput>eyedbadmin database list --dname</userinput>
+	  </screen>
+	</informalexample>
+	(run without –dname for more details)
+      </para>
+
+    </section>
+
+    <section>
+      <title>Defining a simple schema with ODL</title>
+
+      <para>
+	Now that a database has been created, we are going to populate it with objects.
+      </para>
+
+      <para>
+	The first step is to define the database schema.
+      </para>
+
+      <para>
+	A standard example in databases is the well known <classname>Person</classname> class (or table in relational system) which contains a few attributes such as a firstname, a lastname, an age, an address, a spouse and a set of children.
+      </para>
+
+      <para>
+	We will show the inheritance feature through the simple class <classname>Employee</classname> which inherits from the <classname>Person</classname> class and will contains a simple attribute: salary.
+      </para>
+
+      <para>
+	<xref linkend="odl-schema"/> shows the ODL schema for the classes <classname>Address</classname>, <classname>Person</classname> and <classname>Employee</classname>:
+      </para>
+
+      <example id="odl-schema">
+	<title>The ODL schema</title>
+	<programlisting><![CDATA[
+//
+// person.odl
+//
+
+class Address {
+  int num;
+  string street;
+  string town;
+  string country;
+};
+
+class Person {
+  string firstname;
+  string lastname;
+  int age;
+  Address addr;
+  Person * spouse inverse Person::spouse;
+  set<Person *> children;
+};
+
+class Employee extends Person {
+  long salary;
+};
+]]>
+	</programlisting>
+      </example>
+
+
+      <para>
+	A few comments about this schema:
+	<itemizedlist>
+	  <listitem>
+	    <para>
+	      the <classname>Address</classname> class contains four attributes, one integer and three strings
+	      <itemizedlist>
+		<listitem><para><classname>integer</classname>: there are three types of ODL integers: 16-bits integer, named <classname>int16</classname> or <classname>short</classname>, 32-bits integer, named <classname>int32</classname> or <classname>int</classname> and 64-bits integer, named <classname>int64</classname> or <classname>long</classname>, so the <classname>num</classname> attribute is a 32-bits integer</para></listitem>
+		<listitem><para><classname>string</classname>: an ODL string is under the form: <classname>string</classname> or <classname>string&lt;N&gt;</classname>. The first form means that the string is not bounded, the second form means that the string contains at most <command>N</command> characters.</para></listitem>
+	      </itemizedlist>
+	    </para>
+	  </listitem>
+
+	  <listitem>
+	    <para>
+	      the <classname>Person</classname> class contains six attributes: two strings, one 32-bits integer, one <classname>Person</classname> object and one set of <classname>Person</classname> objects:
+	      <itemizedlist>
+		<listitem><para>the third attribute <varname>addr</varname> is of <classname>Address</classname> type and is a literal because there is no <varname>*</varname> before the attribute name. A literal is an object without identifier: the <varname>addr</varname> attribute is tied to a <classname>Person</classname> instance, it has no proper existence.</para></listitem>
+		<listitem><para>the <varname>spouse</varname> attribute is an object, not a literal, because it is preceded by a <varname>*</varname>. An object has an identifier and has its proper existence. The <varname>*</varname> means a reference or pointer to an object. The directive after the attribute name <varname>inverse Person::spouse</varname> is a relationship directive.</para></listitem>
+		<listitem><para>the <varname>children</varname> attribute is a collection set of <classname>Person</classname> objects</para></listitem>
+	      </itemizedlist>
+	    </para>
+	  </listitem>
+
+	  <listitem>
+	    <para>
+	      the <classname>Employee</classname> contains seven attributes: the six <classname>Person</classname> attributes because <classname>Employee</classname> inherits from <classname>Person</classname> and 64-bits integer attribute: <varname>salary</varname>.
+	    </para>
+	  </listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	To add the previous schema in the <command>foo</command> database, you need to use the &eyedbodl; tool as follows:
+	<informalexample>
+	  <screen>
+% <userinput>eyedbodl -d foo -u person.odl</userinput>
+Updating 'person' schema in database foo...
+Adding class Address
+Adding class Person
+Adding class Employee
+
+Done
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	Note that you must pass the following command line options to the &eyedbodl; command: <command>-d foo</command> to specify to which database you are applying the schema and <command>-u</command> to update the database schema.
+      </para>
+
+      <para>
+	To verify that the update has correctly worked, you can generate the ODL schema from the database, as in <xref linkend="generating-odl-schema"/>.
+      </para>
+
+      <example id = "generating-odl-schema">
+	<title>Generating the ODL schema from a database</title>
+	<screen>
+<![CDATA[% eyedbodl -d foo --gencode=ODL
+//
+// EyeDB Version 2.8.4 Copyright (c) 1995-2007 SYSRA
+//
+// UNTITLED Schema
+//
+// Generated by eyedbodl at Mon Dec 10 13:44:03 CET 2007
+//
+
+class Address (implementation <hash, hints = "key_count = 2048;">) {
+        attribute int32 num;
+        attribute string street;
+        attribute string town;
+        attribute string country;
+};
+
+class Person (implementation <hash, hints = "key_count = 2048;">) {
+        attribute string firstname;
+        attribute string lastname;
+        attribute int32 age;
+        attribute Address addr;
+        relationship Person* spouse inverse Person::spouse;
+        attribute set<Person*> children;
+};
+
+class Employee (implementation <hash, hints = "key_count = 2048;">) extends Person {
+        attribute int64 salary;
+};
+]]>
+	</screen>
+      </example>
+
+      <para>
+	Note that the exact output may differ a bit from what is displayed above, depending on &eyedb;'s version.
+      </para>
+
+      <para>
+	By default, &eyedbodl; generates the ODL on the standard output. You see here that the displayed ODL is very similar to the original ODL except that the keywords <varname>attribute</varname> and <varname>relationship</varname> have been added before each attribute declaration. The <varname>relationship</varname> keyword means that the attribute has an <varname>inverse</varname> directive.
+      </para>
+
+      <para>
+	Note that these two keywords are optional: it is why we have not used them in our example.
+      </para>
+
+      <para>
+	Another way to check that the schema has been created within the database, is to use the &eyedboql; tool, as in <xref linkend="generating-oql-schema"/>
+      </para>
+
+      <example id="generating-oql-schema">
+	<title>Checking the database schema using &eyedboql;</title>
+	<screen>
+% <userinput>eyedboql -d foo -c "select schema" --print</userinput>
+<![CDATA[
+= bag(2546.2.120579:oid, 2553.2.112046:oid, 2568.2.515951:oid)
+struct Address {2546.2.120579:oid} : struct : agregat : instance : object { 
+        attribute int32 num;
+        attribute string street;
+        attribute string town;
+        attribute string country;
+};
+struct Person {2553.2.112046:oid} : struct : agregat : instance : object { 
+        attribute string firstname;
+        attribute string lastname;
+        attribute int32 age;
+        attribute Address addr;
+        relationship Person* spouse inverse Person::spouse;
+        attribute set<Person*> children;
+};
+struct Employee {2568.2.515951:oid} : Person : struct : agregat : instance : object { 
+        attribute string Person::firstname;
+        attribute string Person::lastname;
+        attribute int32 Person::age;
+        attribute Address Person::addr;
+        relationship Person* Person::spouse inverse Person::spouse;
+        attribute set<Person*> Person::children;
+        attribute int64 salary;
+};
+]]>
+	</screen>
+      </example>
+
+      <para>
+	Again, note that the exact output may differ a bit from what is displayed above, depending on the &eyedb; version.
+      </para>
+
+      <para>
+	Note that the object identifiers (<emphasis>oid</emphasis>) of the classes are displayed.
+      </para>
+
+    </section>
+
+    <section>
+      <title>Creating and updating objects with the OQL interpreter</title>
+
+      <para>
+	Once a schema has been created in the database, we can create and update <classname>Person</classname> and <classname>Employee</classname> instances.
+      </para>
+
+      <para>
+	Using the &eyedboql; monitor, we are going to perform the following operations:
+	<itemizedlist>
+	  <listitem><para>create a person named "john wayne"</para></listitem>
+	  <listitem><para>create a person named "mary poppins"</para></listitem>
+	  <listitem><para>mary them</para></listitem>
+	  <listitem><para>create 3 "john wayne" children named "baby1", "baby2" and "baby3"</para></listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	Here is the way to perform the first three step:
+	<informalexample>
+	  <screen>
+% <userinput>eyedboql -d foo -w</userinput>
+Welcome to eyedboql.
+  Type `\help' to display the command list.
+  Type `\copyright' to display the copyright.
+? john := Person(firstname : "john", lastname : "wayne", age : 72);
+= 2585.2.196439:oid
+? mary := Person(firstname : "mary", lastname : "poppins", age : 68);
+= 2587.2.702511:oid
+? john.spouse := mary;
+= 2587.2.702511:oid
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+Note the <command>-w</command> option on the &eyedboql; command line, specifying that you open the <database>foo</database> database in write mode.
+      </para>
+
+      <para>
+	A few comments:
+	<itemizedlist>
+	  <listitem><para><command>?</command> is the &eyedboql; prompt: of course, do not type this string!</para></listitem>
+	  <listitem><para><command>:=</command> is the assignment operator</para></listitem>
+	  <listitem><para>each time you create an object, its identifier (<emphasis>oid</emphasis>) is displayed on your terminal</para></listitem>
+	  <listitem><para>because of the relationship integrity constraint on the <varname>spouse</varname> attribute, the operation <command>john.spouse := mary</command> is equivalent to <command>mary.spouse := john</command></para></listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	To create the three "john wayne" children:
+	<informalexample>
+	  <screen>
+? <userinput>add Person(firstname : "baby1", age : 2) to john->children;</userinput>
+= 2589.2.36448:oid
+? <userinput>add Person(firstname : "baby2", age : 3) to john->children;</userinput>
+= 2595.2.683802:oid
+? <userinput>add Person(firstname : "baby3", age : 4) to john->children;</userinput>
+= 2597.2.134950:oid
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	At this stage, it is interesting to perform the following operation: in another terminal, launch another &eyedboql; command on the same database <database>foo</database> and query all persons, as follows:
+	<informalexample>
+	  <screen>
+% <userinput>eyedboql -d foo -w -c "select Person;"</userinput>
+= bag()
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	It may seem surprising that no person instance is returned, but in fact it is not: each interaction with the database occurs within a <emphasis>transaction</emphasis>, and as long as this transaction has not been <emphasis>committed</emphasis>, the database is not modified by the operations that have been done since the beginning of the transaction. To perform effectively these operations, you must <emphasis>commit</emphasis> the transaction, by typing in the first &eyedboql; session:
+	<informalexample>
+	  <screen>
+? <userinput>\commit</userinput>
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	If you now query the person instances in your second &eyedboql; session, the five person instances will be returned:
+	<informalexample>
+	  <screen>
+? <userinput>eyedboql -d foo -w -c "select Person;"</userinput>
+= bag(2597.2.134950:oid, 2595.2.683802:oid, 2589.2.36448:oid, 2587.2.702511:oid, 2585.2.196439:oid)
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	You can now quit the first &eyedboql; session with the following command:
+	<informalexample>
+	  <screen>
+? <userinput>\quit</userinput>
+	  </screen>
+	</informalexample>
+      </para>
+
+    </section>
+
+    <section>
+      <title>Querying objects using the OQL interpreter</title>
+
+      <para>
+	To query on all persons in the database, launch an &eyedboql; session as in:
+	<informalexample>
+	  <screen>
+% <userinput>eyedboql -d foo</userinput>
+Welcome to eyedboql.
+  Type `\help' to display the command list.
+  Type `\copyright' to display the copyright.
+? select Person;
+= bag(2597.2.134950:oid, 2595.2.683802:oid, 2589.2.36448:oid, 2587.2.702511:oid, 2585.2.196439:oid)
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	To query on all persons whose firstname is "john":
+	<informalexample>
+	  <screen>
+? <userinput>select Person.firstname = "john";</userinput>
+= bag(2585.2.196439:oid)
+? <userinput>\print</userinput>
+<![CDATA[Person {2585.2.196439:oid} = { 
+        firstname = "john";
+        lastname = "wayne";
+        age = 72;
+        addr Address = { 
+                num = NULL;
+                street = NULL;
+                town = NULL;
+                country = NULL;
+        };
+        *spouse = {2587.2.702511:oid};
+        children set<Person*> = set { 
+                name = "";
+                count = 3;
+        };
+};
+]]>
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	Note that the <command>print</command> command allows to display the content of the last objects returned on your terminal.
+      </para>
+
+      <para>To query on all persons whose firstname contains a <command>y</command>:
+      <informalexample>
+	<screen>
+? <userinput>select Person.firstname ~ "y";</userinput>
+= bag(2597.2.134950:oid, 2595.2.683802:oid, 2589.2.36448:oid, 2587.2.702511:oid)
+	</screen>
+      </informalexample>
+      </para>
+
+    </section>
+
+    <section>
+      <title>Manipulating objects using OQL</title>
+
+      <para>
+	The OQL interpreter can be used to manipulate object, for instance updating the attributes of objects returned by a query.
+      </para>
+
+      <para>First, launch an &eyedboql; session as in:
+      <informalexample>
+	<screen>
+% <userinput>eyedboql -d foo -w</userinput>
+Welcome to eyedboql.
+  Type `\help' to display the command list.
+  Type `\copyright' to display the copyright.
+	</screen>
+      </informalexample>
+      </para>
+
+      <para>
+	The database must be opened in write mode, because we are going to modify the objects stored in the database.
+      </para>
+
+      <para>
+	To change the <varname>lastname</varname> attribute of the person whose firstname is <command>mary</command>:
+	<informalexample>
+	  <screen>
+? <userinput>(select Person.firstname = "mary").lastname := "stuart";</userinput>
+= bag("stuart")
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	To increment the <varname>age</varname> attribute of all persons, we use a <command>for</command> loop to iterate on the result of a query:
+	<informalexample>
+	  <screen>
+? <userinput>select Person.age;</userinput>
+= bag(4, 3, 2, 68, 72)
+? <userinput>for (p in (select Person)) { p.age += 1 ; };</userinput>
+? select Person.age;
+= bag(5, 4, 3, 69, 73)
+	  </screen>
+	</informalexample>
+      </para>
+
+    </section>
+
+    <section>
+      <title>Updating the database schema</title>
+
+      <para>
+	Once created, a database schema can be updated, to add or remove attributes, add or remove classes or schema, add indexes or contraints.
+      </para>
+
+      <section>
+	<title>Adding indexes</title>
+
+	<para>
+	  To introduce the necessity of indexes, we propose to perform the following operations:
+	  <informalexample>
+	    <screen>
+? <userinput>for (x in 1 &lt;= 50000) new Person(firstname : "xx" + string(x));</userinput>
+? <userinput>select Person.firstname = "xx20";</userinput>
+= bag(23336.2.420154:oid)
+? <userinput>select Person.firstname = "xx10";</userinput>
+= bag(23316.2.824639:oid)
+	    </screen>
+	  </informalexample>
+	</para>
+
+	<para>
+	  The first operation creates 50000 person instances: as you can notice, this operation takes a few seconds. The two last operations query for person instances according to their firstname attribute. These operations also take a few seconds to perform and take a significant amount of CPU.
+	</para>
+
+	<para>
+	  A good idea is to create an index on the attributes - for instance <varname>firstname</varname>, <varname>lastname</varname> and <varname>age</varname> - for which one wants to perform efficient queries.
+	</para>
+
+	<para>
+	  The first step to add an index is to add the index specification to the class <classname>Person</classname> in the ODL schema <filename>person.odl</filename> as follows:
+	  <informalexample>
+	    <programlisting>
+<![CDATA[class Person {
+  string firstname;
+  char lastname;
+  int age;
+  Address addr;
+  ...
+  set<Person *> children;
+
+  index on firstname;
+  index on lastname;
+  index on age;
+};
+]]>
+	    </programlisting>
+	  </informalexample>
+	</para>
+
+	<para>
+	  The database schema can then be updated using the &eyedbodl; tool:
+	  <informalexample>
+	    <screen>
+% <userinput>eyedbodl -d foo -u person.odl</userinput>
+<![CDATA[Updating 'person' schema in database foo...
+Creating [NULL] hashindex 'index<type = hash, propagate = on> on Person.firstname' on class 'Person'...
+Creating [NULL] hashindex 'index<type = hash, propagate = on> on Person.lastname' on class 'Person'...
+Creating [NULL] btreeindex 'index<type = btree, propagate = on> on Person.age' on class 'Person'...
+
+Done
+]]></screen>
+	  </informalexample>
+	</para>
+
+	<para>
+	  Now, you can try again to query for <classname>Person</classname> instances according to its <varname>firstname</varname>, <varname>lastname</varname> or <varname>age</varname>, and you will notice that these operations are now immediate.:
+	  <informalexample>
+	    <screen>
+% <userinput>eyedboql -d foo -w</userinput>
+? <userinput>select Person.firstname = "xx20";</userinput>
+= bag(23336.2.420154:oid)
+? <userinput>select Person.firstname = "xx10";</userinput>
+= bag(23316.2.824639:oid)
+	    </screen>
+	  </informalexample>
+	</para>
+
+      </section>
+
+      <section>
+	<title>Adding constraints</title>
+
+	<para>
+	  In the same way, you can add a <command>notnull</command> and a <command>unique</command> constraint on the <varname>lastname</varname> attribute within the class <classname>Person</classname>.
+	</para>
+
+	<para>
+	  First step is to add the constraint specification to the class <classname>Person</classname> in the <filename>person.odl</filename> file as follows:
+	  <informalexample>
+	    <programlisting>
+<![CDATA[class Person {
+  string firstname;
+  string lastname;
+  int age;
+  Address addr;
+  ...
+
+  index on firstname;
+  index on lastname;
+  index on age;
+  constraint<notnull> on lastname;
+  constraint<unique> on lastname;
+};
+]]>
+	    </programlisting>
+	  </informalexample>
+	</para>
+
+	<para>
+	  Then, use the &eyedbodl; tool to update the database schema:
+	  <informalexample>
+	    <screen>
+% <userinput>eyedbodl -d foo -u person.odl</userinput>
+<![CDATA[Updating 'person' schema in database foo...
+Creating [NULL] notnull_constraint 'constraint<notnull, propagate = on> on Person.lastname' on class 'Person'...
+Creating [NULL] unique_constraint 'constraint<unique, propagate = on> on Person.lastname' on class 'Person'...
+
+Done
+]]>
+	    </screen>
+	  </informalexample>
+	</para>
+
+	<para>
+	  Now try to create two person instances with the same <varname>lastname</varname> attribute:
+	  <informalexample>
+	    <screen>
+% <userinput>eyedboql -d foo -w</userinput>
+? <userinput>new Person(lastname : "curtis");</userinput>
+= 79902.2.884935:oid
+? <userinput>new Person(lastname : "curtis");</userinput>
+<![CDATA[near line 2: 'new Person(lastname : "curtis")' => oql error: new operator 'new<oql$db> Person(lastname:"curtis"); ' : unique[] constraint error: attribute path 'Person.lastname'.
+]]>
+	    </screen>
+	  </informalexample>
+	</para>
+
+	<para>
+	  or with no <varname>lastname</varname> attribute:
+	  <informalexample>
+	    <screen>
+? <userinput>new Person();</userinput>
+<![CDATA[near line 3: 'new Person()' => oql error: new operator 'new<oql$db> Person(); ' : notnull[] constraint error: attribute path 'Person.lastname'.
+]]>
+	    </screen>
+	  </informalexample>
+	</para>
+
+      </section>
+
+      <section>
+	<title>Removing classes and schema</title>
+
+	<para>It is possible to remove a class in a schema using &eyedbodl;. For instance, to remove the class <classname>Employee</classname> in the already introduced schema:
+	<informalexample>
+	  <screen>
+% <userinput>eyedbodl -d foo -u --rmcls=Employee</userinput>
+Updating 'UNTITLED' schema in database foo...
+Removing class Employee
+
+Done
+	  </screen>
+	</informalexample>
+	</para>
+
+	<para>
+	  You can then check the class removal by:
+	  <informalexample>
+	    <screen>
+% <userinput>eyedbodl -d foo --gencode=ODL</userinput>
+<![CDATA[//
+// EyeDB Version 2.8.4 Copyright (c) 1995-2007 SYSRA
+//
+// UNTITLED Schema
+//
+// Generated by eyedbodl at Mon Dec 10 13:44:03 CET 2007
+//
+
+class Address (implementation <hash, hints = "key_count = 2048;">) {
+        attribute int32 num;
+        attribute string street;
+        attribute string town;
+        attribute string country;
+};
+
+class Person (implementation <hash, hints = "key_count = 2048;">) {
+        attribute string firstname;
+        attribute string lastname;
+        attribute int32 age;
+        attribute Address addr;
+        relationship Person* spouse inverse Person::spouse;
+        attribute set<Person*> children;
+
+        index<type = hash, hints = "key_count = 4096; initial_size = 4096; extend_coef = 1; size_max = 4096;", propagate = on> on Person.firstname;
+        index<type = hash, hints = "key_count = 4096; initial_size = 4096; extend_coef = 1; size_max = 4096;", propagate = on> on Person.lastname;
+        constraint<unique, propagate = on> on Person.lastname;
+        constraint<notnull, propagate = on> on Person.lastname;
+        index<type = btree, hints = "degree = 128;", propagate = on> on Person.age;
+};
+]]>
+	    </screen>
+	  </informalexample>
+	</para>
+
+	<para>
+	  It is as well possible to remove entirely the database schema:
+	  <informalexample>
+	    <screen>
+% <userinput>eyedbodl -d foo -u --rmsch</userinput>
+<![CDATA[Updating 'UNTITLED' schema in database foo...
+Removing [2570.2.500986:oid] hashindex 'index<type = hash, hints = "key_count = 4096; initial_size = 4096; extend_coef = 1; size_max = 4096;", propagate = on> on Person.firstname' from class 'Person'...
+Removing [2585.2.286352:oid] hashindex 'index<type = hash, hints = "key_count = 4096; initial_size = 4096; extend_coef = 1; size_max = 4096;", propagate = on> on Person.lastname' from class 'Person'...
+Removing [2599.2.7912:oid] btreeindex 'index<type = btree, hints = "degree = 128;", propagate = on> on Person.age' from class 'Person'...
+Removing [2625.2.396262:oid] unique_constraint 'constraint<unique, propagate = on> on Person.lastname' from class 'Person'...
+Removing [2620.2.240536:oid] notnull_constraint 'constraint<notnull, propagate = on> on Person.lastname' from class 'Person'...
+Removing class Address
+Removing class Person
+Removing class set<Person*>
+
+Done
+]]>
+	    </screen>
+	  </informalexample>
+	</para>
+
+	<para>
+	  The result can be checked with:
+	  <informalexample>
+	    <screen>
+% <userinput>eyedbodl -d foo --gencode=ODL</userinput>
+//
+// EyeDB Version 2.8.4 Copyright (c) 1995-2007 SYSRA
+//
+// UNTITLED Schema
+//
+// Generated by eyedbodl at Mon Dec 10 13:44:03 CET 2007
+//
+	    </screen>
+	  </informalexample>
+	</para>
+
+      </section>
+
+    </section>
+
+  </chapter>
+
+  <chapter>
+    <title>Using the C++ Binding</title>
+
+    <para>
+      We are now going to introduce the C++ binding through the same schema
+      and examples as previously.
+    </para>
+
+    <para>
+      There are two ways to use the C++ binding: 
+      <itemizedlist>
+	<listitem><para>using the generic C++ binding</para></listitem>
+	<listitem><para>using both the generic C++ binding and the specific <classname>Person</classname> C++ code generated from the ODL schema</para></listitem>
+      </itemizedlist>
+    </para>
+
+    <para>
+      We will only explain only the second way, as it is far more simple and pratical than the first one. For more information on the generic C++ binding, please refer to the C++ binding manual.
+    </para>
+
+    <para>
+      Writing a C++ program that can create, retrieve, modify and delete person instances that are stored in an &eyedb; database involves the following steps:
+      <itemizedlist>
+	<listitem><para>generates the specific <classname>Person</classname> binding using the &eyedbodl; tool</para></listitem>
+	<listitem><para>write the C++ client program</para></listitem>
+	<listitem><para>compile the generated binding and the client program</para></listitem>
+      </itemizedlist>
+    </para>
+
+    <para>
+      This example is located in the <filename>examples/GettingStarted</filename> subdirectory.
+    </para>
+
+    <section>
+      <title>Generating the specific C++ binding</title>
+      
+      <para>
+	To generate the specific C++ binding, run the &eyedbodl; tool as follow:
+	<informalexample>
+	  <screen>
+	    % <userinput>eyedbodl --gencode=C++ --package=person schema.odl</userinput>
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	The <command>--package</command> option is mandatory: you may give any name you want, this name will be used as the prefix for generated files names. Without the <command>--package</command> option, the prefix used will be the name of the ODL file without its extension.
+      </para>
+
+      <para>
+	&eyedbodl; generates a few files, all prefixed by <command>person</command>, the most important being <filename>person.h</filename> and <filename>person.cc</filename>.
+      </para>
+
+      <para>
+	If you have a look to the file <filename>person.h</filename>, you will notice that the following classes have been generated:
+	<itemizedlist>
+	  <listitem><para>the class <classname>person</classname></para></listitem>
+	  <listitem><para>the class <classname>personDatabase</classname></para></listitem>
+	  <listitem><para>the class <classname>Root</classname></para></listitem>
+	  <listitem><para>the class <classname>Address</classname></para></listitem>
+	  <listitem><para>the class <classname>Person</classname></para></listitem>
+	  <listitem><para>the class <classname>Employee</classname></para></listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	The first class, <classname>person</classname>, is the package class:
+	<informalexample>
+	  <programlisting>  
+<![CDATA[class person {
+ public:
+  static void init();
+  static void release();
+  static eyedb::Status updateSchema(eyedb::Database *db);
+  static eyedb::Status updateSchema(eyedb::Schema *m);
+};
+]]>
+	  </programlisting>
+	</informalexample>
+      </para>
+
+      <para>
+	It is used to perform package initialization and schema update. Before any use of the <classname>person</classname> package, you need to call <function>person::init</function>.
+      </para>
+
+      <para>
+	The second class, <classname>personDatabase</classname> is used to open, close and
+	manipulate objects within a database containing the <classname>person</classname> schema.
+      </para>
+
+      <para>
+	The <function>open</function> method has two purposes: the first one is to open the database, as the standard <classname>eyedb::Database</classname> will do; the second one is to check that the database schema is consistant with the generated runtime schema. Although it is possible to use the standard <classname>Database</classname> class to open a database containing the <classname>person</classname> schema, it is strongly recommended to use the <classname>personDatabase</classname> class.
+      </para>
+
+      <para>
+	The third class, <classname>Root</classname>, is the root class for all the generated classes. This class is useful to perform safe down-casting during object loading.
+      </para>
+
+      <para>
+	The three last classes, <classname>Address</classname>, <classname>Person</classname> and <classname>Employee</classname> are generated from the <filename>person.odl</filename> class specifications: for each attribute in the <filename>person.odl</filename>, a set of get and set methods is generated.
+      </para>
+
+      <para>
+	For instance, for the <varname>firstname</varname> attribute, the following methods are generated:
+	<informalexample>
+	  <programlisting>
+<![CDATA[eyedb::Status setFirstname(const std::string &);
+std::string getFirstname(eyedb::Bool *isnull = 0, eyedb::Status * = 0) const;
+eyedb::Status setFirstname(unsigned int a0, char);
+char getFirstname(unsigned int a0, eyedb::Bool *isnull = 0, eyedb::Status * = 0)  const;
+]]>
+	  </programlisting>
+	</informalexample>
+      </para>
+
+      <para>
+	The two first methods manipulate the <varname>firstname</varname> attribute as a string while the two last ones manipulate each character within this string.
+      </para>
+
+      <para>
+	There are two <function>set</function> methods and two <function>get</function> methods.
+      </para>
+
+    </section>
+
+    <section>
+      <title>A minimal client program</title>
+
+      <para>
+	We are now going to write a minimal client program which will perform
+	the following operations:
+	<itemizedlist>
+	  <listitem><para>initialize the &eyedb; package and the <classname>person</classname> package</para></listitem>
+	  <listitem><para>open a connection with the &eyedb; server</para></listitem>
+	  <listitem><para>open a database</para></listitem>
+	  <listitem><para>perform error management</para></listitem>
+	  <listitem><para>release the &eyedb; package and the <classname>person</classname> package</para></listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	<xref linkend="cxx-minimal-client"/> shows the code for this minimal client.
+      </para>
+
+      <example id="cxx-minimal-client">
+	<title>A minimal C++ client</title>
+	<programlisting>
+<![CDATA[#include "person.h"
+
+int
+main(int argc, char *argv[])
+{
+  eyedb::init(argc, argv);      // initializes EyeDB package
+  person::init();               // initializes person package
+
+  eyedb::Exception::setMode(eyedb::Exception::ExceptionMode); // use exception mode
+
+  try {
+    eyedb::Connection conn;
+
+    conn.open();                // opens the connection
+
+    personDatabase db(argv[1]); // creates a database handle
+    db.open(&conn, eyedb::Database::DBRW); // opens the database in read/write mode
+  }
+
+  catch(Exception &e) {      // catch any exception and print it
+    e.print();
+  }
+
+  person::release();            // releases person package
+  eyedb::release();             // releases EyeDB package
+
+  return 0;
+}
+]]>
+	</programlisting>
+      </example>
+
+
+      <para>
+	Note that statement <command>Exception::setMode(...)</command> is mandatory if you want to use the exception error policy.
+      </para>
+
+    </section>
+
+    <section>
+      <title>Compiling and running the application</title>
+
+      <para>
+	To use this client, you must first compile it: &eyedbodl; has generated a makefile called <filename>Makefile.&lt;&lt;package&gt;&gt;</filename> which can be used as is or can help you to design your own makefile.
+      </para>
+
+      <para>
+	A template C++ file (<filename>template_&lt;&lt;package&gt;&gt;.cc</filename>) has also been generated, closed to the previous minimal client program, which can be compiled with the generated makefile.
+      </para>
+
+      <para>
+	<xref linkend="cxx-generated-makefile"/> shows the generated <filename>Makefile.person</filename> (<filename>&lt;&lt;datadir&gt;&gt;</filename> is the data directory, usually <filename>/usr/share</filename>):
+      </para>
+
+      <example id="cxx-generated-makefile">
+	<title>The Makefile generated by &eyedbodl;</title>
+	<screen>
+<![CDATA[#
+# Makefile.person
+# 
+# person package
+#
+# Example of template Makefile that can help you to compile
+# the generated C++ file and the template program
+# Generated by eyedbodl at Sat Jan 28 17:53:48 2006
+#
+
+include <<datadir>>/eyedb/Makefile.eyedb
+
+CXXFLAGS += $(EYEDB_CXXFLAGS) $(EYEDB_CPPFLAGS)
+LDFLAGS  += ${EYEDB_LDFLAGS}
+LDLIBS   += ${EYEDB_LDLIBS}
+
+# if you use gcc
+GCC_FLAGS = -Wl,-R$(EYEDB_LIBDIR)
+
+# Example for compiling a client program:
+
+client_program = template_person
+
+$(client_program): person.o $(client_program).o
+        $(CXX) $(LDFLAGS) $(GCC_FLAGS) -o $@ $^ $(LDLIBS)
+]]>
+	</screen>
+      </example>
+
+      <para>
+	Important note: you need a recent version of GNU make to use this makefile. This makefile does not work with the standard SUN make.
+      </para>
+
+      <para>
+	Once compiled, you can execute the program as follows:
+	<informalexample>
+	  <screen>
+% ./persontest foo
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	We are going now to add a function to manipulate <classname>Person</classname> instances:
+	<itemizedlist>
+	  <listitem><para>create a person named "john wayne"</para></listitem>
+	  <listitem><para>create a person named "mary poppins"</para></listitem>
+	  <listitem><para>mary them</para></listitem>
+	  <listitem><para>create 3 "john wayne" children named "baby1", "baby2" and "baby3"</para></listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	These operations are performed in the function <function>create</function>, listed in <xref linkend="cxx-create-function"/>
+      </para>
+
+      <example id="cxx-create-function">
+	<title>A C++ function to create objects</title>
+	<screen>
+<![CDATA[static void
+create(eyedb::Database *db)
+{
+  db->transactionBegin(); // starts a new transaction
+
+  Person *john = new Person(db);
+  john->setFirstname("john");
+  john->setLastname("wayne");
+  john->setAge(32);
+  john->getAddr()->setStreet("courcelles");
+  john->getAddr()->setTown("Paris");
+
+  Person *mary = new Person(db);
+  mary->setFirstname("mary");
+  mary->setLastname("poppins");
+  mary->setAge(30);
+  mary->getAddr()->setStreet("courcelles");
+  mary->getAddr()->setTown("Paris");
+
+  // mary them
+  john->setSpouse(mary);
+
+  // creates children
+  for (int i = 0; i < 5; i++) {
+    std::string name = std::string("baby") + str_convert(i+1);
+    Person *child = new Person(db);
+    child->setFirstname(name.c_str());
+    child->setLastname(name.c_str());
+    child->setAge(1+i);
+    john->addToChildrenColl(child);
+    child->release(); // release the allocated pointer
+  }
+
+  // store john and all its related instances within the database
+  john->store(eyedb::FullRecurs);
+
+  // release the allocated pointers
+  mary->release();
+  john->release();
+
+  db->transactionCommit(); // commits the current transaction
+}
+]]>
+	</screen>
+      </example>
+
+      <para>
+	A few remarks about this code:
+	<itemizedlist>
+	  <listitem>
+	    <para>
+	      all operations - setting, getting attributes, storing, querying instances	in a database - must be performed within a transaction.	A transaction is initiated using the <function>Database::transactionBegin</function> method and is committed (resp. aborted) using the <function>Database::transactionCommit</function> (resp. <function>Database::transactionAbort</function>) method.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      to store any instance in the database, you need to call the <function>store</function> (or <function>realize</function>) method on this instance. In our case, we use the argument <varname>FullRecurs</varname> indicating that we want all related instances (through relationship or indirect attribute) to be stored in the database.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      all runtime pointers allocated with the <function>new</function> operator must be deleted using the <function>release</function> method. The <function>delete</function> operator is forbidden: if you try to use it, an exception will be thrown at runtime.
+	    </para>
+	  </listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	We are now going to query and display all the person instances. The corresponding code is given in <xref linkend="cxx-query-function"/>.
+      </para>
+
+      <example id="cxx-query-function">
+	<title>A C++ function to query objects</title>
+	<screen>
+<![CDATA[static void
+read(eyedb::Database *db, const char *s)
+{
+  db->transactionBegin();
+
+  eyedb::OQL q(db, "select Person.lastname ~ \"%s\"", s);
+
+  eyedb::ObjectArray obj_arr;
+  q.execute(obj_arr);
+
+  for (int i = 0; i < obj_arr.getCount(); i++) {
+    Person *p = Person_c(obj_arr[i]);
+    if (p)
+      printf("person = %s %s, age = %d\n", p->getFirstname(),
+             p->getLastname(), p->getAge());
+  }
+
+  db->transactionCommit();
+}
+]]>
+	</screen>
+      </example>
+
+      <para>
+	An OQL construct can be used within the C++ code using the <command>OQL(Database *, const char *fmt, ...)</command> constructor. For instance, in the above example, assuming <varname>s</varname> is equal to <varname>baby</varname>, the following code will send the query <command>select Person.lastname ~ "baby"</command> to the OQL interpreter:
+	<informalexample>
+	  <programlisting>
+eyedb::OQL q(db, "select Person.lastname ~ \"%s\"", s);
+	  </programlisting>
+	</informalexample>
+      </para>
+
+      <para>
+	This interpreter will perform the query and returned all the found objects. The returned objects can be found using the <function>OQL::execute</function> method as follows:
+	<informalexample>
+	  <programlisting>
+  eyedb::ObjectArray obj_arr;
+  q.execute(obj_arr);
+	  </programlisting>
+	</informalexample>
+      </para>
+
+      <para>
+	The returned objects are of type <classname>eyedb::Object</classname>, so you cannot use the <classname>Person</classname> methods such as <function>getFirstname()</function>, <classname>getAge()</classname>\ldots To use them, you need to perform a down-cast using the <classname>Person\_c</classname> static function as follows:
+	<informalexample>
+	  <programlisting>
+  for (int i = 0; i &lt; obj_arr.getCount(); i++) {
+    Person *p = Person_c(obj_arr[i]);
+    if (p) ...
+	  </programlisting>
+	</informalexample>
+      </para>
+
+      <para>
+	If the object <varname>obj_arr[i]</varname> is not of type <classname>Person</classname>, the returned pointer will be null. It is why we make a test on the value of <varname>p</varname>. If <classname>p</classname> is not null, we can use all the <classname>Person</classname> methods as follows:
+	<informalexample>
+	  <programlisting>
+	    printf("person = %s %s, age = %d\n", p->getFirstname(),
+	    p->getLastname(), p->getAge());
+	  </programlisting>
+	</informalexample>
+      </para>
+
+      <para>
+	To have more information about the C++ binding, please refer to the &eyedb; C++ binding manual.
+      </para>
+
+    </section>
+
+  </chapter>
+
+  <chapter>
+
+    <title>Using the Java Binding</title>
+
+    <para>
+      Although the C++ binding is more complete than the Java binding - essentially according to the administrative operations - the Java bindings allow to manipulate data without limitations.
+    </para>
+
+    <para>
+      Using the Java binding is very similar to the C++ binding. Writing a Java program that can create, retrieve, modify and delete person instances that are stored in an &eyedb; database involves the following steps:
+      <itemizedlist>
+	<listitem><para>generates the specific <classname>Person</classname> binding using the &eyedbodl; tool</para></listitem>
+	<listitem><para>write the Java client program</para></listitem>
+	<listitem><para>compile the generated binding and the client program</para></listitem>
+      </itemizedlist>
+    </para>
+
+    <para>
+      This example is located in the <filename>examples/GettingStarted</filename> subdirectory.
+    </para>
+
+    <section>
+      <title>Generating the Java code</title>
+
+      <para>
+	The Java code is generated from the ODL schema definition using the following command:
+	<informalexample>
+	  <screen>
+% eyedbodl --gencode=Java --package=person person.odl
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	The <command>--package</command> option is mandatory: this name will be used as the name of the Java package to which all generated Java classes will belong.
+      </para>
+
+      <para>
+	This command will generate a number of Java file in subdirectory <filename>person/</filename>, each generated file containing a Java class having the same name.
+      </para>
+
+      <para>
+	If you have a look to the files in sub-directory <filename>person</filename>, you will notice that the following classes have been generated:
+	<itemizedlist>
+	  <listitem><para>the class <classname>Address</classname></para></listitem>
+	  <listitem><para>the class <classname>Database</classname></para></listitem>
+	  <listitem><para>the class <classname>Employee</classname></para></listitem>
+	  <listitem><para>the class <classname>Person</classname></para></listitem>
+	  <listitem><para>the class <classname>set\_class\_Person\_ref</classname></para></listitem>
+	</itemizedlist>
+      </para>
+
+    </section>
+
+    <section>
+      <title>A minimal client program</title>
+
+      <para>
+	We are now going to write a minimal client program which will perform the following operations:
+	<itemizedlist>
+	  <listitem><para>initialize the &eyedb; and <classname>person</classname> packages</para></listitem>
+	  <listitem><para>connect to the &eyedb; server</para></listitem>
+	  <listitem><para>open a database</para></listitem>
+	  <listitem><para>creates two person instances and mary them</para></listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	<xref linkend="java-minimal-client"/> shows the code for a minimal Java client:
+      </para>
+
+      <example id="java-minimal-client">
+	<title>A Java minimal client</title>
+	<programlisting>
+<![CDATA[
+//
+// Persontest.java
+//
+import person.*;
+
+class PersonTest {
+  public static void main(String args[]) {
+
+    // Initialize the eyedb package and parse the default eyedb options
+    // on the command line
+    String[] outargs = org.eyedb.Root.init("PersonTest", args);
+     
+    // Check that a database name is given on the command line
+    int argc = outargs.length;
+    if (argc != 1) {
+        System.err.println("usage: java PersonTest dbname");
+        System.exit(1);
+    }
+
+    try {
+      // Initialize the person package
+      person.Database.init();
+
+      // Open the connection with the backend
+      org.eyedb.Connection conn = new org.eyedb.Connection();
+
+      // Open the database named outargs[0]
+      person.Database db = new person.Database(outargs[0]);
+      db.open(conn, org.eyedb.Database.DBRW);
+
+      db.transactionBegin();
+      // Create two persons john and mary
+      Person john = new Person(db);
+      john.setFirstname("john");
+      john.setLastname("travolta");
+      john.setAge(26);
+     
+      Person mary = new Person(db);
+      mary.setFirstname("mary");
+      mary.setLastname("stuart");
+      mary.setAge(22);
+     
+      // Mary them ;-)
+      john.setSpouse(mary);
+
+      // Store john and mary in the database
+      john.store(org.eyedb.RecMode.FullRecurs);
+
+      john.trace();
+
+      db.transactionCommit();
+    }
+    catch(org.eyedb.Exception e) { // Catch any eyedb exception
+       e.print();
+       System.exit(1);
+    }
+  }
+}
+]]>
+	</programlisting>
+      </example>
+
+
+    </section>
+
+    <section>
+      <title>Compiling and running the application</title>
+
+      <para>
+	To use this client, you must first compile it using a standard Makefile, as follows (replace <filename>&lt;&lt;datadir&gt;&gt;</filename> with the data directory, usually <filename>/usr/share</filename>):
+	<informalexample>
+	  <programlisting>
+<![CDATA[include <<datadir>>/eyedb/Makefile.eyedb
+
+all: PersonTest.class
+
+person/Database.java: schema.odl
+        $(EYEDB_ODL) --gencode=Java --package=person --output-dir=person $<
+
+PersonTest.class: PersonTest.java person/Database.java
+        CLASSPATH=$(EYEDB_CLASSPATH):. javac *.java person/*.java
+]]>
+	  </programlisting>
+	</informalexample>
+      </para>
+      
+      <para>
+	Once compiled, you can execute the program as follows:
+	<informalexample>
+	  <screen>
+	    % <userinput>CLASSPATH=. eyedbjrun PersonTest person_g</userinput>
+	  </screen>
+	</informalexample>
+      </para>
+
+      <para>
+	The <command>eyedbjrun</command> script is a helper script that wraps the call to the Java 
+	virtual machine with an appropriate CLASSPATH environment variable containing the path to <filename>eyedb.jar</filename> and passes the necessary options to the <classname>PersonTest</classname> class.
+      </para>
+
+      <para>
+	A few remarks about the Java code:
+	<itemizedlist>
+	  <listitem>
+	    <para>
+	      all operations - setting, getting attributes, storing, querying instances in a database - must be performed within a transaction. A transaction is initiated using the <function>Database::transactionBegin</function> method and is committed (resp. aborted) using the <function>Database::transactionCommit</function> (resp. <function>Database::transactionAbort</function>) method.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      to store any instance in the database, you need to call the <function>store</function> (or <function>realize</function>) method on this instance. In our case, we use the argument <varname>FullRecurs</varname> indicating that we want all related instances (through relationship or indirect attribute) to be stored in the database.
+	    </para>
+	  </listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	The Java binding support both the standalone applications and the applets.
+      </para>
+
+      <para>
+	To have more information about the Java binding, please refer to the
+	&eyedb; Java binding manual.
+      </para>
+
+    </section>
+
+  </chapter>
+
+  <chapter>
+    <title>Learning more about &eyedb;</title>
+
+    <para>
+      We have briefly introduce in this manual some of the main features
+      of &eyedb;. More detailled information can be found in the other &eyedb; manuals:
+      <itemizedlist>
+	<listitem><para>administration guide</para></listitem>
+	<listitem><para>Object Definition Language (ODL) manual</para></listitem>
+	<listitem><para>Object Query Language (OQL) manual</para></listitem>
+	<listitem><para>C++ Binding manual</para></listitem>
+	<listitem><para>Java Binding manual</para></listitem>
+	<listitem><para>Administration manual</para></listitem>
+      </itemizedlist>
+    </para>
+
+  </chapter>
+
+  <index>
+    <title>Index</title>
+  </index>
+
+<!--
+;;; Local Variables: ***
+;;; eval: (load-file "../docbook-common/emacs-macro") ***
+;;; End: ***
+-->
+
+</book>

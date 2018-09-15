@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <title>EyeDB release notes</title>
+  </head>
+
+  <body>
+    <h1>EyeDB release notes</h1>
+
+    <p>
+    <ul>
+      <li><a href="#2.8.7">Release notes for EyeDB 2.8.7</a></li>
+      <li><a href="#2.7.9">Release notes for EyeDB 2.7.9</a></li>
+      <li><a href="#2.7.8">Release notes for EyeDB 2.7.8</a></li>
+      <li><a href="#2.7.7">Release notes for EyeDB 2.7.7</a></li>
+      <li><a href="#2.7.6">Release notes for EyeDB 2.7.6</a></li>
+    </ul>
+    </p>
+
+
+    <h2>Release notes for EyeDB 2.8.7</h2><a name="2.8.7"></a>
+
+    <p> 
+    <ul>
+      <li>Fixed Java bug that made all OQL requests issued from a Java program crash with an exception</li>
+      <li>Added test suites based on examples. 'make check' runs and checks all the examples.</li>
+    </ul>
+    </p>
+
+
+    <h2>Release notes for EyeDB 2.7.9</h2><a name="2.7.9"></a>
+
+    <p> 
+    <ul>
+      <li>Fixed litteral collection one more bug within direct attributes</li>
+      <li>Fixed unitialized Database handle in litteral collections</li>
+      <li>Fixed commit() in OQL which hangs at exit</li>
+    </ul>
+    </p>
+
+    <h2>Release notes for EyeDB 2.7.8</h2><a name="2.7.8"></a>
+
+    <p> 
+    <ul>
+      <li>Fixed litteral collection bug within direct attributes</li>
+      <li>Fixed unitialized enum attribute assignement</li>
+      <li>Fixed int32 and int64 comparison in OQL</li>
+      <li>Fixed append bug (server crash) in OQL</li>
+      <li>Added version definitions (major,minor,patch)</li>
+      <li>Updated examples w.r.t. Makefile.eyedb with prefixed variables</li>
+      <li>Changed eyedb-post-install.sh (no > /dev/null, using plain configuration)</li>
+      <li>Fixed 8 bytes aligned stack allocation in src/eyedbsm/xdr_p.h for MapHeader</li>
+    </ul>
+    </p> 
+
+    <h2>Release notes for EyeDB 2.7.7</h2><a name="2.7.7"></a>
+
+    <p>
+    <ul>
+      <li>Fixed problems for schema updates</li>
+      <li>Fixed problems in OQL garbage collector</li>
+      <li>Suppressed EYEDB_NUMVERSION in generated ODL</li>
+      <li>Fixed multiple symbols link error, isnan() detection on Mac OS X</li>
+      <li>Fixed a bug when database has reached its maximum size</li>
+      <li>Fixed a problem with getpid()</li>
+      <li>Fixed some remaining problems w.r.t Mac OS X. Now, runs the 'Getting Started' example.</li>
+      <li>Fixed stack allocation problems on Mac OS X</li>
+      <li>Added tests for timezone (Mac OS X porting)</li>
+      <li>Changed some enum values because of conflicts with ODL and OQL flex/bison tokens</li>
+      <li>Changed configure to use javac instead of jikes on Mac OS X</li>
+      <li>Changed UT_SEM to HAVE_SEMAPHORE_POLICY_SYSV_IPC, a config #define that is guessed by configure.in</li>
+      <li>Changed configure.in to find automatically the integer type that has the same size as a void *; fixed files using pointer_int, that is now pointer_int_t.</li>
+      <li>Changed configure.in to guess the semaphore policy, added a configure argument to force the semaphore policy, plus some sanity check</li>
+      <li>Changed src/eyedb/Architecture.cc to get the architecture from compile builtins.</li>
+      <li>Added m4 macro to check whether PTHREAD_PROCESS_SHARED is supported</li>
+      <li>Removed #ifdef LINUX|SOLARIS in src/eyedb/OString.cc and src/eyedb/utilsmthfe.cc. Added necessary tests in configure.in</li>
+      <li>Changed HAS_FATTACH to standard HAVE_FATTACH</li>
+      <li>Removed M_strsignal (assumed that all platforms have strsignal, if not we'll see)</li>
+      <li>Removed non-posix thread code in src/lib/rpcdb.cc (assume that all platforms have Posix threads)</li>
+      <li>Removed getrlimit code and #ifdef SOLARIS in src/lib/m_mem.cc</li>
+    </ul>
+    </p>
+
+    <h2>Release notes for EyeDB 2.7.6</h2><a name="2.7.6"></a>
+
+    <p>
+    <ul>
+      <li>Added const Oid::operator<(const Oid &) const method</li>
+      <li>Support --attr-cache=yes eyedbodl option</li>
+      <li>Sync stdio, iostream and write in eyedboql</li>
+      <li>Changed Java m4 autoconf macros not to exit with error if javac not found</li>
+      <li>Added configure summary at end of configure.in</li>
+      <li>Improved OQL GC</li>
+      <li>Added std::map var_map in class Config</li>
+      <li>Added ClientConfig and ServerConfig classes</li>
+      <li>Updated ODL C++ generator : suppressed #define Class_c, clone method, const behind GETOID methods</li>
+      <li>Changed configure.in to reintroduce --enable-java flag</li>
+      <li>Improved configuration parsing and error reporting</li>
+      <li>Added --server-conf option</li>
+      <li>Fixed concurrency problems in SessionLog</li>
+      <li>Suppressed pending eyedbd</li>
+      <li>Changed src/eyedb/Config.cc and include/eyedb/Config.h: read $HOME/.eyedb/eyedb[d].conf file if this file exists, @include to include a file without error if file not found.</li>
+      <li>Fixed examples/Makefile.am w.r.t. Makefile.eyedb, to get rid of Makefile variables that are not prefixed with EYEDB_</li>
+      <li>Moved all configuration files in install/etc to "sample" configuration files, installed in pkgdatadir. Removed Makefile.am test to not overwrite the configuration files.</li>
+      <li>Fixed src/www/Makefile.am and src/www/html/Makefile.am to not overwrite existing files (Apache config file, cgi scripts, html files)</li>
+      <li>Added install/etc/eyedb.conf.in and install/etc/eyedbd.conf.in, configuration file templates, plus substitution in Makefile.am instead of configure.in</li>
+    </ul>
+    </p>
+
+  </body>
+</html>

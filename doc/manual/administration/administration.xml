@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+
+<book lang="en">
+  <title>
+    <phrase>
+      EyeDB Administration Guide
+    </phrase>
+  </title>
+  <bookinfo>
+    <author>
+      <firstname>François</firstname>
+      <surname>Déchelle</surname>
+    </author>
+    <address>
+      <email>francois@dechelle.net</email>
+    </address>
+    <pubdate>2009</pubdate>
+    <copyright>
+      <year>2009</year>
+      <holder>Sysra, Inc.</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This document is distributed under the terms of the Creative Commons BY-SA 3.0 unported Licence.
+      </para>
+      <para>
+	<ulink url="http://creativecommons.org/licenses/by-sa/3.0/"/>
+      </para>
+    </legalnotice>
+  </bookinfo>
+
+  <dedication>
+    <note>
+      <title>TODO</title>
+    <para>
+      <itemizedlist>
+	<listitem><para>large databases: database limits, multi-volumes databases</para></listitem>
+	<listitem><para>complete collections</para></listitem>
+	<listitem><para>complete locations</para></listitem>
+	<listitem><para>make a full example showing: indexes, collections, datafiles, dataspaces</para></listitem>
+	<listitem><para></para></listitem>
+
+      </itemizedlist>
+    </para>
+    </note>
+  </dedication>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="introduction.xml" xpointer="introduction"/>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="server.xml" xpointer="server"/>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="database.xml" xpointer="database"/>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="user.xml" xpointer="user"/>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="database_advanced.xml" xpointer="database-advanced"/>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="database_tuning.xml" xpointer="database-tuning"/>
+
+  <index>
+    <title>Index</title>
+  </index>
+</book>

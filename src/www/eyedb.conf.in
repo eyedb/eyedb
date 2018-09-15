@@ -1,0 +1,15 @@
+Alias /eyedb "@prefix@/lib/@PACKAGE_NAME@/www"
+<Directory "@prefix@/lib/@PACKAGE_NAME@/www">
+    Options Indexes FollowSymLinks
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+</Directory>
+
+<Directory "@prefix@/lib/@PACKAGE_NAME@/www/cgi-bin">
+    Options ExecCGI
+    AddHandler cgi-script .sh
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+</Directory>

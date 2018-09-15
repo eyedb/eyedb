@@ -1,0 +1,1693 @@
+\input{start}
+\input{version}
+\newcommand{\mantitle}{\textsc{Administration}}
+\input{title}
+
+\tableofcontents
+
+\chapter*{Administration and Security Guide}
+
+The chapter introduces the way to administrate properly \eyedb under
+a UNIX based operating system.
+\eyedb administration is simple as only very few commands are necessary to
+make it work properly: starting and stopping the server, creating and deleting
+a database, adding a user and granting him access to a database.
+Those very basic command have already been presented in the
+\emph{Getting Started} document.
+\\
+This chapter introduces all the concepts and operations concerning
+the administration and the security of \eyedbX.
+The distribution organizing is presented in section 1. Section 2
+introduces the configuration of the system.
+The server management is exposed in section 3.
+Section 4 introduces database concepts and operations:
+database files, the EYEDBDBM database, database management.
+Section 5 introduces the \eyedb user concepts and management.
+Section 6 exposed the way to control system and database access.
+Storage manager low level administration is presented in section 7.
+The last section introduces common trouble shotting and the
+way to recover them.
+
+\newcommand{\tdir}{\emph{topdir}}
+\newcommand{\constvar}{The value of this variable cannot be changed}
+\newcommand{\modvar}{The value of this variable can be modified}
+\newcommand{\esc}[1]{\ttv{$\backslash$#1}}
+
+\section{The Distribution}
+\subsection{File Hierarchy}
+In this chapter, we denote by {\tdir } the target directory that has been given
+during the installation step as follows:\\
+\\
+\mbox{ }\ttv{eyedb-install} {\tdir } \emph{licensefile}\\
+\\
+for instance
+\\
+\\
+\mbox{ }\ttv{eyedb-install /usr/local/eyedb license.dat}
+\\
+\\
+Under the directory \tdir, the install shell script has created the
+directories and files: \ttv{db}, \ttv{log}, \ttv{eyedb-V\eyedbversion} and \ttv{eyedb}:
+\bi
+\item \ttv{db}: contains the database files,
+\item \ttv{etc}: contains the license file, a startup shell script
+and environment files,
+\item \ttv{log}: will contains the output log files,
+\item \ttv{eyedb-V\eyedbversion}: contains the whole \eyedbversion \eyedb distribution,
+\item \ttv{eyedb}: a symbolic link to the current distribution, currently
+\ttv{eyedb-V\eyedbversion}.
+When you will perform an update to a new version, for instance \eyedbversion,
+you will need to change this symbolic link to point to
+the directory \ttv{eyedb-V{\eyedbversion}}.
+\ei
+We present now the contents of each of the previous directories.
+\subsubsection{The \tdir/\ttv{db} directory}
+The \ttv{db} directory contains the database files. After the installation,
+this directory contains the database files of the main \eyedb database,
+\textsc{EYEDBDBM}: \ttv{dbmdb.db}, \ttv{dbmdb.log}, \ttv{dbmdb.omp} and
+\ttv{dbmdb.vol}. When you create, for instance, the database \ttv{person}
+the following files
+appears in this directory: \ttv{person.db}, \ttv{person.log},
+\ttv{person.omp} and \ttv{person.vol}. Refer to the \emph{Database} section
+to get the meaning of those files.
+
+\subsubsection{The \tdir/\ttv{etc} directory}
+This directory contains the following files:
+\bi
+\item \ttv{environ.sh}: if you are using a Bourne shell, you need to execute
+this shell script to set the correct environment for using \eyedb, as follows:
+\\
+. \tdir/\ttv{etc/environ.sh}
+\\
+The only operation performed by this shell script is the execution of
+another shell script \tdir/\ttv{eyedb/etc/environ.sh}.
+This allows one to set the environment of the current
+installed version of \eyedbX: indeed,
+remember that \tdir/\ttv{eyedb} is a symbolic link to the current version
+\tdir/\ttv{eyedb-V\eyedbversion}. Furthermore, when you update \eyedbX, you change the
+\ttv{eyedb} symbolic link to point to the new version of \eyedbX, for instance
+\ttv{eyedb-V{\eyedbversion}}.\\
+Therefore, the shell script \tdir/\ttv{etc}/environ.sh will execute
+the shell script \tdir/\ttv{eyedb/etc/environ.sh} which is in fact the file\\
+\tdir/\ttv{eyedb-V{\eyedbversion}/etc/environ.sh}
+\item \ttv{environ.csh}: this file has the same purpose as \ttv{environ.sh}
+but must be used if you are using a C-shell:
+\\
+source \tdir/\ttv{etc/environ.csh}
+\item \ttv{license.dat}: this file contains the license information.
+\item \ttv{rc.eyedb}: this shell script is used to launched the \eyedb servers.
+The only action performed by this shell script is the execution
+of another shell script \tdir/\ttv{eyedb/etc/rc.eyedb}.
+This allows on to launch the \ttv{rc.eyedb} shell script of the
+current installed version. 
+\item \ttv{passwd}: this file contains a crypted password necessary
+to create a \textsc{EYEDBDBM} database.
+\ei
+\subsubsection{The \tdir/\ttv{log} directory}
+After the installation, this directory is empty. The launcher script
+\tdir/\ttv{eyedb/etc/rc.eyedb} redirects the log messages into files
+in this directory.
+\subsubsection{The \tdir/\ttv{eyedb-V\eyedbversion} directory}
+This directory contains the directories and files
+\ttv{bin}, \ttv{etc}, \ttv{include}, \ttv{lib}, \ttv{doc},
+\ttv{examples}, \ttv{java} and \ttv{VERSION}:
+\bi
+\item \ttv{bin}: this directory contains all the \eyedb programs
+divided into different families:
+\be
+\item Server management programs:
+\bi
+\item \ttv{eyedbd}: the \eyedb server,
+\item \ttv{eyedbctl}: the \eyedb launcher used to start or stop
+the server or to get status information on the opened sessions.
+\ei
+\item Generic administration program:
+\bi
+\item \ttv{eyedbadmin}: the generic administration program used to perform
+all the database management or user management operations (do not confuse
+this program with the storage manager level administration program
+\ttv{eyedbdbadmin}).
+\ei
+\item Database management programs:
+\bi
+\item \ttv{eyedbdbcreate}: to create a database,
+\item \ttv{eyedbdbdelete}: to delete a database,
+\item \ttv{eyedbdblist}: to list databases,
+\item \ttv{eyedbdbrename}: to rename a database,
+\item \ttv{eyedbdbmove}: to move a database,
+\item \ttv{eyedbdbcopy}: to copy a database,
+\item \ttv{eyedbdbexport}: to export a database to a file,
+\item \ttv{eyedbdbimport}: to import a database from a file,
+\item \ttv{eyedbdbaccess}: to set the default database access,
+\item \ttv{eyedbdbadmin}: to perform storage manager level database operations
+(do not confuse this program with the generic administration program \ttv{eyedbadmin}),
+\item \ttv{eyedbdbmcreate}: to create an EYEDBDBM database,
+\ei
+\item User management programs:
+\bi
+\item \ttv{eyedbuseradd}: to add an \eyedb user,
+\item \ttv{eyedbuserdelete}: to delete an \eyedb user,
+\item \ttv{eyedbuserlist}: to list the \eyedb users,
+\item \ttv{eyedbpasswd}: to set the password of an \eyedb user,
+\item \ttv{eyedbuserpasswd}:  to set the password of an \eyedb user,
+\item \ttv{eyedbuserdbaccess}: to set a database access for a specific user,
+\item \ttv{eyedbsysaccess}: to set system access for a specific user,
+\ei
+\item OQL monitor:
+\bi
+\item \ttv{eyedboql}: OQL command monitor,
+\ei
+\item ODL compiler:
+\bi
+\item \ttv{eyedbodl}: ODL compiler used to generate C++, Java, IDL or
+CORBA stubs,
+\ei
+\item Generic CORBA servers:
+\bi
+\item \ttv{eyedborbacusd}: \ttv{Orbacus} generic \eyedb server (since
+version \eyedbversion),
+\item \ttv{eyedborbixd}: \ttv{Orbix} generic \eyedb server,
+\ei
+\item WWW programs:
+\bi
+\item \ttv{eyedbwwwd}: the \eyedb WWW server,
+\item \ttv{eyedbcgife}: the \eyedb WWW frontend,
+\item \ttv{eyedbw3tool}: a WWW tool for customization,
+\item \ttv{eyedbputimage}: to insert an image in a database,
+\ei
+\item Miscellaneous programs:
+\bi
+\item \ttv{eyedbgetenv}: to get the value of an \eyedb configuration variable,
+\item \ttv{eyedbchklicense}: to check the validity of a license file,
+\item \ttv{eyedbprotadmin}: to manage object-level protections,
+\ei
+\ee
+\item \ttv{etc}: this directory contains the enviroment files:
+\bi
+\item \ttv{environ.sh}: this Bourne shell script set the
+\ttv{EYEDBROOT}, \ttv{EYEDBCLASSPATH} and \ttv{PATH} environment variables.
+The \ttv{EYEDBROOT} is set to \tdir/\ttv{eyedb-V}\emph{version}, for instance
+\tdir/\ttv{eyedb-V\eyedbversion}.
+Note that these environment variables are not strictly necessary to use
+\eyedb but are recommended. We assume in the rest of the chapter that
+these environment variables have been correctly set by sourcing
+\ttv{environ.sh}
+\item \ttv{environ.csh}: C-shell version of the \ttv{environ.sh} Bourne
+shell script.
+\item \ttv{rc.eyedb}: template shell script used to launch the \eyedb server,
+the \eyedb WWW server and the \eyedb generic CORBA server. This file could
+be customized by the \eyedb administrator.
+\item \ttv{EyeDB.access}: controls TCP/IP accesses,
+\item \ttv{Makefile.eyedb}: a template makefile to be included in your makefile
+to compile properly \eyedb clients: C++, Java or CORBA \eyedb clients.
+\item \ttv{EyeDB.cfg}: the default configuration file generated at the
+installation step,
+\item \ttv{so}: the default directory where to put backend methods or
+triggers for dynamic loading.
+\ei
+\item \ttv{include}: this directory contains the C++ include files.
+\item \ttv{lib}: this directory contains the static and shared C++ libraries
+and the \ttv{classes.jar} file.
+\item \ttv{doc}: this directory contains the documentation. Note
+that the documentation is not part of the binary package, you need
+to install properly the documentation package.
+\item \ttv{examples}: this directory contains a set of examples.
+\item \ttv{java}: this directory contains the Java API classes (same
+as the \ttv{classes.jar} files).
+\item \ttv{VERSION}: this file contains the version number as follows:
+\begin{verbatim}
+Copyright (c) SYSRA 1995-2001
+EyeDB Version \eyedbversion, January 2001
+\end{verbatim}
+\ei
+The files and directories in the distribution directory
+are created with the following rights:
+\bi
+\item the files under the \ttv{bin} directories have read and execute
+rights for all users,
+\item the other files have the read right for all users,
+\item the directories have read, write and search rights for the
+installing user, and read and search rights for the other users.
+\ei
+\subsection{Suggested Organization}
+To install and run \eyedbX, it is recommended to use a specific
+user named \ttv{eyedb}.
+Although this is not mandatory for an evaluation installation,
+it is strongly recommended for a production installation.
+Here are the suggested recommandations:
+\be
+\item as the UNIX root, create a pseudo UNIX user (i.e. a UNIX
+user with no login) named \ttv{eyedb},
+\item in the \ttv{eyedb} home directory, create the file \ttv{.rhosts}
+which contains the following line:
+\\
+\ttv{localhost} \emph{DBA-user-list}
+\\
+for instance:
+\\
+\ttv{localhost root bill johnny}
+\\
+This means that the users \ttv{root}, \ttv{bill} and \ttv{johnny} are
+granted to log without password under the \ttv{eyedb} user using the
+command:
+\ttv{rlogin localhost -l eyedb}
+\\
+As \ttv{eyedb} is a pseudo UNIX user, there are no other way to connect
+under this user.
+The users \ttv{root}, \ttv{bill} and \ttv{johnny} can act as Database
+Administrators (DBA) as they are able to start or stop the \eyedb server,
+and to write database files in the directory \tdir/\ttv{db}
+after have logged under the \ttv{eyedb} UNIX user.
+\ee
+
+\section{Configuration}
+At the installation step, the installation shell script creates
+a default configuration file \tdir/\ttv{eyedb/etc/EyeDB.cfg}.
+This file contains a few configuration variables. Some of them
+are used by the \eyedb clients and the server while others
+are used only by the server (variables prefixed by \ttv{sv\_}).
+Some of them cannot be changed, others are modifiable.
+Here is a typical configuration file:
+\verbsize
+\begin{verbatim}
+#
+# EyeDB package, version 2.6.6
+#
+
+# EyeDB root directory
+
+topdir = /usr/local/eyedb;
+root   = /usr/local/eyedb/eyedb-V2.6.6;
+
+# Version Number
+
+version = 2.6.6;
+numversion = 205001;
+
+# EyeDB ports
+
+port = %root%/pipes/1;
+
+# EyeDB host
+
+host = bill;
+
+# EYEDBDBM Database
+
+dbm = %topdir%/db/dbmdb.db;
+
+# Java Class Path
+
+classpath = %root%/lib/classes.jar;
+
+sopath = %root%/etc/so;
+
+# Set the following variables for a default authentication
+
+#user   = 
+#passwd = 
+
+# Server Parameters
+
+sv_port = %port%;
+sv_voldir = %topdir%/db; 
+sv_timeout = 7200;
+sv_access_file = %root%/etc/EyeDB.access;
+sv_tmpdir = %root%/tmp;
+
+sv_passwd_file = %topdir%/etc/passwd;
+sv_license_file = %topdir%/etc/license.dat;
+\end{verbatim}
+\normalsize
+{\bf Client and server variables}:
+\bi
+\item \ttv{topdir} denotes the target directory
+given in the installation step: \tdir. \constvar.
+If you want to move the \eyedb distribution to another
+directory, you need to perform a new partial installation.
+\item \ttv{root} denotes the \eyedb root directory,
+for instance \ttv{\%root\%/eyedb-V\eyedbversion} where the syntax
+construct \ttv{\%xx\%} denotes the value of the variable \ttv{xx}.
+\constvar.
+\item \ttv{version} denotes the string version of the current \eyedb
+installation, for instance \ttv{\eyedbversion}. \constvar.
+\item \ttv{numversion} denotes the numeric version of the current \eyedb
+installation, for instance \ttv{20406}. \constvar.
+\item \ttv{port} denotes the port for connection
+with the \eyedb server. A numeric value denotes a TCP/IP port while
+a alpha-numeric value denotes a named pipe. Its default value is
+equal to \ttv{\%root\%/pipes/1}. \modvar.
+\item \ttv{host} denotes the host name or IP address for connection with
+the \eyedb server. Its default value is the hostname on which the
+installation has been performed. \modvar.
+\item \ttv{dbm} denotes the database file of the EYEDBDBM database. Its
+default value is \ttv{\%root\%/db/dbmdb.db}.
+\modvar.
+\item \ttv{classpath} denotes the class path for the \eyedb Java library.
+Its default value is \ttv{\%root\%/lib/classes.jar}.
+\modvar.
+\item \ttv{sopath} denotes the path for the loadbable methods and triggers.
+Its default value is \ttv{\%root\%/etc/so}.
+\modvar.
+\item the variables \ttv{user} and \ttv{passwd} are not set by default.
+The value of these variables can be modified.
+\ei
+{\bf Server variables}:
+\bi
+\item \ttv{sv\_port} denotes the port on which the \eyedb server is listening.
+Its default value is set to \ttv{\%port\%}. \modvar.
+\item \ttv{sv\_voldir} denotes the default database file repositery.
+Its default value is \ttv{\%topdir\%/db}. \modvar.
+\item \ttv{sv\_timeout} denotes the elapsed timeout client inactivity in
+seconds. The default is \ttv{7200}. \modvar.
+\item \ttv{sv\_access\_file} denotes the TCP/IP control access file.
+Its default value is \ttv{\%root\%/etc/EyeDB.access}.
+\modvar.
+\item \ttv{sv\_passwd\_file} denotes the password file for
+EYEDBDBM creation. Its default value is \ttv{\%topdir\%/etc/passwd}.
+\item \ttv{sv\_license\_file} denotes the license file path.
+Its default value is \ttv{\%topdir\%/etc/license.dat}.
+\ei
+\subsection{Configuration File Syntax}
+The configuration syntax rules are as follows:
+\bi
+\item comments: all the characters following a \ttv{\#} are ignored.
+\item the general form of an assignation is as follows:
+\\
+\\
+\mbox{ } \emph{variable} = \emph{value}\ttv{;}
+\item \emph{variable} is under the following form:
+\bi
+\item \ttv{[a-zA-Z\_][a-zA-Z\_0-9]*} (i.e. a letter or underscore optionnaly
+following by letters, digits or underscore).
+\ei
+\item \emph{value} is under the following form:
+\bi
+\item \ttv{"([\^{}{\textbackslash}"]$|${\textbackslash}")*"}, where the surrounding double
+quotes are optionnal. You need only to surround with double quotes if
+value contains one or more spaces.
+\item the following escape sequences are interpreted:
+\esc{a}, \esc{b}, \esc{f}, \esc{r}, \esc{t}.
+\esc{v}, \esc{\textbackslash}
+\item a sequence variable delimited by two \ttv{\%} are substitued by the value
+of this variable, for instance \ttv{\%root\%} is substitued by the value of the
+variable \ttv{root}.
+\ei
+\item including other configuration file:
+\\
+\ttv{@include /tmp/EyeDB.cfg}
+\\
+includes the file \ttv{/tmp/EyeDB.cfg}
+\\
+\ttv{@include etc/EyeDB.cfg}
+\\
+includes the file \ttv{etc/EyeDB.cfg} relatively to the root \eyedb
+directory.
+\ei
+For instance, the following constructs are valid:
+\begin{verbatim}
+xx = %root%/abc/edf;
+yy = "%root%  1 2 abc \n \t";
+alpha = " == ; \ney;\tedb  \a \"\"root ";
+\end{verbatim}
+\subsection{The \ttv{eyedbgetenv} Program}
+\eyedb provides a very simple but useful utility to display the
+value of a configuration variable: \ttv{eyedbgetenv}.
+\\
+For instance:\\
+\mbox{ }\ttv{eyedbgetenv root}\\
+displays the value of the \ttv{root} configuration variable, while\\
+\mbox{ }\ttv{eyedbgetenv xxx}\\
+does not display anything as no configuration variable \ttv{xxx} is
+set.
+\subsection{Configuration General Mechanisms}
+If you want to change some configuration values, there are several
+ways:
+\be
+\item you edit the \tdir/\ttv{eyedb/etc/EyeDB.cfg} file,
+\item you create a new configuration file which includes the default
+one and you override the variables that you want,
+%\item you use environment variables,
+\item you use the standard \eyedb command line options which works
+with any \eyedb client.
+\ee 
+\subsection{Editing the default configuration file}
+Using a standard text editor, you can easily modify any of the
+modifiable configuration variables: \ttv{port}, \ttv{host}, \ttv{dbm},
+\ttv{classpath}, \ttv{sopath}, \ttv{user}, \ttv{passwd}, \ttv{sv\_port},
+\ttv{sv\_voldir}, \ttv{sv\_timeout}, \ttv{sv\_access\_file},
+\ttv{sv\_passwd\_file} and/or \ttv{sv\_license\_file}.
+\subsection{Creating and using a new configuration file}
+Using a standard text editor, you create a new file, for instance
+\ttv{\$HOME/EyeDB.cfg}, in which:
+\bi
+\item you re-define all the configuration variables,
+or
+\item you include the default configuration file and you
+override a few variables.
+\\
+For instance:
+\verbsize
+\begin{verbatim}
+# private EyeDB configuration file
+
+@include etc/EyeDB.cfg
+
+user=bill;
+passwd="^&acb12";
+\end{verbatim}
+\normalsize
+\ei
+To use your private configuration file, you need to set the environment
+variable \ttv{EYEDBCONF} to \ttv{\$HOME/EyeDB.cfg} or use the \ttv{-eyedbconf}
+command line option.
+
+%\subsection{Using environment variables}
+
+\subsection{Using command line options}
+All the configuration variable values can be overriden by a command line
+option or a hard coded value: for instance, the \ttv{port} configuration
+variable value can be overriden by using the command line option
+\ttv{-eyedbport}.
+\\
+\\
+Here is the list of the environment variables that
+can be overriden by a command line option:\\
+\\
+\begin{tabular}{|p{4cm}|p{4cm}|p{3cm}|}
+\hline {\bf Configuration Variable} & {\bf Command Line Option} & {\bf Client/Server} \\
+\hline \ttv{root} & \ttv{-eyedbroot} & Client \\
+\hline \ttv{host} & \ttv{-eyedbhost} & Client \\
+\hline \ttv{port} & \ttv{-eyedbport} & Client \\
+\hline \ttv{dbm} & \ttv{-eyedbdbm} & Client \\
+\hline \ttv{user} & \ttv{-eyedbuser} & Client \\
+\hline \ttv{passwd} & \ttv{-eyedbpasswd} & Client \\
+\hline \ttv{sv\_port} & \ttv{-sv\_port} & Server \\
+\hline \ttv{sv\_access\_file} & \ttv{-sv\_access\_file} & Server \\
+\hline \ttv{sv\_vol\_dir} & \ttv{-sv\_vol\_dir} & Server \\
+\hline \ttv{sv\_timeout} & \ttv{-sv\_timeout} & Server \\
+\hline \ttv{sv\_passwd\_file} & \ttv{-sv\_passwd\_file} & Client \\
+\hline \ttv{sv\_license\_file} & \ttv{-sv\_license\_file} & Client \\
+\hline
+\end{tabular}
+
+\subsubsection{The standard client command line options:}
+\bi
+\item \ttv{-eyedbroot} \emph{root}: if you get several \eyedb installation, you
+can force to use a given one by using this option. Rarely used.
+\item \ttv{-eyedbhost} \emph{host}: to set the host name or IP address server,
+\item \ttv{-eyedbport} \emph{port}: to set the port TCP/IP or named pipe,
+\item \ttv{-eyedbdbm} \emph{dbmfile}: to use another EYEDBDBM than the default
+one,
+\item \ttv{-eyedbuser} \emph{user}: to set an \eyedb user name,
+\item \ttv{-eyedbpasswd} \emph{passwd}: to set an \eyedb password,
+\item \ttv{-eyedbuser?}: will ask for an \eyedb user name on
+the standard input. Note that if you are using a C-shell, you need to
+put a backslash before the \ttv{?} character to avoid the interpretation
+of this meta-character by the shell,
+as follows: \ttv{-eyedbuser\textbackslash?},
+\item \ttv{-eyedbpasswd?}: will ask for an \eyedb password on
+the standard input. Refer to previous option if you are using with a C-shell.
+\item \ttv{-eyedbauth?}: will ask for an \eyedb user/password
+on the standard input.  Refer to previous option if you are using with a C-shell.
+\item \ttv{-eyedbconf} \emph{conffile}: will use the given configuration file.
+It is the same than using the \ttv{EYEDBCONF} environment variable,
+\item \ttv{-eyedblog} \emph{logfile}: log information will be displayed
+in the given file,
+\item \ttv{-eyedbarch}: displays the client architecture (since version \eyedbversion),
+\item \ttv{-eyedbversion}: displays the \eyedb version,
+\item \ttv{-eyedbhelp}: displays the help window,
+\item \ttv{-eyedb-error-policy} \emph{directive}: uses a specific
+error policy according to the value of \emph{directive} which can be:
+\ttv{status},
+\ttv{exception}, \ttv{abort}, \ttv{stop} or \ttv{echo}.
+\ei
+For instance to connect the \ttv{eyedboql} monitor to the \eyedb server
+on host \ttv{alpha1} on the TCP/IP port \emph{3122} using the \eyedb user
+\ttv{bill} and password \ttv{bf123}:
+\begin{verbatim}
+eyedboql -eyedbhost alpha1 -eyedbport 3122 -eyedbuser bill \
+        -eyedbpasswd bf123
+\end{verbatim}
+\subsubsection{The server command line options}
+All the server configuration variable values can be overriden by a command line
+option or a hard coded value: for instance, the \ttv{sv\_port} configuration
+variable value can be overriden by using a server command line option
+as follows:
+\ttv{eyedbctl -sv\_port 7863}.
+\\
+\\
+Here is the list of all the standard server options that are recognized
+by \ttv{eyedb} and \ttv{eyedbctl}:
+\bi
+\item \ttv{-sv\_port} \emph{ports}:  listening ports,
+\item \ttv{-sv\_access\_file} \emph{accessfile}: access file (default is \tdir/\ttv{eyedb/etc/EyeDB.access}),
+\item \ttv{-sv\_voldir} \emph{voldir}: default volume directory,
+\item \ttv{-sv\_timeout} \emph{timeout}: timeout in seconds (default is 7200 sec),
+\item \ttv{-sv\_passwd\_file} \emph{passwdfile}: use the given password file,
+\item \ttv{-sv\_license\_file} \emph{licensefile}: use the given license file,
+\item \ttv{-eyedbroot} \emph{root}: use the given \eyedb root directory,
+\item \ttv{-eyedbconf} \emph{conffile}: use the given configuration file,
+\item \ttv{-eyedblog} \emph{logfile}: output log file,
+\item \ttv{-eyedbdbm} \emph{dbmfile}: default EYEDBDBM database file,
+\item \ttv{-eyedbversion}: displays the \eyedb version,
+\item \ttv{-help}: displays a short help.
+\ei
+For instance, to launch an \eyedb server listening on the ports \ttv{7362} and
+\ttv{/tmp/pipes1}, using the default volume directory \ttv{/export/DB}
+and the default EYEDBDBM database file \ttv{/export/DB/dbmdb.db}:
+\begin{verbatim}
+eyedbctl start -sv_port 7362 /tmp/pipes1 -sv_voldir /export/DB \
+              -eyedbdbm /export/DB/dbmdb.db
+\end{verbatim}
+
+\section{Server Management}
+This section introduces the way to launch or stop the server, and to
+get status information on the opening sessions.
+\subsection{Launching the server}
+There are three ways to launch the server:
+\be
+\item running directly the program \ttv{eyedbd}: this way is not
+recommended.
+\item running the program \ttv{eyedbctl} with the {start} option, for
+instance: \\
+\mbox{ }\ttv{eyedbctl start} \\
+\mbox{ }\ttv{eyedbctl start -sv\_port 7763} \\
+\mbox{ }\ttv{eyedbctl start -eyedblog `eyegetenv topdir`/log/eyedbd.log}
+\item running a \ttv{rc.eyedb} shell script: a template is given
+in the distribution (file \tdir/\ttv{eyedb/etc/rc.eyedb}); this way
+is recommended as this shell script can launch all the \eyedb servers:
+\be
+\item the \ttv{eyedbd} daemon,
+\item the \ttv{eyedbwwwd} WEB daemon,
+\item the \ttv{eyedborbixd} generic Orbix server and/or
+\item the \ttv{eyedborbacusd} generic Orbix server.
+\ee
+\ee
+Note that the \ttv{rc.eyedb} uses \ttv{eyedbctl start} to launch the
+\eyedb server.
+\subsection{Listening ports}
+There are two types of listening ports: TCP/IP ports and named pipes:
+\bi
+\item a TCP/IP port is denoted by a number and is available over
+a LAN
+or a WAN. By configuring the TCP/IP access file (by default the file
+\ttv{EyeDB.access}), you can allow or not allow the TCP/IP connections
+from a so-and-so host machine.
+\item a named pipe is denoted by a filename and is available for
+the clients running on the same computer as the server. On the other
+hand, a named pipe is much faster than a TCP/IP connection and it allows
+for safe authentication without password transmission. Refer
+to the \emph{Users} section for information about that.
+\ei
+It is a good idea to make the \eyedb server listening both on
+a TCP/IP port and on a named pipe, for instance:\\
+\ttv{eyedbctl start -sv\_port 8100 /tmp/.eyedb-pipe}\\
+launches an \eyedb server listening both on the TCP/IP port \ttv{8100}
+and on the named pipe \ttv{/tmp/.eyedb-pipe}.
+\\
+Clients on the same computer will preferly use the named pipe because
+transmission is faster, and clients on the LAN or a WAN will use
+the TCP/IP port.
+\subsection{Lauching Several Servers}
+Note that launching one \eyedb server as follows:\\
+\ttv{eyedbctl start -sv\_port 8100 /tmp/.eyedb-pipe}\\
+is equivalent to launch two \eyedb servers as follows:\\
+\ttv{eyedbctl start -sv\_port 8100}\\
+\ttv{eyedbctl start -sv\_port /tmp/.eyedb-pipe}\\
+\\
+The differences is that in the first case, there is only one server listening
+on two ports, while in the second case there are two servers listening on
+one port each.\\
+If you launch the server without using the \ttv{-sv\_port} option,
+the value of the listening port will be taken from the configuration
+file, so:\\
+\ttv{eyedbctl start}\\
+is equivalent to:\\
+\ttv{eyedbctl start -sv\_port `eyedbgetenv sv\_port`}
+\\
+\\
+There can be as many servers as you want on the same computer dealing
+with the same databases: of course, the servers must listen on different
+TCP/IP ports or named pipes: in other words, a database can be shared
+safely by any number of servers that you want, running on the same computer.
+\subsection{MultiProcess Server Architecture}
+The \eyedb server architecture is multi-processus: each time a client
+reaches the server for a connection and that this connection is accepted,
+the server forks a new server.
+\\
+Assume that two clients (for instance two
+\ttv{eyedboql}) are connected to the \eyedb server, there are three
+server processus:
+\bi
+\item the master server that has been launched using the \ttv{eyedbctl start}
+command,
+\item two children of the master server, each one coressponding to each
+client.
+\ei
+\subsection{Getting Session Information}
+The command \ttv{eyedbctl status} gives all the information about the
+opened sessions. For instance the following information could be displayed
+after launching the server:
+\verbsize\begin{verbatim}
+% eyedbctl status
+EyeDB Server is up from Thu Apr  1 14:18:05 1999
+ 
+  Version 2.6.6
+  Program Pid 3263
+  Running Under 'eyedb'
+ 
+  Listening Ports 8100
+  Volume Dir '/eyedb/db'
+ 
+  No Clients connected.
+\end{verbatim}\normalsize
+If two \ttv{eyedboql} clients are connected:
+\verbsize\begin{verbatim}
+% eyedbctl status
+EyeDB Server is up from Thu Apr  1 14:18:05 1999
+ 
+  Version 2.6.6
+  Program Pid 3263
+  Running Under 'eyedb'
+ 
+  Listening Ports 8100
+  Volume Dir '/eyedb/db'
+ 
+  2 Clients connected
+ 
+Client #0
+  Connected from Thu Apr  1 14:19:11 1999
+  Host Name 'bill'
+  User Name 'john'
+  Program Name 'eyedboql'
+  Client Pid 3282
+  EyeDB Server Pid 3283
+  Databases Opened 'EYEDBDBM' [mode='read/trsless/local']
+                   'person' [mode='read'] [userauth='eyedbroot']
+ 
+Client #1
+  Connected from Thu Apr  1 14:20:25 1999
+  Host Name 'bill'
+  User Name 'john'
+  Program Name 'eyedboql'
+  Client Pid 3301
+  EyeDB Server Pid 3302
+  Databases Opened 'EYEDBDBM' [mode='read/trsless/local']
+\end{verbatim}\normalsize
+If you have launched your server on another port as the default port,
+you must use \ttv{eyedbctl status} with the \ttv{-sv\_port} command line option,
+as follows:\\
+\ttv{eyedbctl status -sv\_port /tmp/.eyedb-pipe}
+
+\subsection{The TCP/IP access file}
+\newcommand{\tcpip}{\emph{IP-address-or-mask}}
+The server access file controls TCP/IP accesses. Its location
+is given by the configuration variable \ttv{sv\_access\_file} which
+is set by default to \ttv{\%root\%/etc/EyeDB.access}.
+\\
+\\
+The access file syntax rules are as follows:
+\bi
+\item comments: all the characters following a \ttv{\#} are ignored.
+\item the access file is composed of a set of lines where each
+line is under the form:
+{\tcpip } \emph{user-list}
+\item {\tcpip } can be:
+\bi
+\item a name designating a computer or a subnet mask,
+\item a IP address designating a computer or a subnet mask,
+\item the \ttv{+} character designating any computer anywhere.
+\ei
+\item \emph{user-list} is a list of tokens under the form:
+\bi
+\item an \eyedb user: means that the given user is authorized for
+connection from any computer designated by {\tcpip},
+\item a \ttv{!} character followed by an \eyedb user: this
+means that the given user is not authorized for
+connection from any computer designated by {\tcpip},
+\item a \ttv{=} character followed by an \eyedb user: means
+that this user will be used for any connection from any computer designated
+by {\tcpip } if no authentication is provided.
+\item the \ttv{+} character: means that any \eyedb user
+is authorized for
+connection from any computer designated by {\tcpip}.
+\ei
+\ei
+For instance:
+\verbsize\begin{verbatim}
+# EyeDB.access file
+
+net.infobiogen.fr       + !eyedbroot
+enst.enst.fr            enst
+www.ircam.fr            rhgm
+enst.enst.fr            =guest hgm
+192.168.1.0             eyedbroot =foo stuart
+192.168.1.3             +
+\end{verbatim}\normalsize
+Let's explain some of these access lines:
+\bi
+\item \ttu{net.infobiogen.fr + !eyedbroot}: means than any \eyedb user except
+\ttu{eyedbroot} is allowed for connection from the computer(s) designated
+by \ttu{net.infobiogen.fr}.
+\item {\verbsize\ttu{192.168.1.0  eyedbroot =foo stuart}}: means that the \eyedb users
+\ttu{eyedbroot}, \ttu{foo} and \ttu{stuart} are authorized for connection
+from the computers designated by the subnet mask \ttu{192.168.1.0}. If
+no user authentication is provided for this connection, the user \ttu{foo}
+is used.
+\item \ttu{192.168.1.3 +}: means that any \eyedb user are authorized
+for connection from the computer designated by 
+\ttu{192.168.1.3 +}.
+\ei
+\subsection{The servers and NFS}
+An \eyedb server can manage a database located on a partition mounted by NFS.
+As \eyedb uses a lot of disk access, and as NFS is less efficient that
+a direct access, this is not a very good idea to do so. But you can.
+\\
+\\
+However, there is a restriction for the use of database mounted via NFS:
+a same physical database cannot be shared by two servers running on
+different computers. Assume you have the following configuration:
+\be
+\item the \eyedb volume directory \ttv{VOLDIR} is directly mounted or mounted via NFS
+on the computer \ttv{A} and an \eyedb server is running on this computer,
+\item the \eyedb volume directory \ttv{VOLDIR} is directly mounted or mounted via NFS
+on the computer \ttv{B} and an \eyedb server is running on this computer,
+\item a client is using the database \ttv{DB} through the
+\eyedb server running on the computer \ttv{A}.
+\ee
+If all the previous conditions are true, the server running on
+the computer \ttv{B} cannot deal with the database \ttv{DB}.
+If you try to open \ttv{DB} through the server running on the
+computer \ttv{B}, you will get the following message:\\
+\ttv{database opening error: database 'DB' is hold by computer A}.
+
+\section{Stopping the servers}
+To stop the \eyedb servers, you need to use the \ttv{eyedbctl stop}
+command, for instance:
+{\verbsize\begin{verbatim}
+eyedbctl stop
+eyedbctl stop -sv_port 8100
+eyedbctl stop -sv_port /tmp/.eyedb-pipe
+\end{verbatim}}
+\subsection{License Management}
+To be able to launch a server, the license file must contain
+a valid license. \\
+By default, the license file is \tdir/\ttv{etc/license.dat}  and
+has one of the following form:
+\be
+\item evaluation license: \ttv{EyeDB license} \ttv{*eval* 0} \emph{date} \emph{key}
+\item host oriented license: \ttv{EyeDB license} \emph{hostname} \emph{hostid} \emph{date} \emph{key}
+\ee
+For instance, the license file: \\
+\ttv{EyeDB license ultra 8081d7bf 1998/1/1 ACE4591178355C215357B3C6C4A27C21}
+\\
+contains a license for the computer \ttv{ultra} with an hostid \ttv{8081d7bf}
+available until the 1st january 1998.
+\\
+Note that the license file is only use by the server: there is no
+runtime license for the clients.
+To install a new license file, you only need to replace the
+deprecated license file by the new one: it is not necessary to
+stop any servers or clients.
+\\
+\\
+To check the validity of a license file, you must use the program
+\ttv{eyedbchklicense} as follows:\\
+\ttv{eyedbchklicense} \emph{licensefile}\\
+If the license is valid no output will be displayed and a status
+code of value 0 will be returned.
+Otherwise, a clear error message will be displayed and a status of value
+1 will be returned.
+
+\section{Databases}
+
+\subsection{Database Structure}
+The structure of a database is composed of a logical part and a physical
+part:
+\bi
+\item the \emph{logical part} is composed of:
+\be
+\item a \emph{database name}: this name identifies logically 
+a database in a unique way. This name can be changed at any time.
+\ee
+\item the \emph{physical part} is composed of:
+\be
+\item \emph{a database identifier}: this number identifies
+a database in an unique way,
+\ee
+\item \emph{a set of files}:
+\be
+\item \emph{the database file} (suffixed by \ttv{.db}): contains information
+about volume files, root entries and the main storage allocator.
+\item \emph{the object map file} (suffixed by \ttv{.omp}): contains
+the mapping between the logical object identifiers (OIDs) and their
+physical location
+\item \emph{the log database file} (suffixed by \ttv{.log}): contains the transaction
+tables,
+\item \emph{the volumes files} (at least one; the first one is generally suffixed by \ttv{.vol}):
+contains object data.
+\ee
+\ei
+Note: do not confuse the log database file with the log information displayed by
+the server in the \tdir/\ttv{log} directory.
+\\
+\\
+By default, these files are located in the directory given by the configuration
+variable \ttv{sv\_voldir}.
+However, at the creation step, you can choose where to put your database
+files in the directory you want. Furthermore, you can dynamically add, 
+move, resize or suppress (under certain conditions) volume files.
+\\
+To get information on an existing database, you can use the \ttv{eyedbdblist}
+program, for instance:
+\verbsize
+\begin{verbatim}
+% eyedbdblist person
+dbname    : "person"
+dbid      : 21
+dbfile    : "/eyedb/db/person.db"
+volumes   : (file : "/eyedb/db/person.vol", maxsize : 2000000 Kb)
+defaccess : idbReadDBAccessMode
+dbaccess  : (username : "eyedbroot", access : idbAdminDBAccessMode)
+\end{verbatim}
+\normalsize
+As this is shown, the object map file and the log database file are
+not displayed by the previous commands: anyhow, these files are
+located in the same directory as the database file and are
+suffixed respectively by \ttv{.omp} and \ttv{.log}.
+
+\subsection{Database Management}
+Using \eyedb administration tools, you can perform the following operation
+on databases:
+\be
+\item create a database,
+\item delete a database,
+\item list databases,
+\item rename a database,
+\item move a database,
+\item copy a database,
+\item export a database to a file,
+\item import a database from a file,
+\item add a volume file,
+\item resize a volume file,
+\item move a volume file,
+\item suppress a volume file.
+\ee
+The last four operations are performed by using the storage manager level
+administration tool \ttv{eyedbdbadmin}. The other operations can be
+performed either by using the \ttv{eyedbadmin} generic administration tool
+or a specific tool named \ttv{eyedbdb}\emph{operation} where
+\emph{operation} is one of the following: \ttv{create}, \ttv{delete},
+\ttv{list}, \ttv{rename}, \ttv{move}, \ttv{copy}, \ttv{export} or \ttv{import}.
+\\
+All the administration tools, except the storage manager level
+\ttv{eyedbdbadmin} program understand the client command line options presented
+in a previous section (i.e. \ttv{-eyedbport}, \ttv{-eyedbhost} and so on).
+\\
+Note that to perform the previous operations, some privileges are needed.
+For instance, a user cannot create a database if it has no \ttv{dbcreate}
+system access. Refer to the section \emph{Access Control} for information
+about that.
+\subsubsection{Creating a Database}
+To create a database one can use either \ttv{eyedbadmin create} \emph{args}
+or \ttv{eyedbdbcreate} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \emph{dbname}: the database name, this argument is mandatory.
+\item \ttv{-dbfile} \emph{dbfile}: by default, the database file,
+the object map
+file and the log database file will be created in the directory designated
+by the configuration variable \ttv{sv\_voldir}. If you want to create these
+files in another directory, you must indicate the location of the
+database file using the \ttv{-dbfile} option. The object map file
+and the log database file will be automatically created in the
+same directory as the database file.
+\item \ttv{-volfiles} \emph{volfile size} [\emph{volfile size}]: by default,
+one volume file is created in the directory designated by the
+configuration variable \ttv{sv\_voldir} with a default maximum size of
+2,000,000 Kb (a bit less than 2 Gb). If you want to create the volume
+file in another location or with another maximum size or if you want
+to use several volume files you must use this option.
+The maximum number of volumes files is 512, each one limited to 2Gb because
+of some 32-bit limitation. The 64-bit version of \eyedb will theorically
+support 512 volumes files of one tera-bytes each.
+Note that volumes files can be added or moved dynamically using the
+\ttv{eyedbdbadmin} storage manager level administration tool.
+\item \ttv{-sizeslot} \emph{size}: the default slot size in the storage
+manager is 16 bytes. If you want to change this size, you must use this option.
+Note that this option should be used only by experts.
+\item \ttv{-nbobjs} \emph{nbobjs}: the default maximum object number is
+100,000,000. If you want to change this maximum number, you must use
+this option. This maximum object number can be modified using the
+\ttv{eyedbdbadmin} storage manager level administration tool.
+\ei
+Here are some database creation examples:
+\bi
+\item default creation:
+\verbsize
+\begin{verbatim}
+eyedbdbcreate foo
+\end{verbatim}
+\normalsize
+\item the following command is strictly equivalent to the previous one:
+\verbsize
+\begin{verbatim}
+eyedbadmin create foo
+\end{verbatim}
+\normalsize
+\item same as previously but creating a database using another server
+and another port:
+\verbsize
+\begin{verbatim}
+eyedbdbcreate foo -eyedbhost ultra.sysra.com -eyedbport 8201
+\end{verbatim}
+\normalsize
+\item creating a database with two volumes files:
+\verbsize
+\begin{verbatim}
+eyedbdbcreate foo -volfiles /eyedb/db1/foo.vol1 1000000 \
+                            /eyedb/db2/foo.vol2 2000000
+\end{verbatim}
+\normalsize
+\item creating a database with a specific database file,
+three volumes files and a specific maximum object number:
+\verbsize
+\begin{verbatim}
+eyedbdbcreate foo -dbfile /usr/local/db/FOO.db \
+                  -nobjs 200000000 \
+                  -volfiles /usr/local/db/foo.vol1 10000000 \
+                            /eyedb/db2/foo.vol2 1000000 \
+                            /eyedb/db2/foo.vol3 100000000
+\end{verbatim}
+\normalsize
+\ei
+\subsubsection{Deleting a Database}
+To delete a database one can use either \ttv{eyedbadmin delete} \emph{dbname}
+or \ttv{eyedbdbdelete} \emph{dbname}.
+There is one and only argument for this command:
+\bi
+\item \emph{dbname}: the database name, this argument is mandatory.
+\ei
+Here are some database deletion examples:
+\bi
+\item default deletion:
+\verbsize
+\begin{verbatim}
+eyedbdbdelete foo
+\end{verbatim}
+\normalsize
+\item the following command is strictly equivalent to the previous one:
+\verbsize
+\begin{verbatim}
+eyedbadmin delete foo
+\end{verbatim}
+\normalsize
+\item same as previously but deleting a database using another server
+and another port:
+\verbsize
+\begin{verbatim}
+eyedbdbdelete foo -eyedbhost ultra.sysra.com -eyedbport 8201
+\end{verbatim}
+\normalsize
+\ei
+\subsubsection{Listing Databases}
+To list one or more databases one can use either \ttv{eyedbadmin list}
+\emph{args}
+or \ttv{eyedbdblist} \emph{args}.
+Where \emph{args} is as follows:
+\bi
+\item \emph{empty}: the program list all databases.
+\item one or more database names: the program list the indicated databases.
+\ei
+Here are some database list examples:
+\bi
+\item list all databases:
+\verbsize
+\begin{verbatim}
+eyedbdblist
+\end{verbatim}
+\normalsize
+\item the following command is strictly equivalent to the previous one:
+\verbsize
+\begin{verbatim}
+eyedbadmin list
+\end{verbatim}
+\normalsize
+\item list databases \ttv{foo} and \ttv{person}:
+\verbsize
+\begin{verbatim}
+eyedbdblist foo person
+\end{verbatim}
+\normalsize
+\item same as previously but listing databases using another server
+and another port:
+\verbsize
+\begin{verbatim}
+eyedbdblist foo person -eyedbhost ultra.sysra.com -eyedbport 8201
+\end{verbatim}
+\normalsize
+\ei
+\subsubsection{Renaming a Database}
+To rename a database, one can use either \ttv{eyedbadmin rename}
+\emph{args}
+or \ttv{eyedbdbrename} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \emph{dbname}: the database name to be renamed. This argument is
+mandatory.
+\item \emph{newdbname}: the new database name.
+This argument is mandatory.
+\ei
+Some examples:
+\bi
+\item renaming the database \ttv{foo} to \ttv{FOO}:
+\verbsize
+\begin{verbatim}
+eyedbdbrename foo FOO
+\end{verbatim}
+\normalsize
+\item renaming the database \ttv{person} to \ttv{test\_person} using
+another server and another port:
+\verbsize
+\begin{verbatim}
+eyedbdbrename person test_person -eyedbhost ultra.sysra.com -eyedbport 8201
+\end{verbatim}
+\normalsize
+\ei
+\subsubsection{Moving a Database}
+
+To move a database one can use either \ttv{eyedbadmin move} \emph{args}
+or \ttv{eyedbdbmove} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \emph{dbname}: the database name. This argument is mandatory.
+\item \ttv{-dbfile} \emph{dbfile}:
+the target database file. This argument is mandatory.
+The object map file
+and the log database file will be automatically created in the
+same directory as this target database file.
+\item \ttv{-volfiles} \emph{volfile size} [\emph{volfile size}] (versions
+2.4.0 to 2.4.5):
+the target volume files and sizes. This argument is mandatory.
+There are some restrictions to the use of this option:
+\be
+\item the number of the target volume files must be the same as the
+number of volume files of the source database.
+\item the size of each volume file must be the same as the size
+of each source volume file.
+\ee
+Note that as the size cannot be set by the user, this argument is quite
+not useful.
+So, it has been suppressed since the version 2.4.6.
+\\
+If you want to change the size or the volume number of the moved database,
+you must use the \ttv{eyedbdbadmin} storage manager level administration tool.
+\item \ttv{-volfiles} \emph{volfile} [\emph{volfiles}] (version
+2.4.6 and upper):
+the target volume files. This argument is mandatory.
+There are some restrictions to the use of this option:
+\be
+\item the number of the target volume files must be the same as the
+number of volume files of the source database.
+\ee
+\ei
+Here are some database creation and moving examples:
+\bi
+\item creation and move using version \eyedbversion:
+\verbsize
+\begin{verbatim}
+eyedbdbcreate foo
+eyedbdbmove foo -dbfile /eyedb/db/foo_1.db \
+                -volfiles /eyedb/db/foo_1.vol 2000000
+\end{verbatim}
+\normalsize
+\item same moving operation using version 2.4.6 or upper (the difference is that there is no
+size arguments):
+\verbsize
+\begin{verbatim}
+eyedbdbmove foo -dbfile /eyedb/db/foo_1.db \
+                -volfiles /eyedb/db/foo_1.vol
+\end{verbatim}
+\normalsize
+\item complex creation and move using version \eyedbversion:
+\verbsize
+\begin{verbatim}
+eyedbdbcreate foo -dbfile /usr/local/db/FOO.db \
+                  -nobjs 200000000 \
+                  -volfiles /usr/local/db/foo.vol1 10000000 \
+                            /eyedb/db2/foo.vol2 1000000 \
+                            /eyedb/db2/foo.vol3 100000000
+
+eyedbdbmove foo -dbfile /usr/share/db/foo.db \
+                -volfiles /usr/local/share/foo.vol1 10000000 \
+                          /eyedb/db2/foo.vol8 1000000 \
+                          /eyedb/DB7/FOO.vol3 100000000
+\end{verbatim}
+\normalsize
+note that if one the size of the target volume files is wrong, the
+operation failed.
+\item same moving operation using version 2.4.6 or upper:
+\verbsize
+\begin{verbatim}
+eyedbdbmove foo -dbfile /usr/share/db/foo.db \
+                -volfiles /usr/local/share/foo.vol1 \
+                          /eyedb/db2/foo.vol8 \
+                          /eyedb/DB7/FOO.vol3 \
+\end{verbatim}
+\normalsize
+\ei
+\subsubsection{Copying a Database}
+To copy a database one can use either \ttv{eyedbadmin copy} \emph{args}
+or \ttv{eyedbdbcopy} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \emph{dbname}: the database name. This argument is mandatory.
+\item \emph{newdbname}: the new database name. This argument is mandatory.
+\item \ttv{-dbfile} \emph{dbfile}:
+the target database file. This argument is mandatory.
+The object map file
+and the log database file will be automatically created in the
+same directory as this target database file.
+\item \ttv{-volfiles} \emph{volfile size} [\emph{volfile size}] (version
+2.4.0 to 2.4.5):
+the target volume files and sizes. This argument is mandatory.
+The restrictions for the use of this option are the same as for
+the \ttv{eyedbdbmove} program.
+\item \ttv{-volfiles} \emph{volfile} [\emph{volfiles}] (version
+2.4.6 and upper):
+the target volume files. This argument is mandatory.
+The restrictions for the use of this option are the same as for
+the \ttv{eyedbdbmove} program.
+\ei
+Here are some database creation and copying examples:
+\bi
+\item creation and copy using version 2.4.4:
+\verbsize
+\begin{verbatim}
+eyedbdbcreate foo
+eyedbdbcopy foo FOO -dbfile /eyedb/db/foo_1.db \
+                -volfiles /eyedb/db/foo_1.vol 2000000
+\end{verbatim}
+\normalsize
+\item same copying operation using version 2.4.6 or upper (the difference is that there is no
+size arguments):
+\verbsize
+\begin{verbatim}
+eyedbdbcopy foo FOO -dbfile /eyedb/db/foo_1.db \
+                    -volfiles /eyedb/db/foo_1.vol
+\end{verbatim}
+\normalsize
+\item complex creation and copy using version 2.4.4:
+\verbsize
+\begin{verbatim}
+eyedbdbcreate foo FOO -dbfile /usr/local/db/FOO.db \
+                      -nobjs 200000000 \
+                      -volfiles /usr/local/db/foo.vol1 10000000 \
+                                /eyedb/db2/foo.vol2 1000000 \
+                                /eyedb/db2/foo.vol3 100000000
+
+eyedbdbcopy foo FOO -dbfile /usr/share/db/foo.db \
+                    -volfiles /usr/local/share/foo.vol1 10000000 \
+                              /eyedb/db2/foo.vol8 1000000 \
+                              /eyedb/DB7/FOO.vol3 100000000
+\end{verbatim}
+\normalsize
+note that if one the size of the target volume files is wrong, the
+operation failed.
+\item same copying operation using version 2.4.6 or upper:
+\verbsize
+\begin{verbatim}
+eyedbdbcopy foo -dbfile /usr/share/db/foo.db \
+                -volfiles /usr/local/share/foo.vol1 \
+                          /eyedb/db2/foo.vol8 \
+                          /eyedb/DB7/FOO.vol3 \
+\end{verbatim}
+\normalsize
+\ei
+
+\subsubsection{Exporting a Database}
+When you want to copy a database on another computer on a LAN or a WAN,
+it is sometimes not possible to use \ttv{eyedbdbcopy}, because the
+target computer is not visible as a file system from the source
+computer.
+\\
+In this case, you must export the database to a file or device on the
+source computer and import this database from a file or device
+on the target computer.
+\\
+To export a database to a file, one can use either \ttv{eyedbadmin export} \emph{args}
+or \ttv{eyedbdbexport} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \emph{dbname}: the database name. This argument is mandatory.
+\item \emph{file}: the target file or device (for instance /dev/rmt/1). Note
+that if \emph{file} is omitted, the standard output is used.
+\ei
+For instance:
+\bi
+\item exporting a database to the standard input and compress output
+using \ttv{gzip}:
+\verbsize
+\begin{verbatim}
+eyedbdbexport foo | gzip -c > /tmp/fooDB.gz
+\end{verbatim}
+\normalsize
+\item exporting a database to a tape:
+\verbsize
+\begin{verbatim}
+eyedbdbexport foo /dev/rmt/1
+\end{verbatim}
+\normalsize
+\item same operation but using \ttv{gzip}:
+\verbsize
+\begin{verbatim}
+eyedbdbexport foo | gzip -c > /dev/rmt/1
+\end{verbatim}
+\normalsize
+\ei
+Note that the tied method modules are automatically included in the
+exported file.
+\subsubsection{Importing a Database}
+To import a database from a file one can use either \ttv{eyedbadmin import} \emph{args}
+or \ttv{eyedbdbimport} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \emph{file}: the file from which importation is done.
+This argument is mandatory. To use the standard input \emph{file}, must be
+set to \ttv{-}.
+\item \emph{-l}: if you want only to list the contents of the file, use
+this option. In this case, no importation will be performed.
+\item \ttv{-db} \emph{dbname}: the target database name.
+This argument is not mandatory.
+If you do not use this option, \ttv{eyedbdbimport} will ask for 
+the target database name on the standard input (interactive mode).
+\item \ttv{-voldir} \emph{voldir}: the target volume directory.
+This argument is not mandatory.
+If you do not use this option, \ttv{eyedbdbimport} will ask for 
+the target volume directory on the standard input (interactive mode).
+\item \ttv{-mthdir} \emph{mthdir}: the target method directory.
+This argument is not mandatory.
+If you do not use this option, \ttv{eyedbdbimport} will ask for 
+the target method directory on the standard input (interactive mode).
+\ei
+Here are some database importation examples:
+\bi
+\item let us assume that the exportation has been done as follows:
+\verbsize
+\begin{verbatim}
+% eyedbdbexport foo /eyedb/db/FOO.dat
+\end{verbatim}
+\normalsize
+\item to list the contents of the exportation file:
+\verbsize
+\begin{verbatim}
+% eyedbdbimport -l /eyedb/db/FOO.dat
+Import File "/eyedb/db/FOO.dat"
+ 
+  Database          : foo
+  Dbid              : 21
+  Volumes Count     : 1
+  Total Size        : 3642468 bytes
+  Sizeslot          : 16
+ 
+  Database File     : 162304 bytes {16138095 bytes}
+  Object Map File   : 196608 bytes {400007168 bytes}
+  Volume File #1    : 3055616 bytes {3061456 bytes < 2000000 Kb}
+ 
+  Method File (CC)  : 'foomthbe-2.4.6.so' {227940 bytes}
+\end{verbatim}
+\normalsize
+\item to realize a non interactive importation by designating the value
+of the target database, volume and method directory:
+\verbsize
+\begin{verbatim}
+% eyedbdbimport /eyedb/db/FOO.dat -db FooTest -voldir /eyedb/TDB \
+  -mthdir /eyedb/TDB/so
+\end{verbatim}
+\normalsize
+\item to realize an interactive importation:
+\verbsize
+\begin{verbatim}
+% eyedbdbimport /eyedb/db/FOO.dat
+database [foo]? FooTest
+Directory for Database File and Object Map File [/eyedb/db]? /eyedb/TDB
+Directory for Volume File #1 [/eyedb/db]? /eyedb/TDB
+Directory for Method File 'foomthbe-2.4.6.so' [/eyedb/db/so]? /eyedb/TDB/so
+\end{verbatim}
+\normalsize
+\ei
+{\bf Important note}: to import a database on a computer, the program
+\ttv{eyedbdbimport} must run as the same UNIX user as the \eyedb server.
+\section{Users}
+\subsection{What is an \eyedb User?}
+%An \eyedb user is \ul{not} a UNIX user.
+An \eyedb user is composed of:
+\be
+\item a name,
+\item a user identifier,
+\item a type: \ttv{eyedb}, \ttv{unix} or \ttv{strict unix},
+\item an optionnal password,
+\ee
+At user creation, the administrator chooses for a name, a type and
+a password if the type is \ttv{eyedb} or \ttv{unix}. The user identifier
+is automatically managed by \eyedb and is for internal use only.
+\subsection{User Types}
+\eyedb supports three types of \eyedb users:
+\be
+\item \ttv{eyedb user type}: the \ttv{eyedb user type} is the default type.
+Such a user is not mapped on any UNIX user. So, you can create as
+many users of this type as you want: for instance, you can create the
+user \ttv{zolo} even if no UNIX user of this name exists on your computer.
+When you create a user of this type, you need to give a password. Such
+a user can be used either on a TCP/IP connection or a named pipe connection.
+\item \ttv{unix user type}: when you create a user of this type, a
+UNIX user with the same name must exists on the computer on which
+the \eyedb server is running. When you create a user of this type,
+you need to give a password. Such
+a user can be used either on a TCP/IP connection or a named pipe connection.
+A \ttv{unix user type} does not need to give a password if a named pipe
+connection is used because a safe authentication is provided by
+the UNIX kernel: this is the only difference with 
+a \ttv{eyedb user type} user.
+\item \ttv{strict unix user type}:
+when you create a user of this type, a
+UNIX user with the same name must exists on the computer on which
+the \eyedb server is running. When you create a user of this type,
+you does not need to give a password. Such
+a user can be used only on a named pipe connection.
+A \ttv{strict unix user type} does not need to give a password for connection
+on a named pipe  because a safe authentication is provided by
+the UNIX kernel.
+\ee
+\subsection{User Management}
+
+\subsubsection{Adding a User}
+To add a user one can use either \ttv{eyedbadmin useradd} \emph{args}
+or \ttv{eyedbuseradd} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \ttv{-unix}: if this option is set, the user will be a
+\ttv{unix user type} user.
+\item \ttv{-strict-unix}:
+if this option is set, the user will be a
+\ttv{strict unix user type} user.
+\item \emph{username}: the user name. This argument is mandatory.
+\item \emph{password}: a password is needed if the user is not
+a \ttv{strict unix user type} user. If no password is given on
+the command line, the program will ask for it on the standard input.
+\ei
+For instance:
+\bi
+\item adding a \ttv{eyedb user type} user named \ttv{john}:
+\verbsize
+\begin{verbatim}
+% eyedbuser add john
+john passwd:
+retype john passwd:
+\end{verbatim}
+\normalsize
+\item adding a \ttv{unix user type} user named \ttv{john}:
+\verbsize
+\begin{verbatim}
+% eyedbuser -unix add john
+john passwd:
+retype john passwd:
+\end{verbatim}
+\normalsize
+If \ttv{john} is not a UNIX user, then the following message is displayed:
+\verbsize
+\begin{verbatim}
+eyedbuseradd: eyedb error: username 'john' is an unknown unix user.
+\end{verbatim}
+\normalsize
+\item adding a \ttv{strict unix user type} user named \ttv{john} (no password
+is asked):
+\verbsize
+\begin{verbatim}
+% eyedbuser -strict-unix add john
+\end{verbatim}
+\normalsize
+\ei
+\subsubsection{Deleting a User}
+To delete a user one can use either \ttv{eyedbadmin userdelete} \emph{args}
+or \ttv{eyedbuserdelete} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \emph{username}: the user name. This argument is mandatory.
+\ei
+\subsubsection{Listing Users}
+To list one or more users one can use either \ttv{eyedbadmin userlist} \emph{args}
+or \ttv{eyedbuserlist} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \emph{users}: if this optionnal argument is present, the program
+will list the designated users, otherwise all the users will be listed.
+\ei
+\subsubsection{Setting User Password}
+To change a user password one can use either \ttv{eyedbadmin userpasswd} \emph{args}
+or \ttv{eyedbuserpasswd} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \emph{username}: the user name. This argument is mandatory
+\item \emph{newpasswd}: the new password. If this argument is not given,
+the program will ask for a new password on the standard input.
+\ei
+\section{Access Control}
+Each \eyedb user has a set of authorized operations:
+system and database operations.
+A system (resp. database) operation is controled by a system access
+(resp. database):
+\be
+\item a system access control the authorization to perform one
+or more of the following system operations:
+\be
+\item create any database.
+\item add any user.
+\item delete any user.
+\item set the password of any user.
+\ee
+\item a database access control the authorization to perform one
+or more of the following operations on a given database:
+\be
+\item read from this database.
+\item write to this database.
+\item execute any method in this database.
+\item delete this database.
+\ee
+\ee
+Note that a system access is not tied to a particular database,
+while a database access is tied to a particular database.
+Here are the list of the authorized system operations according
+to the system access:
+\\
+\\
+\begin{tabular}{|p{4cm}|p{6cm}|}
+\hline {\bf System Access} & {\bf Authorized Operations} \\
+\hline \ttv{no} & no authorized system operation \\
+\hline \ttv{dbcreate} & can create a database \\
+\hline \ttv{adduser} & can add any user \\
+\hline \ttv{deleteuser} & can delete any user \\
+\hline \ttv{setuserpasswd} & can set the password of any user\\
+\hline \ttv{admin} & can create a database and add a user\\
+\hline \ttv{superuser} & all system accesses \\
+\hline
+\end{tabular}
+\\
+\\
+Here are the list of the authorized operations on a given
+database according to the database access:
+\\
+\\
+\begin{tabular}{|p{4cm}|p{6cm}|}
+\hline {\bf Database Access} & {\bf Authorized Operations} \\
+\hline \ttv{no} & no database access \\
+\hline \ttv{read} & have read access on a given database \\
+\hline \ttv{write} & have write access on a given database \\
+\hline \ttv{exec} & have execute access on a given database \\
+\hline \ttv{admin} & have read/write/execute access on a given database and
+can delete this database \\
+\hline
+\end{tabular}
+
+\subsection{Setting System Access}
+To set a system access to an \eyedb user,
+one can use either \ttv{eyedbadmin sysaccess}
+\emph{args}
+or \ttv{eyedbsysaccess} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \emph{username}: the user name. This argument is mandatory.
+\item \emph{sysaccess}: the system access. This argument is mandatory.
+It is a \ttv{+} combination of one or more of the following:
+\ttv{no},
+\ttv{dbcreate}, \ttv{adduser}, \ttv{deleteuser}, \ttv{setuserpasswd},
+\ttv{admin} or \ttv{superuser}.
+\ei
+{\bf Important note}: only an \eyedb that has all the system accesses
+(i.e. an \eyedb superuser) can set a system access for an \eyedb user.
+Remember that at the installation step, a superuser
+named \ttv{eyedbroot} has been created: so, you must connect the
+\eyedb server as \ttv{eyedbroot} to set a system access to an
+\eyedb user.
+For instance:
+\bi
+\item to set the \ttv{dbcreate} system access to the user \ttv{john}:
+\verbsize
+\begin{verbatim}
+% eyedbsysaccess john dbcreate -eyedbuser eyedbroot -eyedbpasswd eyedbroot
+\end{verbatim}
+\normalsize
+\item to set the \ttv{dbcreate} and \ttv{useradd}
+system access to the user \ttv{john}:
+\verbsize
+\begin{verbatim}
+% eyedbsysaccess john dbcreate+useradd -eyedbuser eyedbroot \
+                 -eyedbpasswd eyedbroot
+\end{verbatim}
+\normalsize
+\item to suppress all system access to the user \ttv{john}:
+\verbsize
+\begin{verbatim}
+% eyedbsysaccess john no -eyedbuser eyedbroot -eyedbpasswd eyedbroot
+\end{verbatim}
+\normalsize
+\item to create a new \eyedb superuser:
+\verbsize
+\begin{verbatim}
+% eyedbuseradd ROOT -eyedbuser eyedbroot -eyedbpasswd eyedbroot
+ROOT password:
+retype ROOT password:
+% eyedbsysaccess ROOT superuser -eyedbuser eyedbroot -eyedbpasswd eyedbroot
+\end{verbatim}
+\normalsize
+\ei
+
+\subsection{Setting Database Access}
+To set a database access to an \eyedb user,
+one can use either \ttv{eyedbadmin userdbaccess}
+\emph{args}
+or \ttv{eyedbuserdbaccess} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \emph{username}: the user name. This argument is mandatory.
+\item \emph{dbname}: the database name. This argument is mandatory.
+\item \emph{database access}: one of the following:
+\ttv{r, rw, rx, rwx, admin} or \ttv{no} where \ttv{r} means read,
+\ttv{w} means write and \ttv{x} means execute.
+\ei
+{\bf Important note}: only an \eyedb user that has the \ttv{admin} database
+access for a given database
+can set a database access on this database for an \eyedb user.
+At the database creation step, the creating \eyedb user has automatically
+the \ttv{admin} database access.
+For instance:
+\bi
+\item to set the \ttv{r} database access to the user \ttv{john}:
+\verbsize
+\begin{verbatim}
+% eyedbcreate foo
+% eyedbuserdbaccess john foo r
+\end{verbatim}
+\normalsize
+\item to suppress all database accesses to the user \ttv{john}:
+\verbsize
+\begin{verbatim}
+% eyedbuserdbaccess john foo no
+\end{verbatim}
+\normalsize
+\ei
+\subsection{Setting Default Database Access}
+To set a default database access for all \eyedb user,
+one can use either \ttv{eyedbadmin dbaccess}
+\emph{args}
+or \ttv{eyedbdbaccess} \emph{args}.
+The command line options for this operation are as follows:
+\bi
+\item \emph{dbname}: the database name. This argument is mandatory.
+\item \emph{database access}: one of the following:
+\ttv{r, rw, rx, rwx, admin} or \ttv{no} where \ttv{r} means read,
+\ttv{w} means write and \ttv{x} means execute.
+\ei
+{\bf Important note}: only an \eyedb user that has the \ttv{admin} database
+access for a given database
+can set a default database access for this database.
+At the database creation step, the creating \eyedb user has automatically
+the \ttv{admin} database access.
+For instance:
+\bi
+\item to set the \ttv{r} database access for all users:
+\verbsize
+\begin{verbatim}
+% eyedbcreate foo
+% eyedbdbaccess foo r
+\end{verbatim}
+\normalsize
+\ei
+
+\section{Storage Manager Level Administration}
+The storage manager level administration program, \ttv{eyedbdbadmin}
+allows for the following operations:
+\be
+\item information display: general information or statistics display.
+\item log management: display the log size, the log allocation table.
+Changes the log size or reformat the log.
+reformat the
+\item transaction management: display the transaction header or the
+transaction contents.
+\item mutex management: display the mutex state or reset any mutex.
+\item oid display: displaying all the oids, the count of oids or the
+invalid oids.
+\item volume management: adding, inserting, moving, resizing or
+suppress a volume file.
+\item object number management: change the maximum object number.
+\ee
+The general usage of \ttv{eyedbdbadmin} is as follows:
+\verbsize
+\begin{verbatim}
+usage: eyedbdbadmin <directive> <command> [arguments] <dbfile>
+
+where directive is `display' or `configure'
+
+ eyedbdbadmin display info <dbfile>
+ eyedbdbadmin display stats <dbfile>
+ eyedbdbadmin display transaction header [<server-pid>] <dbfile>
+ eyedbdbadmin display transaction [<server-pid>] <dbfile>
+ eyedbdbadmin display volume [<number>|<name>] <dbfile>
+ eyedbdbadmin display log map <dbfile>
+ eyedbdbadmin display log size <dbfile>
+ eyedbdbadmin display mutex <dbfile>
+ eyedbdbadmin display oid invalid <dbfile>
+ eyedbdbadmin display oid count <dbfile>
+ eyedbdbadmin display oid map <dbfile>
+ eyedbdbadmin display oid list <dbfile>
+ 
+ eyedbdbadmin configure volume add      <volname> <size (Kb)> <dbfile>
+ eyedbdbadmin configure volume insert   <pos> <volname> <size (Kb)> <dbfile>
+ eyedbdbadmin configure volume move     <volname> <newvolname> <dbfile>
+ eyedbdbadmin configure volume resize   <volname> <newsize (Kb)> <dbfile>
+ eyedbdbadmin configure volume suppress <volname> <dbfile>
+ eyedbdbadmin configure volumes compress <dbfile>
+ eyedbdbadmin configure log size        <newsize> <dbfile>
+ eyedbdbadmin configure log format <dbfile>
+ eyedbdbadmin configure object number <number> <dbfile>
+ eyedbdbadmin configure mutex unlock <dbfile>
+ eyedbdbadmin configure mutex reset <dbfile>
+\end{verbatim}
+\normalsize
+
+%\section{Trouble Shotting}
+%\be
+%\item any \eyedb client core dumped immediately,
+%\item the \eyedb server crashed at a given or at any database opening:
+%the client
+%displays \ttv{The EyeDB server has probably crashed or timed out}.
+%\item the client displays a message such as \ttv{storage manager error:
+%no space left on device} at a given database opening or at any database
+%opening,
+%\item a client freezes on a database opening.
+%\item the client displays a message such as \ttv{storage manager error:
+%no space left on device} during a long transaction.
+%\ee
+
+\end{document}

@@ -1,0 +1,117 @@
+\documentclass[dvips,10pt]{book}
+%\documentclass[dvips,10pt]{report}
+
+\usepackage{latexsym}
+%\usepackage{amstex}
+%\usepackage{amssymb}
+%\usepackage{amsfonts}
+\usepackage{amstext}
+\usepackage{amsbsy}
+\usepackage{amscd}
+\usepackage{makeidx}
+\usepackage{graphicx}
+%\usepackage{calc}
+\usepackage{longtable}
+
+% -- to reduce the margin pages --
+\topmargin 2pt
+\headsep 20pt
+\headheight 2pt
+
+%\textwidth 440pt
+%\textheight 690pt
+%\oddsidemargin 0pt
+%\evensidemargin 0pt
+
+% 19/01/06: EV
+\textwidth 490pt
+\textheight 700pt
+\oddsidemargin -20pt
+\evensidemargin -20pt
+
+% --------------------------------
+
+\makeindex
+
+\newcommand{\eyedb}{\textsc{EyeDB} }
+\newcommand{\eyedbX}{\textsc{EyeDB}}
+\newcommand{\sysra}{SYSRA}
+\newcommand{\indexentry}[2]{\item #1 #2}
+\newcommand{\chap}[1]{\chapter{#1} \index{#1}}
+\newcommand{\sect}[1]{\section{#1} \index{#1}}
+\newcommand{\subsect}[1]{\subsection{#1} \index{#1}}
+\newcommand{\subsubsect}[1]{\subsubsection{#1} \index{#1}}
+%% WARNING \Box does not work with latex2html
+%%\newcommand{\iii}{\item[{$\Box$}]}
+\newcommand{\rrr}{\item[{$\Box$}]}
+\newcommand{\iii}{\item}
+\newcommand{\jjj}{\item[-]}
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+\newcommand{\be}{\begin{enumerate}}
+\newcommand{\ee}{\end{enumerate}}
+\newcommand{\kkk}{\item[ ]}
+\newcommand{\sh}[1]{\bf #1}
+\newcommand{\ttt}{$\tilde{ }$}
+\newcommand{\ttv}[1]{\texttt{#1}}
+\newcommand{\ttu}[1]{{\verbsize\texttt{#1}}}
+\newcommand{\verbsizex}{\small}
+\newcommand{\verbsizey}{\fontsize{8}{\baselineskip}\selectfont}
+\newcommand{\verbsize}{\normalsize}
+\newcommand{\bugreport}{bug-report@eyedb.org }
+\newcommand{\idt}{\mbox{ } - }
+\newcommand{\ident}{{\bf \texttt{<}identifier\texttt{>}}}
+\newcommand{\grindent}{xxxxxxxxxxxxxxx \= : \kill}
+\newcommand{\arr}{\texttt{-$>$}}
+\newcommand{\ul}[1]{\underline{#1}}
+\newcommand{\uul}[1]{\textit{\texttt{#1}}}
+\newcommand{\ixx}{\makebox[3mm]{ }}
+\newcommand{\ixy}{\makebox[10mm]{ }}
+\newcommand{\ixz}{\\\ixy {- }}
+
+\renewcommand{\normalsize}{\fontsize{9}{11pt}\selectfont}
+
+%\renewcommand{\normalsize}{\fontsize{8}{10pt}\selectfont}
+
+%% The following commands comes from corbaref.tex
+
+\newcommand{\bt}{\begin{tabular}{|p{7cm}|p{7cm}|}}
+\newcommand{\et}{\hline \end{tabular} \\ {\vspace{0.6cm}} \\ }
+
+\newcommand{\mt}[1]{\hline \multicolumn{2}{|c|}{\centerline{{\bf interface #1}
+   \emph{mapped from} {\bf class #1}}}}
+
+\newcommand{\Desc}[1]{\hline \multicolumn{2}{|l|}{\emph{#1}}}
+
+\newcommand{\mTT}[2]{\hline \multicolumn{2}{|c|}
+   {\centerline{{\bf interface #1} \emph{extends} {\bf #2}
+   \emph{mapped from} {\bf #1}}}}
+
+
+\newcommand{\mT}[2]{\hline \multicolumn{2}{|c|}{\centerline{{\bf #1}
+\emph{mapped from} {\bf #1}}}}
+
+\newcommand{\att}{\hline \hline {\bf Attribute} & {\bf Description}}
+\newcommand{\mtt}{\hline \hline {\bf Method} & {\bf Description}}
+\newcommand{\mf}{\emph{mapped from }}
+
+\newcommand{\satt}[1]{\hline \multicolumn{2}{|c|}
+   {\centerline{\emph{attributes inherited from} {\bf #1}}}}
+
+\newcommand{\smtt}[1]{\hline \multicolumn{2}{|c|}{
+   \centerline{\emph{methods inherited from} {\bf #1}}}}
+
+\newcommand{\sets}[1]{sets the #1 \emph{value} in the Object \emph{o} at the \emph{ind}}
+
+\newcommand{\Gets}[1]{gets the #1 value in the Object \emph{o} at the \emph{ind}}
+
+%\setcounter{secnumdepth}{-1}
+%\addtocounter{secnumdepth}{2}
+
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\arabic{section}.\arabic{subsection}}
+\renewcommand{\thechapter}{}
+
+\begin{document}
+\normalsize
+

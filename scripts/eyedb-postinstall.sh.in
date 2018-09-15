@@ -1,0 +1,111 @@
+#!/bin/sh
+#
+# eyedb-postinstall.sh
+#
+#
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+sbindir=@sbindir@
+eyedb_databasedir=@eyedb_databasedir@
+eyedb_pipedir=@eyedb_pipedir@
+eyedb_tmpdir=@eyedb_tmpdir@
+
+PROGNAME=
+
+decrypt_options()
+{
+    for arg in $@
+    do
+      case $arg in
+	  \-help | \-h)
+          usage
+	  exit 0
+	  ;;
+	  --allow-root)
+	  ALLOW_ROOT_OPTION=--allow-root
+	  ;;
+	  *)
+          usage
+	  exit 2
+	  ;;
+      esac
+   done
+}
+
+usage()
+{
+    echo "$PROGNAME creates the EYEDBDBM system database."
+    echo
+    echo "This script must be run after installing EyeDB in a previously empty directory."
+    echo
+    echo "usage: $PROGNAME [OPTION]"
+    echo
+    echo "Options:"
+    echo "  -h, --help    Display this help and exit"
+    echo "  --allow-root  Allow running as root (not allowed by default)\n";
+    echo
+}
+
+ECHO()
+{
+    echo "$PROGNAME: $*"
+}
+
+create_directories() {
+    [ ! -d $eyedb_databasedir ] && mkdir -p $eyedb_databasedir
+    [ ! -d $eyedb_pipedir ] && mkdir -p $eyedb_pipedir
+    [ ! -d $eyedb_tmpdir ] && mkdir -p $eyedb_tmpdir
+    chmod a+w $eyedb_tmpdir
+}
+
+status_server()
+{
+    $sbindir/eyedbctl status
+}
+
+start_server()
+{
+    echo ==== Starting EyeDB server
+    $sbindir/eyedbctl start $ALLOW_ROOT_OPTION --creating-dbm --nod
+}
+
+create_dbm()
+{
+    echo ==== Creating EYEDBDBM database
+    $sbindir/eyedbinitdbm
+}
+
+stop_server()
+{
+    echo ==== Stopping EyeDB server
+    $sbindir/eyedbctl stop
+}
+
+clean_exit()
+{
+    SAVED_STATUS=$?
+    # Check if EyeDB is running, and stop it if running
+    if $sbindir/eyedbctl status > /dev/null 2>&1 ; then
+	$sbindir/eyedbctl stop
+    fi
+    exit $SAVED_STATUS
+}
+
+PROGNAME=`basename $0`
+decrypt_options $*
+
+set -e
+trap clean_exit 0
+
+create_directories
+
+start_server
+
+sleep 4
+
+create_dbm
+
+stop_server
+

@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd"
+[
+<!ENTITY eyedb "EyeDB">
+]
+>
+
+<book>
+  <title>EyeDB Installation Guide</title>
+
+  <chapter id="installing-eyedb">
+    <title>Installing &eyedb;</title>
+
+    <section id="types-of-installation">
+      <title>Different types of installation</title>
+
+      <para>
+	Two types of installation will be described:
+	<itemizedlist>
+	  <listitem><para>the <emphasis>single user</emphasis> installation, that will be used by a single user only, and is usefull for a first try, for testing, for debugging...</para></listitem>
+	  <listitem><para>the <emphasis>shared</emphasis> installation, that can be used by several user and that is the prefered installation for a production environment</para></listitem>
+	</itemizedlist>
+      </para>
+
+    </section>
+
+    <section id="single-user-installation">
+      <title>The single user installation</title>
+
+      <para>
+	This type of installation is the simplest one and does not require superuser rights; it can be done immediately after compiling &eyedb; and require no extra steps. However, it cannot support multiple users accessing EyeDb databases and automaticaly starting &eyedb; on machine boot is less easy to seup.
+      </para>
+
+      <para>
+	This installation is done by selecting, when configuring &eyedb;, a <emphasis>prefix</emphasis> directory where the user compiling &eyedb; has write permission, for instance:
+	<informalexample>
+	  <screen>
+	    <userinput>./configure --prefix=$HOME/eyedb</userinput>
+	  </screen>
+	</informalexample>
+      </para>
+
+      <section id="single-user-installation-install">
+	<title>Installing &eyedb;</title>
+
+	<para>
+	  After building, install &eyedb; by running <command>make install</command>. This will install the files in the directories specified when <link linkend="configuring-eyedb">configuring</link> &eyedb;.
+	</para>
+
+	<para>
+	  Installing requires having write permission in the specified directory.
+	</para>
+
+	<para>
+	  Uninstalling can be done by running <command>make uninstall</command>. Note that this command will not remove created directories.
+	</para>
+      </section>
+
+      <section id="single-user-installation-post-install">
+	<title>Post-installation setup</title>
+
+	<para>
+	  After installing &eyedb;, a post-installation setup script must be run <emphasis>once</emphasis>, to initialize the system. This script is located in subdirectory <filename class="directory">share/eyedb/tools</filename> under the <filename class="directory">prefix</filename> directory and is named <filename>eyedb-postinstall.sh</filename>.
+	</para>
+
+	<para>
+	  The script must be run under the user compiling &eyedb;, as in:
+	  <informalexample>
+	    <screen>
+	      <userinput>./eyedb-postinstall.sh</userinput>
+==== Starting EyeDB server
+Starting EyeDB Server
+Version      V2.8.8
+Compiled     Aug 13 2009 20:24:11
+Architecture x86_64-unknown-linux-gnu
+Program Pid  9388
+==== Creating EYEDBDBM database
+==== Stopping EyeDB server
+Killing EyeDB Server Pid 9388
+	    </screen>
+	  </informalexample>
+	</para>
+
+      </section>
+    </section>
+
+
+    <section id="shared-installation">
+      <title>The shared installation</title>
+
+      <para>
+	This type of installation requires more steps than the single user installation, requires superuser access to the installation host. However, it support multiple users accessing EyeDB databases and can start automaticaly &eyedb; on machine boot.
+      </para>
+
+      <section id="shared-installation-preliminary">
+	<title>Preliminary steps</title>
+
+	<para>
+	  The first step of the shared installation is to select, when configuring &eyedb;, a <emphasis>prefix</emphasis> directory, usually empty, whose ownership will be given to a special user. It is a good practice to select a filename ending with <filename>eyedb</filename>. For instance:
+	  <informalexample>
+	    <screen>
+	      <userinput>./configure --prefix=/opt/eyedb</userinput>
+	    </screen>
+	  </informalexample>
+	</para>
+
+	<para>
+	  The default prefix (<filename class="directory">/usr/local/eyedb</filename>) can perfectly be used.
+	</para>
+
+	<para>
+	  The second step is to create a special Unix user that will own the installation directory and who will be used to run the &eyedb; server. It is recommended that this user is a <emphasis>system</emphasis> user and has a disabled account that does not authorize to login. It is convenient to use 'eyedb' as user name.
+	</para>
+
+	<para>
+	  On Debian distributions, this can be done using the <command>adduser</command> command, as in:
+	  <informalexample>
+	    <screen>
+	      <userinput>adduser --system --group --no-create-home eyedb</userinput>
+Adding system user `eyedb' (UID 115) ...
+Adding new group `eyedb' (GID 129) ...
+Adding new user `eyedb' (UID 115) with group `eyedb' ...
+Not creating home directory `/home/eyedb'.
+	    </screen>
+	  </informalexample>
+	</para>
+
+	<para>
+	  After creating this Unix user, the third step is to create the installation directory and give it the right permissions:
+	  <informalexample>
+	    <screen>
+	      <userinput>mkdir /usr/local/eyedb</userinput>
+	      <userinput>chown eyedb.eyedb /usr/local/eyedb</userinput>
+	    </screen>
+	  </informalexample>
+	</para>
+
+      </section>
+
+      <section id="shared-installation-install">
+	<title>Installing &eyedb;</title>
+
+	<para>
+	  After building, install &eyedb; by running <command>make install</command>. This will install the files in the directories specified when <link linkend="configuring-eyedb">configuring</link> &eyedb; (here <filename class="directory">/usr/local/eyedb</filename>, the default prefix).
+	</para>
+
+	<para>
+	  Running <command>make install</command> <emphasis>must</emphasis> be done under the created Unix user. This can be done using for instance the <command>su</command> or <command>sudo</command> commands:
+	  <informalexample>
+	    <screen>
+	      <userinput>sudo -u eyedb make install</userinput>
+	    </screen>
+	  </informalexample>
+	</para>
+
+      </section>
+
+      <section id="shared-installation-post-install">
+	<title>Post-installation setup</title>
+
+	<para>
+	  After installing &eyedb;, a post-installation setup script must be run, as in the single user installation. This script is located in subdirectory <filename class="directory">share/eyedb/tools</filename> under the <filename class="directory">prefix</filename> directory and is named <filename>eyedb-postinstall.sh</filename>.
+	</para>
+
+	<para>
+	  Running this script <emphasis>must</emphasis> be done under the created Unix user, using for instance the <command>su</command> or <command>sudo</command> commands:
+	  <informalexample>
+	    <screen>
+	      <userinput>sudo -u eyedb /usr/local/eyedb/share/eyedb/tools/eyedb-postinstall.sh</userinput>
+==== Starting EyeDB server
+Starting EyeDB Server
+ Version      V2.8.8
+ Compiled     Aug 17 2009 16:40:17
+ Architecture x86_64-unknown-linux-gnu
+ Program Pid  31589
+==== Creating EYEDBDBM database
+==== Stopping EyeDB server
+Killing EyeDB Server Pid 31589
+	    </screen>
+	  </informalexample>
+	</para>
+
+	<para>
+	  The last step is to create &eyedb; users to perform standard &eyedb; tasks (creating databases, inserting and querying data...). Creating a &eyedb; user and assigning this user permissions must be done under the created Unix user, using for instance the <command>su</command> or <command>sudo</command> commands:
+	<informalexample>
+	  <screen>
+	    <userinput>sudo -u eyedb /usr/local/eyedb/sbin/eyedbctl start</userinput>
+Starting EyeDB Server
+ Version      V2.8.8
+ Compiled     Aug 17 2009 16:40:17
+ Architecture x86_64-unknown-linux-gnu
+ Program Pid  31727
+            <userinput>sudo -u eyedb /usr/local/eyedb/bin/eyedbadmin user add --strict-unix francois</userinput>
+	    <userinput>sudo -u eyedb /usr/local/eyedb/bin/eyedbadmin user sysaccess francois dbcreate</userinput>
+	    <userinput>/usr/local/eyedb/bin/eyedbadmin database create foo</userinput>
+	    <userinput>/usr/local/eyedb/bin/eyedbadmin database list foo</userinput>
+	  </screen>
+	</informalexample>
+	</para>
+
+	<para>
+	  Note that the last two commands are not run using <command>sudo</command>, as the created &eyedb; user (here 'francois') has permission to create &eyedb; databases.
+	</para>
+
+	<para>
+	  The final step is to allow, on Linux systems, &eyedb; to start automatically at boot time. A System-V init script is provided to start and stop &eyedb;; this script is located after installation in <filename>/usr/local/eyedb/share/eyedb/eyedb.rc</filename> (if prefix was <filename class="directory">/usr/local/eyedb</filename>). This script uses only LSB logging function and can therefore be used on any Linux distribution. The following steps are needed:
+	  <itemizedlist>
+	    <listitem><para>copy the given script to the init scripts directory (for instance <filename class="directory">/etc/init.d</filename>, but this may vary depending on your distribution)</para></listitem>
+	    <listitem><para>update the system init scripts configuration by making the appropriate links between the runlevel directories and the init script (this is usually done by a distribution specific command such as <command>update-rc.d</command> or <command>chkconfig</command></para></listitem>
+	  </itemizedlist>
+	</para>
+
+      </section>
+
+    </section>
+
+  </chapter>
+
+  <!--
+      ;;; Local Variables: ***
+      ;;; eval: (load-file "../docbook-common/emacs-macro") ***
+      ;;; End: ***
+  -->
+
+</book>

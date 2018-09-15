@@ -1,0 +1,90 @@
+
+//
+// person.oql
+//
+// EyeDB Object Database Management System
+//
+// Copyright (C) 1994-1999,2004,2005 SYSRA
+//
+
+//
+// insertion examples
+//
+
+function make_car(i, j) {
+  return new Car(brand : "brand" + string(i) + "_" + string(j),
+		 num : i + 1000);
+}
+
+function make_child(i, j, p) {
+  return new Person(name : "john" + string(i) + "_" + string(j),
+		    age  : i + 10,
+		    addr.street : p.addr.street,
+		    addr.town :  p.addr.town,
+		    addr.country : p.addr.country);
+}
+
+function make_person(i) {
+  p := new Person(name : "john" + string(i),
+		  age  : i + 10,
+		  addr.street : "street" + string(i),
+		  addr.town : "town" + string(i),
+		  addr.country : "country" + string(i),
+		  other_addrs[0].street : "other_street" + string(i),
+		  other_addrs[0].town : "other_town" + string(i),
+		  other_addrs[0].country : "other_country" + string(i));
+  for (j in 0 < 5)
+    add make_car(i, j) to p.cars;
+
+  for (j := 5; j < 20; j += 4)
+    p.children[j] := make_child(i, j, p);
+
+  return p;
+}
+
+function populate(count) {
+  for (x in 1 <= count) {
+    p := make_person(x);
+    p.spouse := make_person(x+count);
+  }
+}
+
+populate(10);
+
+//
+// query examples
+//
+
+select Person;
+//\print contents
+
+select Person.children.count != 0;
+//\print contents
+
+select Person.cars.count != 0;
+//\print contents
+
+select Person.children[?].name ~ "john3_17";
+
+(select Person.children[?].name ~ "john3_17").spouse;
+
+(select Person.children[?].name ~ "john3_17").spouse := null;
+
+select y.age from Person x, x.children[?] y where y.name = "john3_17";
+
+for (x in (select y from Person x, x.children[?] y where y.name = "john3_17"))
+  x.age++;
+
+select one Person;
+select one x from Person x;
+select one x.toString() from Person x;
+
+select class.name = "Person";
+\print all
+
+x := select one Person;
+x.toString();
+x.class.toString();
+x.getStringCTime();
+
+\commit

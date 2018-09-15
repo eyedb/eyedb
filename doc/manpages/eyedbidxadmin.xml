@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+  <!ENTITY eyedbidxadmin "<command>eyedbidxadmin</command>">
+]>
+
+<refentry id="eyedbidxadmin">
+  <refentryinfo>
+    <date>March 2007</date>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>eyedbidxadmin</refentrytitle>
+    <manvolnum>1</manvolnum>
+    <refmiscinfo>EyeDB database</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>&eyedbidxadmin;</refname>
+    <refpurpose>client for administering EyeDB databases</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      &eyedbidxadmin;
+      <arg choice="req"><replaceable>subcommand</replaceable></arg> 
+      <arg choice="opt"><replaceable>common-options</replaceable></arg> 
+      <arg choice="opt"><replaceable>subcommand-options</replaceable></arg> 
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <para>&eyedbidxadmin; is a client for performing administrative operations on EyeDB databases.</para>
+
+    <para>&eyedbidxadmin; accepts the following sub-commands:
+    <variablelist>
+
+      <varlistentry>
+	<term><command>create</command></term>
+	<listitem><para>See <command>eyedbidxcreate(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>delete</command></term>
+	<listitem><para>See <command>eyedbidxdelete(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>list</command></term>
+	<listitem><para>See <command>eyedbidxlist(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>stats</command></term>
+	<listitem><para>See <command>eyedbidxstats(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>update</command></term>
+	<listitem><para>See <command>eyedbidxupdate(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>simulate</command></term>
+	<listitem><para>See <command>eyedbidxsimulate(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command></command></term>
+	<listitem><para>See <command>(1)</command></para></listitem>
+      </varlistentry>
+
+    </variablelist>
+    </para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>Exit status</title>
+  </refsect1>
+
+  <refsect1>
+    <title>Examples</title>
+  </refsect1>
+
+  <refsect1>
+    <title>See also</title>
+  </refsect1>
+
+  <refsect1>
+    <title>Authors</title>
+  </refsect1>
+
+</refentry>

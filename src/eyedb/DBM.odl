@@ -1,0 +1,108 @@
+/* 
+   EyeDB Object Database Management System
+   Copyright (C) 1994-1999,2004,2005 SYSRA
+   
+   EyeDB is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+   
+   EyeDB is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+   
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA 
+*/
+
+/*
+   Author: Eric Viara <viara@sysra.com>
+*/
+
+//
+// DBM database schema description
+//
+
+enum system_access_mode [SysAccessMode] {
+  NO_SYSACCESS_MODE [NoSysAccessMode] = 0x000,
+  DB_CREATE_SYSACCESS_MODE [DBCreateSysAccessMode] = 0x100,
+  ADD_USER_SYSACCESS_MODE [AddUserSysAccessMode] = 0x200,
+  DELETE_USER_SYSACCESS_MODE [DeleteUserSysAccessMode] = 0x400,
+  SET_USER_PASSWD_SYSACCESS_MODE [SetUserPasswdSysAccessMode] = 0x800,
+  ADMIN_SYSACCESS_MODE [AdminSysAccessMode] = 0x300,
+  SUPERUSER_SYSACCESS_MODE [SuperUserSysAccessMode] = 0xFFF
+};
+
+enum database_access_mode [DBAccessMode] {
+  NO_DBACCESS_MODE [NoDBAccessMode] = 0x00,
+  READ_DBACCESS_MODE [ReadDBAccessMode] = 0x10,
+  WRITE_DBACCESS_MODE [WriteDBAccessMode] = 0x20,
+  EXEC_DBACCESS_MODE [ExecDBAccessMode] = 0x40,
+  READ_WRITE_DBACCESS_MODE [ReadWriteDBAccessMode] = 0x30,
+  READ_EXEC_DBACCESS_MODE [ReadExecDBAccessMode] = 0x50,
+  READ_WRITE_EXEC_DBACCESS_MODE [ReadWriteExecDBAccessMode] = 0x70,
+  ADMIN_DBACCESS_MODE [AdminDBAccessMode] = 0x71
+};
+
+enum user_type [UserType] {
+  EYEDB_USER [EyeDBUser] = 1,
+  UNIX_USER [UnixUser],
+  STRICT_UNIX_USER [StrictUnixUser]
+};
+
+class user_entry [UserEntry] {
+  string name;
+  string passwd;
+  int uid;
+  user_type #type;
+
+  constraint<unique> on name;
+  index on name;
+  index on uid;
+};
+
+class database_user_access [DBUserAccess] {
+  database_entry *dbentry;
+  user_entry *user;
+  database_access_mode mode;
+
+  index on dbentry;
+  index on user;
+};
+
+class system_user_access [SysUserAccess] {
+  user_entry *user;
+  system_access_mode mode;
+
+  index on user;
+};
+
+class database_entry [DBEntry] {
+  string dbname;
+  int dbid;
+  string dbfile;
+  database_access_mode default_access;
+  object *schm;
+  string comment;  
+  database_property *props[];
+
+  constraint<unique> on dbname;
+  index on dbname;
+  index on dbid;
+};
+
+class database_property_value [DBPropertyValue] {
+  int64 ival;
+  string sval;
+  byte bval[];
+  object *oval;
+};
+
+class database_property [DBProperty] {
+  string key;
+  database_property_value value;
+
+  index on key;
+};

@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+# eyedbjrun
+#
+# EyeDB package
+#
+# Eric Viara Copyright (c) SYSRA 1995-2001
+#
+
+if [ $# -lt 1 ]
+then
+  echo "usage: $0 CLASSNAME [ARGS...]"
+  exit 1
+fi
+
+class=$1
+shift
+
+OPTIONS=""
+EYEDB_HOST=`eyedbgetenv host`
+if [ "x$EYEDB_HOST" != "x" ] ; then OPTIONS="$OPTIONS --host=$EYEDB_HOST" ; fi
+
+EYEDB_PORT=`eyedbgetenv tcp_port`
+if [ "x$EYEDB_PORT" != "x" ] ; then OPTIONS="$OPTIONS --port=$EYEDB_PORT" ; fi
+
+EYEDB_DBM=`eyedbgetenv dbm`
+if [ "x$EYEDB_DBM" != "x" ] ; then OPTIONS="$OPTIONS --dbm=$EYEDB_DBM" ; fi
+
+EYEDB_USER=`eyedbgetenv --expand-user user`
+if [ "x$EYEDB_USER" != "x" ] ; then OPTIONS="$OPTIONS --user=$EYEDB_USER" ; fi
+
+EYEDB_PASSWD=`eyedbgetenv passwd`
+if [ "x$EYEDB_PASSWD" != "x" ] ; then OPTIONS="$OPTIONS --passwd=$EYEDB_PASSWD" ; fi
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+EYEDB_CLASSPATH=@libdir@/eyedb/java/eyedb.jar
+
+CLASSPATH=$CLASSPATH:$EYEDB_CLASSPATH @JAVA@ $class $OPTIONS "$@"

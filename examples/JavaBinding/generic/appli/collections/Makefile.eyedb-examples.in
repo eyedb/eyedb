@@ -1,0 +1,10 @@
+prefix=@prefix@
+include @datadir@/@PACKAGE@/Makefile.eyedb
+
+all: Collections.class
+
+Collections.class: Collections.java
+	CLASSPATH=$(EYEDB_CLASSPATH):. @JAVAC@ $^
+
+clean:
+	rm -f *.class

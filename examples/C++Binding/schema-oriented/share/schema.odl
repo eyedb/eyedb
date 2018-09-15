@@ -1,0 +1,46 @@
+
+//
+// person.odl
+//
+// EyeDB Package
+//
+// Eric Viara Copyright (c) SYSRA 2001
+//
+
+enum CivilState {
+  Lady = 0x10,
+  Sir  = 0x20,
+  Miss = 0x40
+};
+
+class Address {
+  attribute string street;
+  attribute string<32> town;
+  attribute string country;
+
+  index on street;
+};
+
+class Person {
+  attribute string name;
+  attribute int age;
+  attribute Address addr;
+  attribute Address other_addrs[];
+  attribute CivilState cstate;
+  attribute Person * spouse inverse Person::spouse;
+  attribute set<Car *> cars inverse owner;
+  attribute array<Person *> children;
+  int change_address(in string street, in string town,
+                     out string oldstreet, out string oldtown);
+  index on  name;
+};
+
+class Car {
+  attribute string brand;
+  attribute int num;
+  Person *owner inverse cars;
+};
+
+class Employee extends Person {
+  attribute long salary;
+};

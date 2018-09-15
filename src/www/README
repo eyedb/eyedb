@@ -1,0 +1,119 @@
+
+EYEDB Web Browser Installation and Configuration Procedure
+----------------------------------------------------------
+
+We assume that the EyeDB System is correctly installed on your computer.
+
+First of all, you have to configure your httpd server and the EyeDB WWW
+package.
+
+You have to choose :
+
+- a root directory for the EyeDB WWW package
+  (for instance /usr/local/eyedb/www).
+
+- a port for your http server
+  (for instance 8092, so you can use the http server for local test).
+
+- a communication port for the EyeDB WWW daemon
+  (for instance 10000).
+
+Let `marcello' be your hostname.
+Let `/usr/local/apache' be the http apache directory.
+
+HTTP CONFIGURATION
+------------------
+
+For instance, if you use the HTTP APACHE server, you must edit the
+following configuration files:
+
+---- the file conf/http.conf (may be called httpd.conf) -----
+
+Port 8092
+
+ServerRoot /usr/local/apache
+
+---- conf/srm.conf file -----
+Note: on new version of apache, there is no more srm.conf file. So the following lines
+must be set in httpd.conf
+
+DocumentRoot /usr/local/apache/htdocs
+
+ScriptAlias /eyedb/cgi-bin/ /usr/local/eyedb/www/cgi-bin/
+Alias       /eyedb/         /usr/local/eyedb/www/
+
+(MIND : you must put the ScriptAlias directive before the Alias directive
+        because of the precedence of the Alias extensions.)
+
+
+
+EyeDB WWW CONFIGURATION
+-----------------------
+
+You must now configure the EyeDB WWW files:
+
+---- the files /usr/local/eyedb/www/browser.html and 
+     /usr/local/eyedb/www/cbrowser.html ------
+
+replace the line:
+
+<form method=POST ACTION="http://HOSTNAME:PORT/eyedb/cgi-bin/eyedbcgi.sh?-dbdlggen">
+
+by:
+
+<form method=POST ACTION="http://marcello:8092/eyedb/cgi-bin/eyedbcgi.sh?-dbdlggen">
+
+
+--- the file /usr/local/eyedb/www/cgi-bin/eyedbcgi.sh ----
+
+# HOST   : the host on which the eyedbwwwd server is running.
+# PORT   : the main port on which the eyedbwwwd server is listening.
+# ALIAS  : the http alias for the cgi-bin script, for instance:
+#          www.xxx.com/eyedb
+# CGIDIR : the relative path of the directory of this cgi shell script
+#          (default is cgi-bin)
+
+edit the following lines as follows (according to our example):
+
+PORT=10000
+HOST=marcello
+ALIAS=marcello:8092/eyedb
+CGIDIR=cgi-bin
+
+--- the environment variable EYEDBCGI ---
+
+If you want to use the EyeDB browser with eyedboql, you must set
+the environment variable EYEDBCGI to the following value (for our
+example):
+
+For bourne shells:
+EYEDBCGI=http://marcello:8092/eyedb
+export EYEDBCGI
+
+For C-shells:
+setenv EYEDBCGI http://marcello:8092/eyedb
+
+RUNNING THE SERVICE
+-------------------
+
+(1) run the httpd daemon, for instance:
+
+   httpd -f /usr/local/apache/conf/httpd.conf
+
+(2) run the eyedbwwwd daemon as follows:
+
+    eyedbwwwd -sv_port 10000 &
+
+    (the eyedb server must run before)
+
+
+TESTING THE BROWSER
+-------------------
+
+Under your WEB browser, try the url:
+
+http://marcello:8092/eyedb/
+
+The EyeDB WWW root page should appear...
+
+Then follow the instructions on this page.

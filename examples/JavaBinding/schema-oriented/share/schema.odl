@@ -1,0 +1,67 @@
+
+//
+// person.odl
+//
+// EyeDB Package
+//
+// Copyright (c) SYSRA Informatique 1995-1998
+// Eric Viara
+// Francois Dechelle
+
+enum CivilState {
+  Lady = 0x10,
+  Sir  = 0x20,
+  Miss = 0x40
+};
+
+class Address {
+  attribute int num;
+  attribute string street;
+  attribute string<32> town;
+  attribute string country;
+
+  index on street;
+};
+
+class Person {
+  attribute string firstname;
+  attribute string lastname;
+  attribute int age;
+  attribute Address addr;
+  attribute Address other_addrs[];
+  attribute CivilState cstate;
+  relationship Person * spouse inverse Person::spouse;
+  relationship set<Car *> cars inverse Car::owner;
+  attribute array<Person *> children;
+
+  index on firstname;
+  index on lastname;
+  index on age;
+
+  %Java{
+   public Person(org.eyedb.Database db, String firstname, String lastname, int age) throws org.eyedb.Exception {
+      this(db);
+
+      setFirstname(firstname); 
+      setLastname(lastname); 
+      setAge(age);
+   }
+
+   public void checkName() throws org.eyedb.Exception {
+	if (getFirstname().length() > 20)
+		setFirstname("***bad***name***");
+	if (getLastname().length() > 20)
+		setLastname("***bad***name***");
+   }
+  %}
+};
+
+class Car {
+  attribute string mark;
+  attribute int num;
+  relationship Person *owner inverse Person::cars;
+};
+
+class Employee extends Person {
+  attribute long salary;
+};

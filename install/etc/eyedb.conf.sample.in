@@ -1,0 +1,19 @@
+# EyeDB client configuration file
+# 
+# This file is a template that you can use to override the default values.
+
+# Unix socket filename for Unix socket connection
+#port = @eyedb_pipedir@/eyedbd;
+
+# TCP port number for TCP socket connection
+#tcp_port = 6240;
+
+# Hostname for TCP socket connection
+#host = localhost;
+
+# Default EyeDB user
+#user = @;
+
+# EYEDBDBM Database
+#dbm = default;
+

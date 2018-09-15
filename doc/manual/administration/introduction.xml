@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd"
+[
+<!ENTITY eyedb "EyeDB">
+<!ENTITY eyedbadmin "<command>eyedbadmin</command>">
+]
+>
+
+<book>
+  <title>EyeDB Administration Guide</title>
+
+  <chapter id="introduction">
+    <title>Introduction</title>
+
+    <section>
+      <title>Administration of the &eyedb; object database management system</title>
+
+      <para>
+	As for every database management system, using &eyedb; implies some administration operations, ranging from the simplest ones, such as creating or deleting a database, to the most advanced, such as managing objects and indexes locations for improved performances.
+      </para>
+
+      <para>
+	This manual describes in details all &eyedb; administration operations and include the following topics:
+	<itemizedlist>
+	  <listitem><para>server administration: how to start and stop the server, get its status, configure it...</para></listitem>
+	  <listitem><para>database administration: creating and deleting databases, renaming, moving, exporting databases...</para></listitem>
+	  <listitem><para>user administration: adding and deleting users, managing user rights...</para></listitem>
+	  <listitem><para>advanded database administration: managing data partitionning</para></listitem>
+	  <listitem><para>database tuning: how to create large databases, managing indexes, collections and data locations for better performance</para></listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	This manual is directed to a large audience, ranging from regular users experimenting with &eyedb; to database administrators managing large databases. The first three chapters (server, database and user administration) are usefull for every &eyedb; users; the last two chapters (advanced administration and tuning) are directed to advanced &eyedb; users who want to understand in-depth databases organisation and tune their &eyedb; installation for large databases and increased performances.
+      </para>
+
+      <para>
+	Most of the &eyedb; administration operations are performed using the &eyedbadmin; command. This command will be described briefly in the next section.
+      </para>
+
+    </section>
+
+    <section>
+      <title>The &eyedbadmin; command</title>
+
+      <para>
+	The &eyedbadmin; command is used for most of the &eyedb; administration operations. It is installed in <filename class="directory">/usr/bin</filename> for standard &eyedb; installations.
+      </para>
+
+      <section id="eyedbadmin-command-syntax">
+	<title>&eyedbadmin; command syntax</title>
+
+	<para>
+	  The &eyedbadmin; command has the following syntax:
+	  <cmdsynopsis>
+	    &eyedbadmin;<arg choice="plain"><replaceable>topic</replaceable></arg><arg choice="plain"><replaceable>command</replaceable></arg><arg choice="plain" rep="repeat">options</arg>
+	  </cmdsynopsis>
+	  where <cmdsynopsis><arg choice="plain"><replaceable>topic</replaceable></arg></cmdsynopsis> is one of the subsystem adressed by the command (database, user, index...) 
+	  and <cmdsynopsis><arg choice="plain"><replaceable>command</replaceable></arg></cmdsynopsis> is the command relative to this subsystem.
+	</para>
+
+	<para>
+	  Help on the &eyedbadmin; command can be obtained with the <command>help</command> command for general help (<xref linkend="eyedbadmin-help"/>) or <command><replaceable>topic</replaceable> help</command> (<xref linkend="eyedbadmin-help-topic"/>):
+	</para>
+
+	<example id="eyedbadmin-help">
+	  <title>&eyedbadmin; help</title>
+	  <screen><userinput>eyedbadmin help</userinput>
+eyedbadmin usage:
+  eyedbadmin --help
+  eyedbadmin --help-eyedb-options
+  eyedbadmin TOPIC --help
+  eyedbadmin TOPIC COMMAND --help
+  eyedbadmin TOPIC COMMAND OPTIONS
+
+where TOPIC is one of the following:
+  database | db
+  datafile | dtf
+  dataspace | dsp
+  user | usr
+  index | idx	
+	  </screen>
+	</example>
+
+	<example id="eyedbadmin-help-topic">
+	  <title>&eyedbadmin; help on topic</title>
+	  <screen><userinput>eyedbadmin database help</userinput>
+eyedbadmin database usage:
+
+  eyedbadmin database --help
+  eyedbadmin database COMMAND OPTIONS
+
+where COMMAND is one of the following:
+  create
+  delete
+  list
+  move
+  copy
+  rename
+  defaccess
+  export
+  import
+  setobjcount
+  getobjcount
+  setlogsize
+  getlogsize
+</screen>
+	</example>
+      </section>
+
+      <section>
+	<title>&eyedbadmin; standard options</title>
+
+	<para>
+	  &eyedbadmin; accepts a list of options shared by all the topics, described in <xref linkend="eyedbadmin-help-options"/>.
+	</para>
+
+	<example id="eyedbadmin-help-options">
+	  <title>&eyedbadmin; help on topic</title>
+	  <screen><userinput>eyedbadmin --help-eyedb-options</userinput>
+Common Options:
+  -U USER|@, --user=USER|@          User name
+  -P [PASSWD], --passwd[=PASSWD]    Password
+  --host=HOST                       eyedbd host
+  --port=PORT                       eyedbd port
+  --inet                            Use the tcp_port variable if port is not set
+  --dbm=DBMFILE                     EYEDBDBM database file
+  --conf=CONFFILE                   Client Configuration file
+  --server-conf=CONFFILE            Server Configuration file (used for local opening)
+  --default-file-mask=MASK          Default file mask
+  --default-file-group=GROUP        Default file group
+  --maximum-server-memory-size=SIZE Maximum server memory size (in Mb)
+  --logdev=LOGFILE                  Output log file
+  --logmask=MASK                    Output log mask
+  --logdate=on|off                  Control date display in output log
+  --logtimer=on|off                 Control timer display in output log
+  --logpid=on|off                   Control pid display in output log
+  --logprog=on|off                  Control progname display in output log
+  --error-policy=VALUE              Control error policy: status|exception|abort|stop|echo
+  --trans-def-mag=MAGORDER          Default transaction magnitude order
+  --arch                            Display the client architecture
+  -v, --version                     Display the version
+  --help-logmask                    Display logmask usage
+  --help-eyedb-options              Display this message
+	  </screen>
+	</example>
+
+	<para>
+	  The following options are the most usefull:
+	  <itemizedlist>
+	    <listitem><para><cmdsynopsis><arg choice="plain">--user=<replaceable>user</replaceable></arg></cmdsynopsis>: specifies the user name for &eyedb; authentication; if user is "@", then the Unix user name is used</para></listitem>
+	    <listitem><para><cmdsynopsis><arg choice="plain">--passwd=<replaceable>passwd</replaceable></arg></cmdsynopsis>: specifies the user password for &eyedb; authentication</para></listitem>
+	    <listitem><para><cmdsynopsis><arg choice="plain">--host=<replaceable>host</replaceable></arg></cmdsynopsis>: specifies the host name of the machine running the &eyedb; server</para></listitem>
+	    <listitem><para><cmdsynopsis><arg choice="plain">--port=<replaceable>port</replaceable></arg></cmdsynopsis>: specifies the TCP port number for a TCP connection to the &eyedb; server</para></listitem>
+	  </itemizedlist>
+	</para>
+
+      </section>
+
+      <section>
+	<title>&eyedbadmin; shortcuts</title>
+
+	<para>
+	  A set of shortcuts have been defined for &eyedbadmin; most used topics and subcommands. These shortcuts are symbolic links, created at installation time and located in binaries installation directories. Shorcuts can be used as any shell command and accept the same arguments and options as their &eyedbadmin; equivalents.
+	</para>
+
+	<para>
+	  The list of &eyedbadmin; shortcuts is the following:
+
+	<table id="eyedbadmin-shortcuts">
+	  <title>
+	    List of &eyedbadmin; shortcuts
+	  </title>
+	  <tgroup cols="2">
+	    <thead>
+	      <row>
+		<entry>
+		  Shortcut
+		</entry>
+		<entry>
+		  &eyedbadmin; equivalent
+		</entry>
+	      </row>
+	    </thead>
+	    <tbody>
+	      <row>
+		<entry>
+		  eyedb_dbcreate
+		</entry>
+		<entry>
+		  eyedbadmin database create
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_dbdelete
+		</entry>
+		<entry>
+		  eyedbadmin database delete
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_dblist
+		</entry>
+		<entry>
+		  eyedbadmin database list
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_dbrename
+		</entry>
+		<entry>
+		  eyedbadmin database rename
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_dbexport
+		</entry>
+		<entry>
+		  eyedbadmin database export
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_dbimport
+		</entry>
+		<entry>
+		  eyedbadmin database import
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_dtfcreate
+		</entry>
+		<entry>
+		  eyedbadmin datafile create
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_dtfdelete
+		</entry>
+		<entry>
+		  eyedbadmin datafile delete
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_dtflist
+		</entry>
+		<entry>
+		  eyedbadmin datafile list
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_dspcreate
+		</entry>
+		<entry>
+		  eyedbadmin dataspace create
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_dspdelete
+		</entry>
+		<entry>
+		  eyedbadmin dataspace delete
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_dsplist
+		</entry>
+		<entry>
+		  eyedbadmin dataspace list
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_useradd
+		</entry>
+		<entry>
+		  eyedbadmin user add
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_userdelete
+		</entry>
+		<entry>
+		  eyedbadmin user delete
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_userlist
+		</entry>
+		<entry>
+		  eyedbadminuser list
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  eyedb_userpasswd 
+		</entry>
+		<entry>
+		  eyedbadmin user passwd 
+		</entry>
+	      </row>
+	    </tbody>
+	  </tgroup>
+	</table>
+	</para>
+
+      </section>
+
+    </section>
+
+  </chapter>
+
+<!--
+;;; Local Variables: ***
+;;; eval: (load-file "../docbook-common/emacs-macro") ***
+;;; End: ***
+-->
+
+</book>

@@ -1,0 +1,32 @@
+
+//
+// person.odl
+//
+// EyeDB Package
+//
+// Eric Viara Copyright (c) SYSRA 2001-2006
+//
+
+class Address {
+  int num;
+  string street;
+  string town;
+  string country;
+};
+
+class Person {
+  string firstname;
+  string lastname;
+  int age;
+  Address addr;
+  Person * spouse inverse Person::spouse;
+  set<Person *> children;
+
+  index on firstname;
+  index on lastname;
+  index on age;
+};
+
+class Employee extends Person {
+  long salary;
+};

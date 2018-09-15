@@ -1,0 +1,707 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd"
+[
+<!ENTITY eyedb "EyeDB">
+<!ENTITY eyedbadmin "<command>eyedbadmin</command>">
+]
+>
+
+<book>
+  <title>EyeDB Administration Guide</title>
+
+  <chapter id="database-tuning">
+    <title>Database tuning</title>
+
+    <para>
+      This chapter explains how to tune &eyedb; to improve performance, either system response time or databases size.
+    </para>
+
+    <para>
+      The first section describes how to build multi-volumes databases
+      that can contain hundred of terabytes of data. The two following
+      sections explains how to manage indexes and collections to improve
+      system response time. The last section describes how to specify a
+      location (i.e. a dataspace) for &eyedb; entities such as class
+      instances, collections...
+    </para>
+
+    <section>
+      <title>Creating large databases</title>
+
+      <para>
+	Creating large databases (i.e. larger than a terabyte) requires partitionning the database between several volumes, either physical disks or partitions of a disk. &eyedb; supports multi-volumes databases using datafiles (see <xref linkend="managing-datafiles"/>) and dataspaces (see <xref linkend="managing-dataspaces"/>).
+      </para>
+
+      <section>
+	<title>Databases limits</title>
+	
+	<para>
+	</para>
+
+      </section>
+
+      <section>
+	<title>Tuning the host system</title>
+
+	<para>
+	  An important notice is that the host system imposes to the processes running on it some resource limits, in particular on process memory size and process virtual memory size. As &eyedb; file access relies heavily on virtual memory and file mapping, it is mandatory to either unset these limits or set them to a high value.
+	</para>
+
+	<para>
+	  On Linux, the resource limits can be retrieved and set using functions <function>getrlimit</function> and <function>setrlimit</function>, that can be used from a C or C++ program. For a further description of these functions, consult the <citerefentry><refentrytitle>getrlimit</refentrytitle><manvolnum>2</manvolnum></citerefentry> and <citerefentry><refentrytitle>setrlimit</refentrytitle><manvolnum>2</manvolnum></citerefentry> manual pages.
+	</para>
+
+	<para>
+	  When using command line tools, an easy way to retrieve and set resource limits is to use the bash <command>ulimit</command> command. For a further description of this command, consult the <citerefentry><refentrytitle>bash</refentrytitle><manvolnum>1</manvolnum></citerefentry> manual page.
+	</para>
+
+	<para>
+	  The two mandatory resource limits that must be set are:
+	  <itemizedlist>
+	    <listitem><para>the maximum memory size, which can be retrieved using command <command>ulimit -m</command> </para></listitem>
+	    <listitem><para>the maximum virtual memory size, which can be retrieved using command <command>ulimit -v</command></para></listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="ulimit">
+	  <title>Retrieving and setting resource limits using <command>ulimit</command></title>
+	  <screen>
+<userinput>ulimit -m</userinput>
+1024
+<userinput>ulimit -m unlimited</userinput>
+<userinput>ulimit -m</userinput>
+unlimited
+<userinput>ulimit -v</userinput>
+8192
+<userinput>ulimit -v unlimited</userinput>
+<userinput>ulimit -v</userinput>
+unlimited
+	  </screen>
+	</example>
+
+      </section>
+      
+      <section>
+	<title>Creating multi-volumes databases using datafiles and dataspaces</title>
+
+	<para>
+	</para>
+
+      </section>
+
+    </section>
+
+    <section>
+      <title>Managing indexes</title>
+
+      <para>
+	As a relational database management system does, &eyedb; provides indexes to improve drastically the time needed to retrieve an objet in a database and to improve therefore the performances of queries.
+      </para>
+
+      <para>
+	&eyedb; supports two types of indexes, hash and b-trees. 
+      </para>
+
+      <para>
+	As the description of indexes management needs that the database has a <emphasis>schema</emphasis>, the ODL database schema given in <xref linkend="eyedbadmin-index-odl-example"/> will be used in the index administration commands examples.
+      </para>
+
+      <example id="eyedbadmin-index-odl-example">
+	<title>The ODL database schema</title>
+	<programlisting><![CDATA[
+class Address {
+  attribute int number;
+  attribute string street;
+  attribute string town;
+  attribute int code;
+};
+
+class Person {
+  attribute string firstName;
+  attribute string lastName;
+  attribute int age;
+  attribute Address addr;
+};
+]]></programlisting>
+      </example>
+
+      <example id="eyedbadmin-index-odl">
+	<title>Indexes: updating the schema</title>
+	<screen>
+<userinput>eyedbadmin database create test_index</userinput>
+<userinput>eyedbodl -u -d test_index test_index.odl</userinput>
+Updating 'test' schema in database test...
+Adding class Address
+Adding class Person
+
+Done
+	</screen>
+      </example>
+
+      <section>
+	<title>Creating and deleting indexes</title>
+
+	<para>
+	  Creating an index is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>index create</command>
+	    <arg choice="opt">options</arg>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>attribute_path</replaceable></arg>
+	    <arg choice="opt"><replaceable>hints</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Options are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--propagate=<group><arg choice="plain">on</arg><arg choice="plain">off</arg></group></arg>
+		</cmdsynopsis>
+		propagation mode
+	      </para>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--type=<replaceable>type</replaceable></arg>
+		</cmdsynopsis>
+		index type (supported types are: hash, btree)
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>attribute_path</replaceable></arg>
+		</cmdsynopsis>
+		the path of the attribute on which the index is to be created
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>hints</replaceable></arg>
+		</cmdsynopsis>
+		index hints, i.e. index configuration values that are implementation specific
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  An attribute path is an expression built using the <emphasis>.</emphasis> (dot) operator and class names or attribute names.
+	</para>
+	
+	<example id="eyedbadmin-index-paths">
+	  <title>Examples of attribute paths</title>
+      <programlisting><![CDATA[
+Person.firstName
+Person.age
+Address.number
+Person.addr.town
+]]></programlisting>
+	</example>
+
+	<example id="eyedbadmin-index-create">
+	  <title>&eyedbadmin; index create</title>
+	  <screen>
+<userinput>eyedbadmin index create test_index Person.age</userinput>
+Creating btree index on Person.age
+<userinput>eyedbadmin index create test_index Person.addr.town</userinput>
+Creating hash index on Person.addr.town
+<userinput>eyedbadmin index create test_index Person.addr.number</userinput>
+Creating btree index on Person.addr.number
+<userinput>eyedbadmin index create --type=hash test_index Person.addr.code</userinput>
+Creating hash index on Person.addr.code
+	  </screen>
+	</example>
+
+	<para>
+	  Deleting an index is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>index delete</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>attribute_path</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>attribute_path</replaceable></arg>
+		</cmdsynopsis>
+		the path of the attribute on which the index is to be created
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-index-delete">
+	  <title>&eyedbadmin; index delete</title>
+	  <screen>
+<userinput>eyedbadmin index delete test_index Person.addr.number</userinput>
+Deleting index Person.addr.number
+<userinput>eyedbadmin index delete test_index Person.addr.street</userinput>
+eyedbadmin: index 'Person.addr.street' not found
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Listing, updating and moving indexes</title>
+
+	<para>
+	  Listing indexes is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>index list</command>
+	    <arg choice="opt">options</arg>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="opt"><group><arg choice="req"><replaceable>attribute_path</replaceable></arg><arg choice="req"><replaceable>class_name</replaceable></arg></group></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="opt"><group><arg choice="req"><replaceable>attribute_path</replaceable></arg><arg choice="req"><replaceable>class_name</replaceable></arg></group></arg>
+		</cmdsynopsis>
+		the index to be listed, specified either as an attribute path or as a class name
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-index-list">
+	  <title>&eyedbadmin; index list</title>
+	  <screen>
+<userinput>eyedbadmin index list test_index</userinput>
+btree index on Person.age
+hash index on Person.addr.town
+hash index on Person.addr.code
+<userinput>eyedbadmin index list test_index Person</userinput>
+btree index on Person.age
+hash index on Person.addr.town
+hash index on Person.addr.code
+<userinput>eyedbadmin index list test_index Person.age</userinput>
+btree index on Person.age
+	  </screen>
+	</example>
+
+
+      </section>
+
+      <section>
+	<title>Getting statistics on indexes</title>
+
+	<para>
+	  Getting statistics on indexes is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>index stats</command>
+	    <arg choice="opt">options</arg>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="opt"><group><arg choice="req"><replaceable>attribute_path</replaceable></arg><arg choice="req"><replaceable>class_name</replaceable></arg></group></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="opt"><group><arg choice="req"><replaceable>attribute_path</replaceable></arg><arg choice="req"><replaceable>class_name</replaceable></arg></group></arg>
+		</cmdsynopsis>
+		the index on which to print statistics, specified either as an attribute path or as a class name
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Options are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--full</arg>
+		</cmdsynopsis>
+		displays all index entries statistics
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--format=<replaceable>format</replaceable></arg>
+		</cmdsynopsis>
+		statistics format; <replaceable>format</replaceable> is a printf-like string where:
+		<itemizedlist>
+		  <listitem><para>%n denotes the number of keys</para></listitem>
+		  <listitem><para>%O denotes the count of object entries for this key</para></listitem>
+		  <listitem><para>%o denotes the count of hash objects for this key</para></listitem>
+		  <listitem><para>%s denotes the size of hash objects for this key</para></listitem>
+		  <listitem><para>%b denotes the busy size of hash objects for this key</para></listitem>
+		  <listitem><para>%f denotes the free size of hash objects for this key</para></listitem>
+		</itemizedlist>
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-index-stats">
+	  <title>&eyedbadmin; index statistics</title>
+	  <screen>
+<userinput>eyedbadmin index stats --full test_index</userinput>
+    Total hash object count: 1
+    Total hash object size: 98376B, ~96KB
+    Total hash object busy size: 0B
+    Total hash object free size: 98376B, ~96KB
+    Busy entry count: 0
+    Free entry count: 4096
+...
+<userinput>eyedbadmin index stats '--format=%n %O\n' test_index Person.addr.code</userinput>
+4090 0
+4091 0
+4092 0
+4093 0
+4094 0
+4095 0
+...
+<userinput>eyedbadmin index stats '--format=%n -> %O, %o, %s\n' test_index Person.addr.town</userinput>
+4090 -> 0, 0, 0
+4091 -> 0, 0, 0
+4092 -> 0, 0, 0
+4093 -> 0, 0, 0
+4094 -> 0, 0, 0
+4095 -> 0, 0, 0
+...
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Getting and setting index default dataspace</title>
+
+	<para>
+	  An index has a <emphasis>default dataspace</emphasis> (see <xref linkend="database-advanced"/>). This default dataspace determines in which dataspace index data will be inserted when index is updated, for instance when objects are inserted into the database.
+	</para>
+
+	<para>
+	   Getting index default dataspace is done using command <command>eyedbadmin index getdefdsp</command>:
+	  <cmdsynopsis>
+	    <command>eyedbadmin index getdefdsp</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><group><arg choice="req"><replaceable>attribute_path</replaceable></arg><arg choice="req"><replaceable>class_name</replaceable></arg></group></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="opt"><group><arg choice="req"><replaceable>attribute_path</replaceable></arg><arg choice="req"><replaceable>class_name</replaceable></arg></group></arg>
+		</cmdsynopsis>
+		the index on which to print statistics, specified either as an attribute path or as a class name
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	   Setting index default dataspace is done using command <command>eyedbadmin index setdefdsp</command>:
+	  <cmdsynopsis>
+	    <command>eyedbadmin index setdefdsp</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="opt"><group><arg choice="req"><replaceable>attribute_path</replaceable></arg><arg choice="req"><replaceable>class_name</replaceable></arg></group></arg>
+	    <arg choice="req"><replaceable>dataspace</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="opt"><group><arg choice="req"><replaceable>attribute_path</replaceable></arg><arg choice="req"><replaceable>class_name</replaceable></arg></group></arg>
+		</cmdsynopsis>
+		the index on which to print statistics, specified either as an attribute path or as a class name
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>dataspace</replaceable></arg>
+		</cmdsynopsis>
+		the name of the dataspace to be created
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+
+	<example id="eyedbadmin-index-getdefdsp-setdefdsp">
+	  <title>&eyedbadmin; index getdefdsp/setdefdsp</title>
+	  <screen>
+# get default dataspace for index on Person.age
+<userinput>eyedbadmin index getdefdsp test_index Person.age</userinput>
+Default dataspace for index 'Person.age':
+  Dataspace #0 (default)
+   Name DEFAULT
+   Composed of {
+     Datafile #0
+       Name DEFAULT
+       File test_index.dat
+   }
+# create a datafile
+<userinput>eyedbadmin datafile create --name=DAT1 test_index test_index_data1.dat</userinput>
+# create a dataspace containing this file
+<userinput>eyedbadmin dataspace create test_index DSP1 DAT1</userinput>
+# set default dataspace for index on Person.age
+<userinput>eyedbadmin index setdefdsp test_index Person.age DSP1</userinput>
+# get default dataspace for index on Person.age
+<userinput>eyedbadmin index getdefdsp test_index Person.age</userinput>
+Default dataspace for index 'Person.age':
+  Dataspace #1
+   Name DSP1
+   Composed of {
+     Datafile #1
+       Name DAT1
+       File test_index_data1.dat
+   }
+	  </screen>
+	</example>
+
+      </section>
+
+    </section>
+
+    <section>
+      <title>Managing collections</title>
+      
+      <section>
+	<title>&eyedb; collection implementations</title>
+
+	<para>
+	  &eyedb; supports several types of collections:
+	  <itemizedlist>
+	    <listitem><para><classname>set</classname>: unordered collection without element duplication</para></listitem>
+	    <listitem><para><classname>bag</classname>: unordered collection with element duplication</para></listitem>
+	    <listitem><para><classname>array</classname>: ordered collection</para></listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Independentely from its type, a collection has an <emphasis>implementation</emphasis>, i.e. the data structure that supports the collection. &eyedb; supports several types of implementation, either indexed or non-indexed:
+	  <itemizedlist>
+	    <listitem><para>hash index</para></listitem>
+	    <listitem><para>btree index</para></listitem>
+	    <!-- <listitem><para>no index</para></listitem> -->
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  The choice of the collection implementation will have of course an impact on the collection performance for inserting, deleting retrieving objects. For example, having a <classname>bag</classname> collection containing a large number of elements and <emphasis>not</emphasis> using an indexed implementation will have poor performance for element insertion: when inserting an element in a <classname>bag</classname> collection, &eyedb; must lookup the element in the collection to check for duplication and this will have poor performance if the lookup is not accelerated using an index.
+	</para>
+
+	<example id="eyedbadmin-collection-odl-example">
+	  <title>The ODL database schema for collections</title>
+	  <programlisting><![CDATA[
+class Person {
+  attribute string firstName;
+  attribute string lastName;
+};
+
+class Diary {
+  attribute string name;
+  attribute set<Person *> persons;
+};
+]]></programlisting>
+	</example>
+
+	<example id="eyedbadmin-collection-odl">
+	  <title>Collections: updating the schema</title>
+	  <screen>
+## create database
+<userinput>eyedbadmin database create test_collection</userinput>
+<userinput>eyedbodl -u -d test_collection test_collection.odl</userinput>
+Updating 'test_collection' schema in database test_collection...
+Adding class Person
+Adding class Diary
+
+Done
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Getting and setting collection default implementation</title>
+
+	<para>
+	</para>
+
+	<example id="eyedbadmin-collection-getdefimpl-setdefimpl">
+	  <title>&eyedbadmin; </title>
+	  <screen>
+## getting and setting default implementation
+<userinput>eyedbadmin collection getdefimpl test_collection Diary.persons</userinput>
+Default implementation on Diary.persons:
+  System default
+<userinput>eyedbadmin collection setdefimpl --type=hashindex test_collection Diary.persons</userinput>
+<userinput>eyedbadmin collection getdefimpl test_collection Diary.persons</userinput>
+Default implementation on Diary.persons:
+  Type: Hash
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Getting and updating a particular collection implementation</title>
+
+	<para>
+	</para>
+
+      </section>
+
+      <section>
+	<title>Getting statistics on a collection implementation</title>
+
+	<para>
+	</para>
+
+      </section>
+
+      <section>
+	<title>Getting and setting collection default dataspace</title>
+
+	<para>
+	</para>
+
+      </section>
+
+    </section>
+
+    <section id="managing-locations">
+      <title>Managing locations</title>
+      
+      <section>
+	<title>What is a location in EyeDB?</title>
+
+	<para>
+	</para>
+
+      </section>
+
+      <section>
+	<title>Managing instances locations</title>
+
+	<para>
+	</para>
+
+      </section>
+
+      <section>
+	<title>Managing attributes locations</title>
+
+	<para>
+	</para>
+
+      </section>
+
+      <section>
+	<title>Managing collections locations</title>
+
+	<para>
+	</para>
+
+      </section>
+
+      <section>
+	<title>Managing indexes locations</title>
+
+	<para>
+	</para>
+
+      </section>
+
+    </section>
+
+  </chapter>
+
+<!--
+;;; Local Variables: ***
+;;; eval: (load-file "../docbook-common/emacs-macro") ***
+;;; End: ***
+-->
+
+</book>

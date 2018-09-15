@@ -1,0 +1,38 @@
+EXTRA_DIST=$(MAIN_XML_FILE) $(OTHER_XML_FILES)
+
+# PDF
+if COND_DBLATEX
+manualdir=$(datadir)/doc/$(PACKAGE)/manual/pdf
+manual_DATA=$(PDF_PREFIX)$(MANUAL).pdf
+endif
+
+XSL_PARAMS = $(top_srcdir)/doc/manual/docbook-common/params.xsl
+DBLATEXFLAGS = -p $(XSL_PARAMS)
+
+$(PDF_PREFIX)$(MANUAL).pdf: $(MAIN_XML_FILE)
+	$(DBLATEX) $(DBLATEXFLAGS) -o $@ $<
+
+$(PDF_PREFIX)$(MANUAL).pdf: $(OTHER_XML_FILES)
+
+# HTML
+if COND_DOCBOOK_HTML
+htmlmanualdir=$(datadir)/doc/$(PACKAGE)/manual/html/$(MANUAL)
+htmlmanual_DATA=html/index.html
+endif
+
+XSLTPROC=@XSLTPROC@
+XSLTPROCFLAGS=--novalid --nonet --xinclude
+#HTML as a single file
+#HTML_XSL_STYLESHEET=@HTML_XSL_STYLESHEET_DIR@/docbook.xsl
+#HTML chunked
+HTML_XSL_STYLESHEET=@HTML_XSL_STYLESHEET_DIR@/chunk.xsl
+
+html/index.html: $(MAIN_XML_FILE)
+	test -d html || mkdir html
+	$(XSLTPROC) $(XSLTPROCFLAGS) --output $@ $(HTML_XSL_STYLESHEET) $<
+
+html/index.html: $(OTHER_XML_FILES)
+
+clean-local:
+	-rm -rf *.pdf html/
+

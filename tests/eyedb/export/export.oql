@@ -1,0 +1,14 @@
+
+N := 1000;
+
+for (x := 0; x < N; x++) {
+  new C0(id : x);
+  new C1(id : x);
+  new C2(id : x);
+  new C3(id : x);
+  new C4(id : x);
+  new C5(id : x);
+}
+;
+
+\commit

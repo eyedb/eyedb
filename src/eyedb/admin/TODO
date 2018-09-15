@@ -1,0 +1,96 @@
+
+eyedbadmin TODO list, 18/05/07
+
+EV:
+  eyedbadmin database delete [DONE]
+  eyedbadmin database create [DONE]
+  eyedbadmin database list [DONE]
+  eyedbadmin database rename [DONE]
+
+FD:
+  eyedbadmin database move [DONE]
+  eyedbadmin database copy [DONE]
+  eyedbadmin database defaccess [DONE]
+  eyedbadmin database export [DONE, NOT TESTED]
+  eyedbadmin database import [DONE, NOT TESTED]
+
+FD:
+  eyedbadmin datafile create [DONE]
+  eyedbadmin datafile delete [DONE]
+  eyedbadmin datafile list [DONE]
+  eyedbadmin datafile move [DONE]
+  eyedbadmin datafile resize [DONE]
+  eyedbadmin datafile defragment [DONE]
+  eyedbadmin datafile rename [DONE]
+
+FD: from eyedbadmin user * [USRTopic module]
+  eyedbadmin user add [DONE]
+  eyedbadmin user delete [DONE]
+  eyedbadmin user list [DONE]
+  eyedbadmin user sysaccess [DONE]
+  eyedbadmin user dbaccess [DONE]
+  eyedbadmin user passwd [DONE]
+
+FD: from eyedbadmin dataspace * [DSPTopic module]
+Note: tests depends on datafile create,delete,list
+  eyedbadmin dataspace create [DONE]
+  eyedbadmin dataspace update [DONE]
+  eyedbadmin dataspace delete [DONE]
+  eyedbadmin dataspace rename [DONE]
+  eyedbadmin dataspace list [DONE]
+  eyedbadmin dataspace setdef [DONE]
+  eyedbadmin dataspace getdef [DONE]
+  eyedbadmin dataspace setcurdat [DONE]
+  eyedbadmin dataspace getcurdat [DONE]
+
+FD: from eyedbidxadmin [IDXTopic module]
+  eyedbadmin index create [DONE]
+  eyedbadmin index delete [DONE]
+  eyedbadmin index update [DONE, NOT TESTED]
+  eyedbadmin index list [DONE]
+  eyedbadmin index stats [DONE]
+  eyedbadmin index simulate [DONE]
+
+   from eyedbloca
+  # index move: ajouter une option --collapse + une info dans le protocole
+  eyedbadmin index move <dbname> <index name> <dest dataspace> [DONE, MISSING PROTOCOL]
+  eyedbadmin index setdefdsp <dbname> <idx name> [DONE]
+  eyedbadmin index getdefdsp <dbname> <idx name> [DONE]
+  eyedbadmin index --stats|--loca|--all getloca <dbname> <idx name> [DONE]
+  # => eyedbgetidxloca
+
+Later:
+  from eyedbloca
+  eyedbadmin class getinstdefdsp
+  eyedbadmin class setinstdefdsp
+  eyedbadmin class moveinst
+  eyedbadmin class getinstloca
+
+  from eyedbloca
+  eyedbadmin collection getdefdsp
+  eyedbadmin collection setdefdsp
+  eyedbadmin collection getelemloca
+  eyedbadmin collection moveelems
+
+  from eyedbcollimpladmin
+  eyedbadmin collection setdefimpl
+  eyedbadmin collection getdefimpl
+  eyedbadmin collection listimpl
+  eyedbadmin collection updateimpl
+  eyedbadmin collection simulimpl
+  eyedbadmin collection implstats
+
+  from eyedbloca
+  eyedbadmin attribute getloca
+  eyedbadmin attribute getdefdsp
+  eyedbadmin attribute setdefdsp
+  eyedbadmin attribute move
+
+  from eyedbloca
+  eyedbadmin object getloca
+  eyedbadmin object move
+
+  from eyedbconsadmin
+  eyedbadmin constraint create
+  eyedbadmin constraint delete
+  eyedbadmin constraint list

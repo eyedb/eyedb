@@ -1,0 +1,629 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd"
+[
+<!ENTITY eyedb "EyeDB">
+<!ENTITY eyedbadmin "<command>eyedbadmin</command>">
+]
+>
+
+<book>
+  <title>EyeDB Administration Guide</title>
+
+  <chapter id="user">
+    <title>User administration</title>
+
+    <para>
+      As any other DBMS, &eyedb; provides the concept of <emphasis>user</emphasis> that is the basis for rights management: database read or write access, database administration...
+    </para>
+
+    <section>
+      <title>The different user types</title>
+
+      <para>
+	An &eyedb; user is identified by:
+	<itemizedlist>
+	  <listitem><para>a name</para></listitem>
+	  <listitem><para>an optional password</para></listitem>
+	  <listitem><para>a user identifier, managed by &eyedb; and for internal use only</para></listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	&eyedb; users can have the following types:
+	<itemizedlist>
+	  <listitem><para><emphasis>eyedb</emphasis> user type (the default type): users of this type are not mapped to Unix users and can use &eyedb; password authentication only</para></listitem>
+	  <listitem><para><emphasis>unix</emphasis>: users of this type are mapped to Unix standard users (a Unix user of the same name must exist) and can use &eyedb; password authentication or &eyedb; Unix identification</para></listitem>
+	  <listitem><para><emphasis>strict unix</emphasis>: users of this type are mapped to Unix standard users, and can use only &eyedb; Unix authentication</para></listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	The &eyedb; Unix authentication is a mode of authentication that can be used only when using a named pipe connection between the &eyedb; client and the &eyedb; server; this authentication does not require a password and uses a safe challenge-based authentication supported by the Unix operating system.
+      </para>
+
+    </section>
+
+    <section>
+      <title>Managing users</title>
+
+      <section>
+	<title>Adding a user</title>
+
+	<para>
+	  Adding user is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>user add</command>
+	    <arg choice="opt" rep="repeat">options</arg>
+	    <arg choice="opt"><replaceable>user</replaceable></arg>
+	    <arg choice="opt"><replaceable>password</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Options are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <group>
+		    <arg choice="plain">--unix</arg>
+		    <arg choice="plain">--strict-unix</arg>
+		  </group>
+		</cmdsynopsis>
+		specify the user type, if unix or strict-unix type
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="opt">user</arg>
+		</cmdsynopsis>
+		user name, if not unix or strict-unix type (if unix or strict-unix type, the user name is the user running the eyedbadmin command)
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="opt">password</arg>
+		</cmdsynopsis>
+		password, if not strict-unix type. If no password is provided on command line, &eyedbadmin; will ask for a password on standard input.
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-user-add">
+	  <title>&eyedbadmin; user add</title>
+	  <screen>
+## Adding a 'eyedb' user: password is required
+<userinput>eyedbadmin user add joe</userinput>
+joe password: <userinput>123</userinput>
+
+retype joe password: <userinput>123</userinput>
+
+## Adding a 'unix' user with password on command line: Unix user does not exist, error
+<userinput>eyedbadmin user add --unix tom 456</userinput>
+eyedb error: username 'tom' is an unknown unix user
+
+## Adding a 'unix' user: Unix user already exists, password is required
+<userinput>eyedbadmin user add --unix eric</userinput>
+eric password: <userinput>456</userinput>
+
+retype eric password: <userinput>456</userinput>
+
+## Adding a 'strict-unix' user: no password is required
+<userinput>eyedbadmin user add --strict-unix mimi</userinput>
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Deleting a user</title>
+
+	<para>
+	  Deleting user is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>user delete</command>
+	    <arg choice="req"><replaceable>user</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>user</replaceable></arg>
+		</cmdsynopsis>
+		EyeDB user name (can be of any user type)
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-user-delete">
+	  <title>&eyedbadmin; user delete</title>
+	  <screen>
+## Deleting existing user
+<userinput>eyedbadmin user delete joe</userinput>
+## Deleting unknown user
+<userinput>eyedbadmin user delete r2d2</userinput>
+delete user error: user entry 'r2d2' does not exist
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Setting user password</title>
+
+	<para>
+	  Setting user password is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>user passwd</command>
+	    <arg choice="plain"><replaceable>user</replaceable></arg>
+	    <arg choice="opt"><replaceable>password</replaceable></arg>
+	    <arg choice="opt"><replaceable>new_password</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="opt">user</arg>
+		</cmdsynopsis>
+		EyeDB user name (can be of type 'eyedb' or 'unix')
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="opt">password</arg>
+		</cmdsynopsis>
+		old password (will be asked if not provided on command line)
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="opt">new_password</arg>
+		</cmdsynopsis>
+		new password (will be asked if not provided on command line)
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-user-passwd">
+	  <title>&eyedbadmin; user passwd</title>
+	  <screen>
+## Setting password with prompt
+<userinput>eyedbadmin user passwd eric</userinput>
+user old password: <userinput>456</userinput>
+
+user new password: <userinput>123</userinput>
+retype user new password: <userinput>123</userinput>
+## Setting password from command-line
+<userinput>eyedbadmin user passwd eric 123 789</userinput>
+ 	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Listing users</title>
+
+	<para>
+	  Listing existing &eyedb; users is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>user list</command>
+	    <arg choice="opt"><replaceable>user</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="opt"><replaceable>user</replaceable></arg>
+		</cmdsynopsis>
+		EyeDB user name
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-user-list">
+	  <title>&eyedbadmin; user list</title>
+	  <screen>
+## Listing all users
+<userinput>eyedbadmin user list</userinput>
+name      : "mimi" [strict unix user]
+sysaccess : NO_SYSACCESS_MODE
+
+name      : "eric" [unix user]
+sysaccess : NO_SYSACCESS_MODE
+
+name      : "francois" [strict unix user]
+sysaccess : SUPERUSER_SYSACCESS_MODE
+dbaccess  : (dbname : "newtest", access : ADMIN_DBACCESS_MODE)
+            (dbname : "test3", access : ADMIN_DBACCESS_MODE)
+## Listing a specific user
+<userinput>eyedbadmin user list mimi</userinput>
+name      : "mimi" [strict unix user]
+sysaccess : NO_SYSACCESS_MODE
+	  </screen>
+	</example>
+
+      </section>
+
+    </section>
+
+    <section>
+      <title>Managing user access rights</title>
+
+      <section>
+	<title>The different access rights</title>
+
+	<para>
+	  &eyedb; access rights are managed at two levels:
+	  <itemizedlist>
+	    <listitem><para>system level, for global operations (for instance, adding a user, creating a database...)</para></listitem>
+	    <listitem><para>database level, for database specific operations (for instance, reading objects with a query, inserting objects...)</para></listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Each &eyedb; user has therefore:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		a set of system access rights, controling the authorization to perform the following system operations:
+		<itemizedlist>
+		  <listitem><para>creating a database</para></listitem>
+		  <listitem><para>adding a user</para></listitem>
+		  <listitem><para>deleting any user</para></listitem>
+		  <listitem><para>setting password for any user</para></listitem>
+		</itemizedlist>
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		a set of database access rights, controling the authorization to perform the following operations on a given database:
+		<itemizedlist>
+		  <listitem><para>read from this database</para></listitem>
+		  <listitem><para>write to this database</para></listitem>
+		  <listitem><para>execute any method in this database</para></listitem>
+		  <listitem><para>delete this database</para></listitem>
+		</itemizedlist>
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Note that a system access right is not attached to a particular database, whilst a database access right is attached to a particular database.
+	</para>
+
+	<para>
+	  <xref linkend="system-access-rights"/> presents the different system access rights defined by &eyedb; and the corresponding authorized operations.
+	</para>
+
+	<table id="system-access-rights">
+	  <title>System access rights and corresponding authorized operations</title>
+	  <tgroup cols="2">
+	    <thead>
+	      <row>
+		<entry>
+		  System Access Right
+		</entry>
+		<entry>
+		  Authorized operation
+		</entry>
+	      </row>
+	    </thead>
+	    <tbody>
+	      <row>
+		<entry>
+		  no
+		</entry>
+		<entry>
+		  no authorized system operation 
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  dbcreate
+		</entry>
+		<entry>
+		  can create a database 
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  adduser
+		</entry>
+		<entry>
+		  can add any user 
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  deleteuser
+		</entry>
+		<entry>
+		  can delete any user 
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  setuserpasswd
+		</entry>
+		<entry>
+		  can set the password of any user
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  admin
+		</entry>
+		<entry>
+		  can create a database and add a user
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  superuser
+		</entry>
+		<entry>
+		  all operations
+		</entry>
+	      </row>
+	    </tbody>
+	  </tgroup>
+	</table>
+
+	<para>
+	  <xref linkend="database-access-rights"/> presents the different database access rights defined by &eyedb; and the corresponding authorized operations.
+	</para>
+
+	<table id="database-access-rights">
+	  <title>Database access rights and corresponding authorized operations</title>
+	  <tgroup cols="2">
+	    <thead>
+	      <row>
+		<entry>
+		  Database Access Right
+		</entry>
+		<entry>
+		  Authorized operation
+		</entry>
+	      </row>
+	    </thead>
+	    <tbody>
+	      <row>
+		<entry>
+		  no 
+		</entry>
+		<entry>
+		  no database access 
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  read 
+		</entry>
+		<entry>
+		  have read access on this database 
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  write 
+		</entry>
+		<entry>
+		  have write access on this database 
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  exec 
+		</entry>
+		<entry>
+		  have execute access on this database 
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  admin 
+		</entry>
+		<entry>
+		  have read/write/execute access on this database and can delete this database 
+		</entry>
+	      </row>
+	    </tbody>
+	  </tgroup>
+	</table>
+
+      </section>
+
+      <section>
+	<title>Setting system access rights</title>
+
+	<para>
+	  Setting system access rights for a &eyedb; user is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>user sysaccess</command>
+	    <arg choice="req"><replaceable>user</replaceable></arg>
+	    <arg choice="req">
+	      <group>
+		<arg choice="plain">dbcreate</arg>
+		<arg choice="plain">adduser</arg>
+		<arg choice="plain">deleteuser</arg>
+		<arg choice="plain">setuserpasswd</arg>
+		<arg choice="plain">admin</arg>
+		<arg choice="plain">superuser</arg>
+		<arg choice="plain">no</arg>
+	      </group>
+	    </arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>user</replaceable></arg>
+		</cmdsynopsis>
+		EyeDB user name
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req">
+		    <group>
+		      <arg choice="plain">dbcreate</arg>
+		      <arg choice="plain">adduser</arg>
+		      <arg choice="plain">deleteuser</arg>
+		      <arg choice="plain">setuserpasswd</arg>
+		      <arg choice="plain">admin</arg>
+		      <arg choice="plain">superuser</arg>
+		      <arg choice="plain">no</arg>
+		    </group>
+		  </arg>
+		</cmdsynopsis>
+		system access right
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-user-sysaccess">
+	  <title>&eyedbadmin; user sysaccess</title>
+	  <screen>
+## List user system access rights
+<userinput>eyedbadmin user list eric</userinput>
+name      : "eric" [unix user]
+sysaccess : NO_SYSACCESS_MODE
+## Set user system access rights
+<userinput>eyedbadmin user sysaccess eric dbcreate</userinput>
+<userinput>eyedbadmin user list eric</userinput>
+name      : "eric" [unix user]
+sysaccess : DB_CREATE_SYSACCESS_MODE
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Setting database access rights</title>
+
+	<para>
+	  Setting database access rights for a &eyedb; user is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>user dbaccess</command>
+	    <arg choice="req"><replaceable>user</replaceable></arg>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>access</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>user</replaceable></arg>
+		</cmdsynopsis>
+		EyeDB user name
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		database name
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>access</replaceable></arg>
+		</cmdsynopsis>
+		database access right, that can be one of the following values:
+		<cmdsynopsis>
+		  <group>
+		    <arg choice="plain">r</arg>
+		    <arg choice="plain">rw</arg>
+		    <arg choice="plain">rx</arg>
+		    <arg choice="plain">rwx</arg>
+		    <arg choice="plain">admin</arg>
+		    <arg choice="plain">no</arg>
+		  </group>
+		</cmdsynopsis>
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-user-dbaccess">
+	  <title>&eyedbadmin; user dbaccess</title>
+	  <screen>
+## List user database access rights
+<userinput>eyedbadmin user list eric</userinput>
+name      : "eric" [unix user]
+sysaccess : NO_SYSACCESS_MODE
+## Set user database access rights for database test2
+<userinput>eyedbadmin user dbaccess eric test2 rw</userinput>
+<userinput>eyedbadmin user list eric</userinput>
+name      : "eric" [unix user]
+sysaccess : DB_CREATE_SYSACCESS_MODE
+dbaccess  : (dbname : "test2", access : READ_WRITE_DBACCESS_MODE)
+## Set user database access rights for database test3
+<userinput>eyedbadmin user dbaccess eric test3 admin</userinput>
+<userinput>eyedbadmin user list eric</userinput>
+name      : "eric" [unix user]
+sysaccess : DB_CREATE_SYSACCESS_MODE
+dbaccess  : (dbname : "test2", access : READ_WRITE_DBACCESS_MODE)
+            (dbname : "test3", access : ADMIN_DBACCESS_MODE)
+	  </screen>
+	</example>
+
+      </section>
+
+    </section>
+
+  </chapter>
+
+<!--
+;;; Local Variables: ***
+;;; eval: (load-file "../docbook-common/emacs-macro") ***
+;;; End: ***
+-->
+
+</book>
+

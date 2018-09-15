@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+### BEGIN INIT INFO
+# Provides: eyedb
+# Required-Start: $network
+# Required-Stop: $network
+# Default-Start: 3 4 5
+# Short-Description: EyeDB database server
+# Description: Starts and stops the EyeDB daemon that handles 
+#              databases.
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+NAME=eyedb
+LOCK_FILE=/var/lock/subsys/$NAME
+RETVAL=0
+
+# Read options file
+[ -f /etc/sysconfig/$NAME ] && . /etc/sysconfig/$NAME
+
+start() {
+    if [ ! -f $LOCK_FILE ]; then
+	EYEDB_START=$"Starting %s:"
+	echo -n "$EYEDB_START" $NAME
+
+	# Start EyeDB daemon under user eyedb
+	# FIXME: add options from /etc/sysconfig/eyedb (need first to check which options can be set from the command line)
+	su -l eyedb -s /bin/bash -c "/usr/sbin/eyedbctl start"
+        RETVAL=$?
+        if [ $RETVAL -eq 0 ] ; then
+	    touch $LOCK_FILE
+	    # Get the pids
+	    pid_eyedbd=`pidof -s /usr/sbin/eyedbd`
+	    pid_eyedbsmd=`pidof -s /usr/sbin/eyedbsmd`
+	    echo "$pid_eyedbd" > /var/run/eyedbd.pid
+	    echo "$pid_eyedbsmd" > /var/run/eyedbsmd.pid
+	fi
+	[ $RETVAL -eq 0 ] && success "$EYEDB_START" $NAME || failure "$EYEDB_START" $NAME
+	echo
+    fi
+}
+
+stop() {
+    EYEDB_STOP=$"Stopping %s:"
+    echo "$EYEDB_STOP" $NAME
+    su -l eyedb -s /bin/bash -c "/usr/sbin/eyedbctl stop"
+    RETVAL=$?
+    [ $RETVAL -eq 0 ] && rm -f $LOCK_FILE
+    [ $RETVAL -eq 0 ] && success "$EYEDB_STOP" $NAME || failure "$EYEDB_STOP" $NAME
+    echo
+}
+
+status() {
+    /usr/sbin/eyedbctl status
+    RETVAL=$?
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        RETVAL=1
+esac
+
+exit $RETVAL

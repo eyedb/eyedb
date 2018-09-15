@@ -1,0 +1,106 @@
+
+//
+// test.odl
+//
+
+//#define ALL
+
+class A {
+  int a_id;
+  string a_s;
+
+  set <B *> *set_b1;
+  set <B *> *set_b2 inverse a2;     // N:1
+  set <B *> *set_b3 inverse set_a3; // N:N
+
+  array <B *> *arr_b4;
+  bag <B *> *bag_b5;
+
+  B *ob6             inverse B::oset_a4;
+  B *lb6             inverse B::lset_a4;
+
+#ifdef ALL
+  set <B *>   set_b6 inverse B::bag_a5;
+  bag <B *>   bag_b7 inverse B::arr_a6;
+  array <B *> arr_b8 inverse B::set_a7;
+#endif
+
+  index on a_id;
+};
+
+class B {
+  int b_id;
+  string b_s;
+
+  set <A *> *set_a1;
+  A *a2 inverse set_b2;
+
+  set <A *> *set_a3 inverse set_b3;
+
+  set <A *>   lset_a4  inverse A::lb6;
+  set <A *>   *oset_a4 inverse A::ob6;
+
+  set <A *>   lset_a5;
+  set <A *>   *oset_a5;
+
+#ifdef ALL
+  bag <A *>   bag_a5   inverse A::set_b6;
+  array <A *> arr_a6   inverse A::bag_b7;
+  set <A *>   *set_a7  inverse A::arr_b8;
+#endif
+  index on b_id;
+  index on lset_a4;
+  index on oset_a5;
+};
+
+class B1 extends B {
+  int ib1_id;
+  int b1_id;
+
+  index on ib1_id;
+};
+
+class B1_1 extends B1 {
+  int ib2_id;
+  int b2_id;
+
+  int ibb_id;
+  int bb_id;
+
+  index on ib2_id;
+  index on ibb_id;
+};
+
+class B1_2 extends B1 {
+  int ib3_id;
+  int b3_id;
+
+  int ibb_id;
+  int bb_id;
+  index on ib3_id;
+  index on ibb_id;
+};
+
+class B2 {
+  B b_1;
+  B b_2[2];
+  B b_3[];
+};
+
+class B3 {
+  B2 b2;
+};
+
+// mekano (Stuart) test
+class Supercontig {
+  int id; index on id;
+};
+
+class Stage {
+  int id; index on id;
+
+  //  array<Supercontig *> link_test;
+  //  array<set<Supercontig *> *> link_counts1;
+  // array<set<Supercontig *> > link_counts2;
+  bag<set<Supercontig *> > link_counts2;
+};

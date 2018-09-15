@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+  <!ENTITY eyedbcollimpladmin "<command>eyedbcollimpladmin</command>">
+]>
+
+<refentry id="eyedbcollimpladmin">
+  <refentryinfo>
+    <date>March 2007</date>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>eyedbcollimpladmin</refentrytitle>
+    <manvolnum>1</manvolnum>
+    <refmiscinfo>EyeDB database</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>&eyedbcollimpladmin;</refname>
+    <refpurpose>client for administering EyeDB databases</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      &eyedbcollimpladmin;
+      <arg choice="req"><replaceable>subcommand</replaceable></arg> 
+      <arg choice="opt"><replaceable>common-options</replaceable></arg> 
+      <arg choice="opt"><replaceable>subcommand-options</replaceable></arg> 
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <para>&eyedbcollimpladmin; is a client for performing administrative operations on EyeDB databases.</para>
+
+    <para>&eyedbcollimpladmin; accepts the following sub-commands:
+    <variablelist>
+      <varlistentry>
+	<term><command>getdef</command></term>
+	<listitem><para>See <command>eyedbcollimplgetdef(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>list</command></term>
+	<listitem><para>See <command>eyedbcollimpllist(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>setdef</command></term>
+	<listitem><para>See <command>eyedbcollimplsetdef(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>simulate</command></term>
+	<listitem><para>See <command>eyedbcollimplsimulate(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>stats</command></term>
+	<listitem><para>See <command>eyedbcollimplstats(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>update</command></term>
+	<listitem><para>See <command>eyedbcollimplupdate(1)</command></para></listitem>
+      </varlistentry>
+
+    </variablelist>
+    </para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>Exit status</title>
+  </refsect1>
+
+  <refsect1>
+    <title>Examples</title>
+  </refsect1>
+
+  <refsect1>
+    <title>See also</title>
+  </refsect1>
+
+  <refsect1>
+    <title>Authors</title>
+  </refsect1>
+
+</refentry>

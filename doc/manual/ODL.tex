@@ -1,0 +1,1967 @@
+\input{start}
+\input{version}
+\newcommand{\mantitle}{\textsc{Object Definition Language}}
+\input{title}
+
+\tableofcontents
+
+\chapter*{The Object Definition Language}
+
+The \eyedb Object Definition Language (ODL) is a specification language
+to define the specifications of object types based on the ODMG ODL (but not compliant).\\
+ODL \footnote{ODL is used for shortness to denote \eyedb ODL} 
+is not intented to be a full programming language. It is
+a definition language for object specifications. Database management
+systems traditionaly provide facilities that support
+data definition (using a Data Definition Language (DDL)). The DDL allows
+users to define their data types and interfaces while the
+Data Manipulation Language (DML) allows to create, delete, read update
+instances of those data types.\\
+ODL is a DDL for objects types.
+If defines the characteristics of types, including their properties
+and operations.
+ODL defines only the signatures of operations defined in C++ and does not
+address definitions of the methods that implements those operations.
+Operations defined in OQL can be defined in the ODL.
+\\
+ODL is intented to define object types that can be implemented
+in a variety of programming languages. Therefore, ODL is not tied
+to the syntax of a particular programming language.\\\\
+\eyedb ODL differs from ODMG ODL from several points:
+\bi
+\item ODMG ODL defines class attributes, relationships, method signatures and keys.
+It supports nested classes, typedef constructs, constant definitions and
+exception hints.
+\item \eyedb ODL defines class attributes, relationships, method signatures,
+attribute constraints (notnull, unique, collection cardinality), index
+specifications and trigger declarations. It does not support
+nested classes, typedef constructs, constant definitions and
+exception hints.
+\item in \eyedb ODL, any type instance can be both a literal or
+an object. In ODMG ODL, this property is tied to the type: all
+basic types and user defined \emph{struct} are literal while \emph{interface}s
+and \emph{class}es are objects.
+In \eyedb ODL, any type instance can be an object, even the basic types.
+\item at last, \eyedb ODL allows to specify whether a method is executed by the server or by the client,
+and whether it is a class or instance method.
+\ei
+
+\sect{The Language Specifications}
+
+The basic concept of the \eyedb object model is the class which, as in any
+traditionnal object model, modelize a set
+of objects of similar properties (attributes) and behaviors (methods).
+The attributes can be basic types, user types, references, arrays, collections.
+The methods can be defined in C++ or in OQL (Object Query Language).
+\\
+\\
+ODL allows one to specify classes, attributes, methods, triggers, constraints,
+enumerate types, indexes and implementation hints.
+\\
+\\
+We are going to introduced in details all the features of ODL.
+\subsect{Comments}
+The ODL comments are like in C++:
+\bi
+\item mono-line comments: any characters following \texttt{//} and until
+the end of the line are comments
+\item multi-line comments: any characters (including newlines) between \texttt{/*} and \texttt{*/}
+are comments
+\ei
+For instance:
+\vspace{-2mm}
+\begin{verbatim}
+// this is a simple line comments
+
+/* this is
+   a multi line
+   comments */
+\end{verbatim}
+\subsect{Basic types}
+The basic types are as follows:\\\\
+\begin{tabular}{|p{2cm}|p{5cm}|}
+\hline
+byte & 1-byte integer \\
+\hline
+char & 1-byte character \\
+\hline
+short & 2-byte integer \\
+\hline
+int & 4-byte integer \\
+\hline
+long & 8-byte integer \\
+\hline
+double & 8-byte floating point \\
+\hline
+oid & 8-byte internal object identifier \\
+\hline
+enum & 4-byte integer \\
+\hline
+\end{tabular}
+\\
+\\
+For instance:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  attribute byte b;
+  attribute char c;
+  attribute short s;
+  attribute int i;
+  attribute long l;
+  attribute double d;
+  attribute oid o;
+};
+\end{verbatim}
+Notes :
+\be
+\vspace{-0.2cm}
+\item The key word \texttt{attribute} is optional:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  byte b;
+  char c;
+  // ...
+};
+\end{verbatim}
+\vspace{-0.2cm}
+is correct.
+\item The grammar does not allow one to gather several attributes on
+the same line declaration:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  attribute char c1, c2, c3; // NOT correct
+  // ...
+};
+\end{verbatim}
+\ee
+\subsect{Enum types}
+An enumerate type is denoted by a set of integers mapped to symbols
+like in C++.
+The syntax is similar to the C++ syntax, for instance:
+\vspace{-0.2cm}
+\begin{verbatim}
+enum E1 {
+  A, // A == 0
+  B, // B == 1
+  C  // C == 2
+};
+
+enum E2 {
+  D = 3,   // D == 3
+  E,       // E == 4
+  F = 100, // F == 100
+  G,       // G == 101
+  H        // H == 102
+};
+
+class C {
+  attribute int i;
+  E1 e1;
+  E2 e2;
+};
+\end{verbatim}
+\subsect{Array types}
+The object model supports multi-dimensionnal fixed or variable size arrays
+of any type. For instance:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  attribute byte b_a[4];      // fixed length mono-dimensionnal array
+  attribute char str[];       // variable size mono-dimensionnal array
+  attribute int i_a[3][4][8]; // multi-dimensionnal fixed size array
+  attribute long l_a[][4][8]; // multi-dimensionnal variable size array
+};
+\end{verbatim}
+%\vspace{-0.2cm}
+One particular interesting array type is the array of characters, which
+can be denoted as \texttt{string} as follows:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  attribute string s;       // <=> char s[] (unlimited size string)
+  attribute string<32> bs;  // <=> char bs[32] (bounded string)
+};
+\end{verbatim}
+%\vspace{-0.2cm}
+Note that in a multi-dimensionnal array, only the extreme left dimension can be
+variable:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  attribute long l_a1[][4][8]; // correct
+  attribute long l_a2[4][][8]; // NOT correct
+  attribute long l_a2[4][8][]; // NOT correct
+};
+\end{verbatim}
+\subsect{Literal and object types}
+Remember that each object in a set of \eyedb databases has an unique identifier called OID.
+\\
+A literal attribute is an attribute fully included in the class and has
+no OID, while an object attribute denotes the reference
+to another object with an object identifier.
+A reference attribute is denoted by a \texttt{*} or a \texttt{\&} symbol.
+For instance:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C1 {
+  attribute int i;
+};
+
+class C {
+  attribute C1  l_c1;  // literal attribute included in C
+  attribute C1 *o_c1;  // object attribute referenced by C (or &oc1_1)
+};
+\end{verbatim}
+Let \texttt{c} an instance of the class \texttt{C}.
+\bi
+\item \texttt{c} includes a literal of type \texttt{C1} through the attribute
+\texttt{l\_c1}
+\item \texttt{c} can reference an object of type \texttt{C1} through the attributes 
+\texttt{o\_c1}
+\item if \texttt{c} is removed from the database, the attribute \texttt{l\_c1}
+is removed at the same time, but the object denoted by \texttt{o\_c1} is
+not removed
+\ei
+\begin{tabular}{|p{16.8cm}|}
+\hline
+\vspace{0.1mm}
+Do not confuse the \texttt{*} ODL meaning and the \texttt{*} C/C++ meaning:
+in C/C++, the \texttt{*} type modifier denotes an address to an area of the
+indicated type instances: it is a pointer to an address. This pointer
+can be incremented and decremented to change its location in the area.
+\\
+In ODL, the \texttt{*} denotes a reference to one and only one object, it is why
+the \texttt{\&} token is also accepted, although the meaning of this token
+is a little bit different in C++.
+\\
+\\
+So, in ODL the construct \texttt{C1 **oc1} makes no sense, in the same
+manner that the construct \texttt{C1 \&\&oc1} makes no sense in C++.\\
+\hline
+\end{tabular}\\
+\\
+One can have arrays of litteral or object as follows:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  attribute C1  l_c1_1[2];
+  attribute C1  l_c1_2[];
+  attribute C1  l_c1_3[][10][20];
+
+  attribute C1 *o_c1_1[4];
+  attribute C1 *o_c1_2[];
+  attribute C1 *o_c1_3[][4][5];
+};
+\end{verbatim}
+
+\subsect{Collection types}
+The \eyedb object model support three types of collections, set, bag and array. A fourth type, list, will be implemented in a further version:
+\bi
+\item a set an unordered collection of elements of the same type
+not allowing duplicate elements
+\item a bag a unordered collection of elements of the same type
+allowing duplicate elements
+\item an array an ordered collection of elements of the same type
+allowing duplicate elements
+\item a list (\emph{non yet implemented}) is an ordered collections of elements of
+the same type allowing duplicate elements
+and where element insertion and removal is
+efficiently implemented
+\ei
+An element may be of any type, literal or object and
+a collection attribute may be a literal or an object, and one can have
+arrays of collection, for instance:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  attribute set<int>  i_lset;    // literal set of int
+  attribute set<C1>   l_c1_lset; // literal set of C1 literals
+  attribute set<C1 *> o_c1_lset; // literal set of C1 objects
+
+  attribute set<int>  *i_oset;    // object set of int
+  attribute set<C1>   *l_c1_oset; // object set of C1 literals
+  attribute set<C1 *> *o_c1_oset; // object set of C1 objects
+
+  attribute bag<C1 *> o_c1_lbag;  // literal bag of C1 objects
+
+  attribute array<C1 *> o_c1_larr;   // literal array of C1 objects
+  attribute bag<C1 *>   o_c1_lbag[]; // array of literal bag of C1 objects
+
+  // multi-dimensionnal array of literal bag of set of array of C1 objects
+  attribute bag<set<array<set<C1 *> > > > x[2][3][4]; 
+};
+\end{verbatim}
+The differences between an array collection (i.e.
+\texttt{array<}\emph{type}\texttt{>} and an attribute array (i.e. 
+\emph{type} \texttt{[]}) are:
+\bi
+\item a collection array may exists independently from any class as a
+an attribute array exists only within a class
+\item the implementation is very different:
+\bi
+\item one can have a big collection array (thousand or millions of elements)
+without loss of performance (if the collection is well parametered, see
+below)). Big attribute array are unefficient
+\item collection array can have ``holes'' without loss of performance, for instance an element at index 1 and another one at index 1000000 and nothing between. An attribute array with holes are unefficient as they are stored
+consecutively
+\item a collection array is heavier than an attribute array, and so is not
+recommended for little size
+\ei
+\ei
+
+\subsect{Inheritance}
+The object model support single inheritance using the keyword \texttt{extends}:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C1 {
+  attribute string c1;
+};
+
+class C2 extends C1 {
+  attribute string c2;
+};
+
+class C3 extends C2 {
+  attribute string c3;
+};
+\end{verbatim}
+As in usual object conception, an object of class \texttt{C2} includes the two
+attributes \texttt{c1} and \texttt{c2} and an object of class \texttt{C3}
+includes the three attributes \texttt{c1}, \texttt{c2} and \texttt{c3}.
+\\
+\\
+In the following construct:
+%\vspace{-0.2cm}
+\begin{verbatim}
+class C4 {
+  attribute C1 *oc1;
+  attribute C2 *oc2;
+  attribute C3 *oc3;
+
+  attribute C1 lc1;
+  attribute C2 lc2;
+  attribute C3 lc3;
+};
+\end{verbatim}
+The attribute \texttt{oc1} may be of type \texttt{C1}, \texttt{C2} or
+\texttt{C3}.\\
+The attribute \texttt{oc2} may be of type \texttt{C2} or \texttt{C3}.\\
+The attribute \texttt{oc3} may be of type \texttt{C3} only.\\
+The attribute \texttt{lc1} is of type \texttt{C1}.\\
+The attribute \texttt{lc2} is of type \texttt{C2}.\\
+The attribute \texttt{lc3} is of type \texttt{C3}.
+
+
+\subsect{Constraints}
+The object model supports currently two declarative constraints: notnull
+and unique. The cardinality constraint on collection is partially
+implemented and is not currently supported.
+Non declarative constraints are defined using triggers (see below).
+\\
+\\
+Note that:
+\bi
+\item unique constraint cannot be defined on several attributes and
+\item unique constraint on an attribute needs an index. The index is not
+automatically created, it must be defined in the ODL (see below)
+or outside using the \texttt{idxcreate} tool.
+\ei
+For instance:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  attribute string s1;
+  attribute string s2;
+  attribute string s3;
+
+  constraint<notnull> on s1;
+
+  constraint<notnull> on s2;
+  constraint<unique> on s2;
+
+  constraint<unique> on s3;
+};
+\end{verbatim}
+The attribute \texttt{s1} must not be null.\\
+The attribute \texttt{s2} must not be null and is unique in the collection
+of C objects.\\
+The attribute \texttt{s3} is unique in the collection
+of C objects.
+\subsubsect{Constraint and inheritance propagation}
+By default, constraints are propagated to subclasses, let \texttt{C2}
+a subclass of \texttt{C}:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C2 extends C {
+  attribute string c2;
+};
+\end{verbatim}
+When one creates an \texttt{C2} object, the attributes \texttt{s1} and
+\texttt{s2} must not be null and the attributes \texttt{s2} and
+\texttt{s3} must be unique.\\
+\\
+Important note: the unique constraint applies separately on each class
+(\texttt{C} and \texttt{C2}) and not on the set of inheritance class tree.
+This means that one can have a \texttt{C} object with a given value
+for \texttt{s2} and a \texttt{C2} object with the same value for \texttt{s2}.
+\\
+This is not the expected default behavior and will
+can be parametrised in a next version.
+\\
+\\
+If you do no want to propagate automatically a constraint to the subclasses,
+you need to use the construct \texttt{propagate = off} as follows:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  attribute string s1;
+  attribute string s2;
+  attribute string s3;
+
+  constraint<notnull, propagate = off> on s1;
+
+  constraint<notnull> on s2;
+  constraint<unique, propagate = off> on s2;
+
+  constraint<unique> on s3;
+};
+
+class C2 extends C {
+  attribute string c2;
+};
+\end{verbatim}
+The notnull constraint on \texttt{C::s1} and the unique constraint
+on \texttt{C1::s2} will not be propagated to \texttt{C2}, but the
+notnull constraint on \texttt{C::s1} and the unique constraint on
+\texttt{C::s3} will be propagated to \texttt{C2}.
+
+\subsubsect{Constraint on attribute of literal composite type}
+One can define constraints on attributes of literal composite type
+attribute, for instance:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C1 {
+  attribute string s1;
+  attribute int i1;
+};
+
+class C {
+  attribute C1 c1;
+ 
+  constraint<notnull> on c1.s1;
+  constraint<unique> on c1.i1;
+};
+\end{verbatim}
+
+\subsect{Referential integrity}
+The \eyedb object model support one-to-one, one-to-many and many-to-many
+relationships. 
+\\
+\\
+A relationship between a class \texttt{A} and a class \texttt{B} is
+materialized by attributes in the two classes of the following
+types according to the cardinality of the relationship:
+\bi
+\item one-to-one : \texttt{A} contains an attribute of type \texttt{B *} and
+\texttt{A} contains an attribute  of type \texttt{B *}
+\item one-to-many : \texttt{A} contains an attribute of type \emph{collection}\texttt{<B *>} (\emph{collection} is a set or a bag) and
+\texttt{A} contains an attribute  of type \texttt{B *}
+\item many-to-many : \texttt{A} contains an attribute of type \emph{collection}\texttt{<B *>} and
+\texttt{A} contains an attribute  of type \emph{collection}\texttt{<B *}
+\ei
+For instance for a one-to-one relationship:
+\vspace{-0.2cm}
+\begin{verbatim}
+class A {
+  attribute string sa;
+  attribute B *b;
+};
+
+class B {
+  attribute string sb;
+  attribute A *a;
+};
+\end{verbatim}
+In the previous cas, \eyedb maintains only partially the referential
+integrity: for instance, one cannot create an object \texttt{A}
+with an attribute \texttt{b} which refers an non-existent \texttt{B}
+object. But, if the referenced \texttt{B} object is removed, the attribute
+\texttt{b} will still referenced the removed object.
+\\
+\\
+\eyedb can maintain the referential integrity by indicating the
+\texttt{inverse directive} in the ODL as follows:
+\vspace{-0.2cm}
+\begin{verbatim}
+class A {
+  attribute string sa;
+  relationship B *b inverse B::b; // or inverse b
+};
+
+class B {
+  attribute string sb;
+  relationship A *a inverse A::b; // or inverse a
+};
+\end{verbatim}
+Note \texttt{attribute} has been replaced by \texttt{relationship} in
+this case: this is mandatory.
+\\
+In this case, if the \texttt{B} object referenced by a \texttt{A} object
+through \texttt{b} is removed, \texttt{b} is set to the null value.
+\\
+A one-to-many relationship:
+\vspace{-0.2cm}
+\begin{verbatim}
+class A {
+  attribute string sa;
+  relationship set<B *> b_set inverse a;
+};
+
+class B {
+  attribute string sb;
+  relationship A *a inverse b_set;;
+};
+\end{verbatim}
+and a many-to-many relationship:
+\vspace{-0.2cm}
+\begin{verbatim}
+class A {
+  attribute string sa;
+  relationship set<B *> b_set inverse a_set;
+};
+
+class B {
+  attribute string sb;
+  relationship set<A *> a_set inverse b_set;;
+};
+\end{verbatim}
+
+\subsect{Methods}
+In ODL, one can declared the signature of C++ and OQL methods
+and one can defined the body of OQL methods.
+By default, a method is executed on the server side.
+\\
+A method argument can be any basic type, reference on a composite type or
+mono-dimensionnal array of basic or composite type. An argument
+can be \texttt{in}, \texttt{out} or \texttt{inout}.
+Argument may be named or unnamed (only type is given), for instance:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C1 {
+  attribute string c1;
+};
+
+class C2 {
+  attribute string c2;
+  int perform(in int size, in string str, out double, in C1 &, inout C2 &);
+};
+\end{verbatim}
+Note that the \texttt{\&} symbol may be replaced by the \texttt{*} symbol
+or no symbol as anyhow only a persistent object (not a litteral) may
+be passed to a method call.
+\\
+\\
+The \texttt{C::perform} method must be defined in C++ but may be called
+from OQL or a C++ client. To define a C++ method, refer to the
+document \emph{C++ Binding}.
+\\
+\\
+Methods can be overloaded (same name but different signatures), for instance:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C2 {
+  attribute string c2;
+  int perform(in int size, in string str, out double, in C1 &, inout C2 &);
+  int perform(in double, out string mystr);
+};
+\end{verbatim}
+One can defined OQL methods in ODL. In this case, the name of the
+arguments must be given:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C2 {
+  attribute string c2;
+  int append(in string s)
+  %oql{
+    this.s2 += s;
+    return strlen(this.s);
+  %};
+};
+\end{verbatim}
+The OQL \texttt{this} variable denotes the calling instance.
+\\
+\\
+A method can be an instance method (the default) or a class method (equivalent
+to C++ or Java static methods). To defined a class method, there are
+two constructs, using the keyword \texttt{static} or \texttt{classmethod}:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  static int perform1(in string); // or
+  classmethod int perform2(in string);
+
+  instmethod int perform3(in string); // <=> int perform3(in string)
+};
+\end{verbatim}
+If you want to execute a method on the client side, you must
+use the keyword \texttt{client} as follows:
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  instmethod<client> int perform1(in string);
+  classmethod<client> int perform2(in string);
+
+  instmethod<server> int perform3(in string);  // <=> int perform3(...)
+  classmethod<server> int perform4(in string); // <=> classmethod perform3(...)
+};
+\end{verbatim}
+
+\subsect{Triggers}
+Triggers are server methods which are executed when a particular
+event occurs on an object: before or after creation, update, load or delete.
+\\
+Like methods, a trigger can be written in C++ or in OQL. On the other
+hand a trigger has no argument but has a name;
+\vspace{-0.2cm}
+\begin{verbatim}
+class C {
+  attribute string s;
+
+  // C++ triggers
+  trigger<create_before> c_b();
+  trigger<create_after> c_a();
+
+  trigger<update_before> u_b();
+  trigger<update_after> u_a();
+
+  trigger<load_before> l_a();
+  trigger<load_after> l_b();
+
+  trigger<remove_before> r_b();
+  trigger<remove_after> r_a();
+
+  trigger<create_before> c_b2(); // one can have several create_before triggers
+
+  // OQL trigger
+  trigger<create_before> l_a2()
+  %oql{
+    if (strlen(this.s) > 100)
+      throw "invalid length";
+  %};
+};
+\end{verbatim}
+
+
+\subsect{Indexes}
+Indexes can be defined in ODL or with the tool \texttt{eyedbidxadmin}.
+To define indexes on attributes:
+\begin{verbatim}
+class C {
+  attribute string s;
+  attribute int i;
+
+  index on s;
+  index on i;
+};
+\end{verbatim}
+Note that we cannot define one index on several attributes.
+\\
+\subsubsect{Index and inheritance propagation}
+As constraints, indexes may be or not propagated to subclasses.
+The behavior is the same as for constraints: indexes are propagated
+by default to subclasses:
+\begin{verbatim}
+class C {
+  attribute string s;
+  attribute int i;
+
+  index on s;
+  index on i;
+};
+
+class C2 extends C {
+  attribute long l;
+  
+};
+\end{verbatim}
+Indexes are created for \texttt{C::s}, \texttt{C::i}, \texttt{C2::s}
+and \texttt{C2::i}.
+\\
+\\
+Note that the index on \texttt{C::s} (resp. \texttt{C::i} is different from the
+index on \texttt{C2::s} (resp. \texttt{C2::i}).
+\\
+To forbid propagation:
+\begin{verbatim}
+class C {
+  attribute string s;
+  attribute int i;
+
+  index<propagate=off> on s;
+  index<propagate=off> on i;
+};
+
+class C2 extends C {
+  attribute long l;
+  
+};
+\end{verbatim}
+Indexes are created only for only \texttt{C::s} and \texttt{C::i}.
+\subsubsect{Index on attribute of literal composite type}
+One can create indexes on an attribute of a literal composite type, for
+instance:
+\begin{verbatim}
+class C1 {
+  attribute int i;
+  attribute double d;
+};
+
+class C {
+  attribute string s;
+  C1 c1; // literal composite type
+
+  index on s;
+  index on c1.i;
+  index on c1.d;
+};
+\end{verbatim}
+\subsubsect{Index specifications}
+By default, index on number attribute (char, short, int, long and double)
+are implemented as BTree, while index on string or bounded string are
+implemented as Hash.
+\\
+The differences between BTree and Hash are as follows:
+\bi
+\item BTree indexes allows one to retrieve in an efficient way
+entries with values greater or lesser than a given value. Hash indexes
+does not allows this in a efficient way.
+\item On big volume of data, BTree indexes are more efficient 
+with the default parameters than Hash indexes with the default parameters
+\item On the other hand, for exact match search a Hash index
+with good parameters is more efficient than as BTree index
+\item At least, Hash indexes creation is about four times faster
+than BTree indexes
+\ei
+The ODL index specification allows one to change the default index
+type and parameters of a given attribute.
+To set the type of a given index:
+\begin{verbatim}
+class C {
+  attribute string<32> s;
+  attribute int i;
+
+  index<type = btree> on s; // default is hash: change to btree
+  index<type = hash> on i;  // default is btree: change to hash
+};
+\end{verbatim}
+Important note: one cannot set a BTree index on non bounded string.
+One can set implementation parameters for indexes as follows:
+\begin{verbatim}
+class C {
+  attribute string<32> s;
+  attribute int i;
+
+  index<type = btree, hints = "degree = 64;"> on s;
+  index<type = hash, hints = "key_count = 4096; initial_size = 4096;
+        extend_coef = 1; size_max = 4096;"> on i;
+};
+\end{verbatim}
+
+%\subsect{Advances features}
+%  collection implementation
+%  class implementation ??
+%  name alias
+%  quoted sequences
+
+\sect{The eyedbodl tool}
+The eyedbodl tool can be used to:
+\bi
+\item update a database from an ODL file:
+\bi
+\item create a schema
+\item add methods, triggers, constraints, indexes to classes
+\item remove methods, triggers, constraints, indexes to classes
+\item add classes
+\item remove classes
+\item add attributes
+\item rename attributes
+\item remove attributes
+\item remove classes
+\ei
+\item generate C++ stubs from an ODL file or a database containing
+a schema
+\item generate Java stubs from an ODL file or a database containing
+a schema
+\item generate ODL from a database containing a schema
+\item display the differences between an ODL file and a database
+schema
+\item check an ODL file syntax
+\ei
+For instance, let \texttt{schema.odl} an ODL file and \texttt{dbtest}
+a database.
+\subsect{Updating a schema}
+To update a database from an ODL file:
+\vspace{-2mm}
+\begin{verbatim}
+eyedbodl -u -d dbtest schema.odl
+\end{verbatim}
+or:
+\vspace{-2mm}
+\begin{verbatim}
+eyedbodl --update --database=dbtest schema.odl
+\end{verbatim}
+Important notes:
+\bi
+\item All classes defined in the ODL file will be added to the
+existing schema in the database
+\item The classes in the database and not in the ODL file will not
+be removed from the database
+\item To remove a class from a database, one must use the
+\texttt{--rmcls=}\emph{class} option. Because of class dependancies,
+the removal of a class can fail because one needs to remove
+other classes, for instance collection classes of the class one want
+to remove.
+\\
+In this case, one must delete classes in the good order.
+\item To remove a entire schema from a database, on must use
+the \texttt{--rmsch} option
+\item The methods, triggers, constraint and indexes
+in the ODL file and not in the database will be added to the database
+\item The methods, triggers, constraint and indexes in the databae
+and not in the ODL file will {\bf not} be removed from the database
+unless the \texttt{-rmv-undex-attrcomp=yes} option is given
+\item The common indexes (on same attributes) in the ODL file and in the
+database with a different implementation will not be updated unless
+the \texttt{--update-index=yes} is given
+\item A class \texttt{C} defined in the ODL and in the database with
+different attributes will have the following behavior:
+\bi
+\item an attribute \texttt{a} in a class \texttt{C} of the ODL, not
+in the class \texttt{C} of the database will be automatically added to the
+class \texttt{C} in the database
+\item an attribute \texttt{a} in a class \texttt{C} in the database, not
+in the class \texttt{C} in ODL will be automatically {\bf removed} from
+the class \texttt{C} in the database: {\bf This operation is not undoable}
+\item an attribute \texttt{a} in a class \texttt{C} in the database and
+in the class \texttt{C} in ODL with different types will lead
+to an update failure
+\ei
+\ei
+\subsect{Generates C++ code}
+To generate the C++ API from an ODL file:
+\vspace{-2mm}
+\begin{verbatim}
+eyedbodl --gencode=C++ schema.odl
+\end{verbatim}
+To generate the C++ API from a database:
+\vspace{-2mm}
+\begin{verbatim}
+eyedbodl --gencode=C++ --package=schema -d dbtest
+\end{verbatim}
+For a given \emph{package}.odl ODL file, the generated files are as follows:
+\bi
+\item \emph{package}.h, \emph{package}.cc: the generated C++ API to be used in
+a client program
+\item template\_\emph{package}.cc: an example of a client program using the generated
+API
+\item Makefile.\emph{package}: an example of Makefile to compile \emph{package}.cc and
+template\_\emph{package}.cc: make -f Makefile.\emph{package} will compile
+and link the generated API and template files
+\item \emph{package}stubsfe.cc, \emph{package}stubsbe.cc: stubs for client and server methods
+\item \emph{package}mthfe-skel.cc, \emph{package}mthbe-skel.cc: skeletons for
+client and server methods
+\ei
+
+%Quoted sequence
+
+\subsect{Generates Java code}
+To generate the Java API from an ODL file:
+\vspace{-2mm}
+\begin{verbatim}
+eyedbodl --gencode=Java schema.odl
+\end{verbatim}
+To generate the Java API from a database:
+\vspace{-2mm}
+\begin{verbatim}
+eyedbodl --gencode=Java --package=schema -d dbtest
+\end{verbatim}
+For a given \emph{package}.odl ODL file, 
+the \emph{package} directory contains a Java file for each class
+defined in the ODL file plus a Java file for each collection template
+class used as an attribute in classes of the ODL file.
+\subsect{Generates ODL}
+To generate the ODL from a database:
+\vspace{-2mm}
+\begin{verbatim}
+eyedbodl --gencode=ODL -d dbtest # generates on the standard ouput
+eyedbodl --gencode=ODL -d dbtest -o schema.odl
+\end{verbatim}
+
+\subsect{Display schema differences}
+To display the difference between a schema in an ODL file and a database
+schema:
+\vspace{-2mm}
+\begin{verbatim}
+eyedbodl --diff schema.odl -d dbtest
+\end{verbatim}
+
+\subsect{Checking the syntax of an ODL file}
+To check the syntax of an ODL file:
+\vspace{-2mm}
+\begin{verbatim}
+eyedbodl --checkfile schema.odl
+\end{verbatim}
+
+Beside these major options, eyedbodl has a lot of extra options as
+described when running eyedbodl with the --help option.
+\newpage
+\sect{Annexes}
+\subsect{A simple example}
+Here is a simple example that can be found
+in examples/C++Binding/schema-oriented/share/schema.odl:
+\begin{verbatim}
+enum CivilState {
+  Lady = 0x10,
+  Sir  = 0x20,
+  Miss = 0x40
+};
+
+class Address {
+  attribute string street;
+  attribute string<32> town;
+  attribute string country;
+
+  index on street;
+};
+
+class Person {
+  attribute string name;
+  attribute int age;
+  attribute Address addr;
+  attribute Address other_addrs[];
+  attribute CivilState cstate;
+  attribute Person * spouse inverse Person::spouse;
+  attribute set<Car *> cars inverse owner;
+  attribute array<Person *> children;
+  int change_address(in string street, in string town,
+                     out string oldstreet, out string oldtown);
+  index on  name;
+};
+
+class Car {
+  attribute string brand;
+  attribute int num;
+  Person *owner inverse cars;
+};
+
+class Employee extends Person {
+  attribute long salary;
+};
+\end{verbatim}
+\newpage
+\subsect{A more complex example}
+Here is a more complex example used for the management of biological
+databases:
+\begin{verbatim}
+enum StatusType {
+  running = 0,
+  done = 1
+};
+
+class File {
+  attribute string path;
+  attribute string name;
+  attribute string desc;
+  attribute set<Import_ctx *> imported_in inverse Import_ctx::file;
+
+  constraint<notnull, propagate=on> on name;
+};
+
+class Import_ctx {
+  attribute File * file inverse File::imported_in;
+  attribute Import * import inverse Import::contexts;
+  attribute StatusType status;
+  attribute string comment;
+  attribute int32 count;
+  attribute int32 elapsed;
+  attribute float average;
+  attribute string start_date;
+  attribute string last_update;
+
+  constraint<notnull, propagate=on> on file;
+  constraint<notnull, propagate=on> on import;
+};
+
+class Import {
+  attribute Db * related_db inverse Db::imports;
+  attribute string database_name;
+  attribute string cvs_tag;
+  attribute set<Import_ctx *> contexts inverse Import_ctx::import;
+  attribute string comment;
+  attribute bool deletable;
+
+  instance_method <client, called_from=OQL> time_interval getElapsed()
+
+  constraint<unique, propagate=on> on database_name;
+  constraint<notnull, propagate=on> on database_name;
+  constraint<unique, propagate=on> on cvs_tag;
+  constraint<notnull, propagate=on> on related_db;
+
+  index< propagate=on> on database_name;
+  index< propagate=on> on cvs_tag;
+};
+
+class Db {
+  attribute string name;
+  attribute string title;
+  attribute int32 version;
+  attribute set<Import *> imports inverse Import::related_db;
+  attribute array<File *> files;
+  attribute set<Db *> divisions;
+  attribute Import * official;
+
+  instance_method <client, called_from=OQL> string [] get_db_names();
+
+  constraint<unique, propagate=on> on name;
+  constraint<notnull, propagate=on> on name;
+
+  index< propagate=on> on name;
+};
+\end{verbatim}
+\newpage
+\subsect{The eyedbodl usage}
+The usage of the eyedbodl is as follows:
+\begin{verbatim}
+eyedbodl --gencode=C++ [--package=<package>] [--output-dir=<dirname>] [--output-file-prefix=<prefix>]
+         [--schema-name=<schname>] [--namespace=<namespace>] [--class-prefix=<prefix>]
+         [--db-class-prefix=<dbprefix>] [--attr-style=implicit|explicit] [--dynamic-attr]
+         [--gen-class-stubs] [--class-enums=yes|no] [--c-suffix=<suffix>] [--h-suffix=<suffix>]
+         [--export] [--down-casting=yes|no] [--gencode-error-policy=status|exception] [--attr-cache=yes|no]
+         [--rootclass=<rootclass>] [--no-rootclass] [--cpp=<cpp>] [--cpp-flags=<flags>]
+         [--no-cpp] <odlfile>|-|-d <dbname>|--database=<dbname> [<openflags>]
+
+eyedbodl --gencode=Java --package=<package> [--output-dir=<dirname>] [--output-file-prefix=<prefix>]
+         [--schema-name=<schname>] [--class-prefix=<prefix>] [--db-class-prefix=<dbprefix>]
+         [--attr-style=implicit|explicit] [--dynamic-attr] [--down-casting=yes|no]
+         [--gencode-error-policy=status|exception] [--cpp=<cpp>] [--cpp-flags=<flags>]
+         [--no-cpp] <odlfile>|-|-d <dbname>|--database=<dbname> [<openflags>]
+
+eyedbodl --gencode=ODL -d <dbname>|--database=<dbname> [--system-class]
+         [-o <odlfile>] [<openflags>]
+eyedbodl --diff -d <dbname>|--database=<dbname> [--system-class] [<openflags>] [--cpp=<cpp>]
+         [--cpp-flags=<flags>] [--no-cpp] <odlfile>|-
+
+eyedbodl -u|-update -d <dbname>|--database=<dbname> [--db-class-prefix=<dbprefix>] [<openflags>]
+         [--schema-name=<schname>] [--rmv-undef-attrcomp=yes|no] [--update-index=yes|no]
+         [--cpp=<cpp>] [--cpp-flags=<flags>] [--no-cpp] [--rmcls={<class>}] [--rmsch] [<odlfile>|-]
+
+eyedbodl --checkfile <odlfile>|-
+
+eyedbodl --help
+
+One must specify one and only one of the following major options:
+--gencode=C++                 Generates C++ code
+--gencode=Java                Generates Java code
+--gencode=ODL                 Generates ODL
+--update|-u                   Updates schema in database <dbname>
+--diff                        Displays the differences between a database schema and an odl file
+--checkfile                   Check input ODL file
+--help                        Displays the current information
+
+The following options must be added to the --gencode=C++ or Java option:
+<odlfile>|-|-d <dbname>|--database=<dbname> Input ODL file (or - for standard input) or the database name
+
+The following options can be added to the --gencode=C++ or Java option:
+--package=<package>           Package name
+--output-dir=<dirname>        Output directory for generated files
+--output-file-prefix=<prefix> Ouput file prefix (default is the package name)
+--class-prefix=<prefix>       Prefix to be put at the begining of each runtime class
+--db-class-prefix=<prefix>    Prefix to be put at the begining of each database class
+--attr-style=implicit         Attribute methods have the attribute name
+--attr-style=explicit         Attribute methods have the attribute name prefixed by get/set (default)
+--schema-name=<schname>       Schema name (default is <package>)
+--export                      Export class instances in the .h file
+--dynamic-attr                Uses a dynamic fetch for attributes in the get and set methods
+--down-casting=yes            Generates the down casting methods (the default)
+--down-casting=no             Does not generate the down casting methods
+--attr-cache=yes              Use a second level cache for attribute value
+--attr-cache=no               Does not use a second level cache for attribute value (the default)
+
+For the --gencode=C++ option only
+--namespace=<namespace>       Define classes with the namespace <namespace>
+--c-suffix=<suffix>           Use <suffix> as the C file suffix
+--h-suffix=<suffix>           Use <suffix> as the H file suffix
+--gen-class-stubs             Generates a file class_stubs.h for each class
+--class-enums=yes             Generates enums within a class
+--class-enums=no              Do not generate enums within a class (default)
+--gencode-error-policy=status Status oriented error policy (the default)
+--gencode-error-policy=exception Exception oriented error policy
+--rootclass=<rootclass>       Use <rootclass> name for the root class instead of the package name
+--no-rootclass                Does not use any root class
+
+The following options can be added to the --gencode=ODL option:
+--system-class                Generates system class ODL
+
+The following option must be added to the --update|-u option:
+-d <dbname>|--database=<dbname> Database for which operation is performed
+
+The following options can be added to the --update|-u option:
+<odlfile>|-                   Input ODL file or '-' (standard input)
+--schema-name=<schname>       Schema name (default is package)
+--db-class-prefix=<prefix>    Prefix to be put at the begining of each database class
+--rmv-undef-attrcomp=yes|no   Removes (yes) or not (no) the undefined attribute components
+                              (constraint, index and implementation). Default is no
+--update-index=yes|no         Updates (yes) or not (no) the index with a different
+                              implementation in the DB. Default is no
+--rmcls={<class>}             Removes the given class list
+--rmsch                       Removes the entire schema
+
+The following options must be added to the --diff option:
+-d <dbname>|--database=<dbname> Database for which the schema difference is performed
+<odlfile>                       The input ODL file for which the schema difference is performed
+
+The following options can be added to the --diff option:
+--system-class                Performs difference on system classes also
+
+The following option must be added to the --checkfile option:
+<odlfile>|-                   Input ODL file or '-' (standard input)
+
+The following options can be added when an <odlfile> is set:
+--cpp=<cpp>                   Uses <cpp> preprocessor instead of the default one
+--cpp-flags=<cpp-flags>       Adds <cpp-flags> to the preprocessing command
+--no-cpp                      Does not use any preprocessor
+
+Common Options:
+  -U <user>|@, --user=<user>|@       User name
+  -P [<passwd>], --passwd[=<passwd>] Password
+  --host=<host>                      eyedbd host
+  --port=<port>                      eyedbd port
+  --inet                             Use the tcp_port variable if port is not set
+  --dbm=<dbmfile>                    EYEDBDBM database file
+  --conf=<conffile>                  Configuration file
+  --logdev=<logfile>                 Output log file
+  --logmask=<mask>                   Output log mask
+  --logdate=on|off                   Control date display in output log
+  --logtimer=on|off                  Control timer display in output log
+  --logpid=on|off                    Control pid display in output log
+  --logprog=on|off                   Control progname display in output log
+  --error-policy=<value>             Control error policy: status|exception|abort|stop|echo
+  --trans-def-mag=<magorder>         Default transaction magnitude order
+  --arch                             Display the client architecture
+  -v, --version                      Display the version
+  --help-eyedb-options               Display this message
+\end{verbatim}
+\end{document}
+
+
+
+
+
+\newpage
+\subsect{A very complex example}
+The following schema has been used in a biological projects:
+\verbsize
+\begin{verbatim}
+class Date {
+  attribute int32 release;
+  attribute int32 version;
+  attribute date d;
+};
+
+class TopicComment {
+  attribute string name;
+  attribute string comment;
+};
+
+class DbObject {
+  attribute string name;
+  attribute ostring other_names[]; 
+  attribute array<EntryReference *> accession_numbers;
+  attribute string description;
+  attribute Date creation_date;
+  attribute Date last_update_date;
+  attribute Date last_annotation_date;
+  attribute bag<CrossReference *> cross_references;
+  attribute array<Citation *> references;
+  attribute set<KeyWord *> keywords;
+  attribute array<Author *> authors;
+  attribute string comment;
+  attribute TopicComment topicComments[];
+
+  index< propagate=on, type=hash> on name;
+  index< propagate=on, type=hash> on other_names.s; 
+  index< propagate=on> on accession_numbers;
+  index< propagate=on> on cross_references;
+  index< propagate=on> on keywords;
+  index< propagate=on> on authors;
+  index< propagate=on> on references;
+  index< propagate=on> on creation_date.d.julian;
+  index< propagate=on> on DbObject.last_annotation_date.d.julian;
+  index< propagate=on> on DbObject.last_update_date.d.julian;
+  index< propagate=on> on topicComments.name;
+  index< propagate=on> on topicComments.comment;
+};
+
+class DbReference {
+  attribute string<32> id;
+  attribute int32 version;
+  attribute string sid;
+  attribute Db * db;
+
+  index< propagate=on, type=hash> on id;
+  index< propagate=on, type=btree> on db;
+  instance_method <client, called_from=OQL> oid get_entry_oid()
+  %oql{
+    return null;
+   %}
+};
+
+class Db {
+  attribute string name;
+  attribute string title;
+  attribute string code;
+  attribute int32 version;
+  attribute set<Division *> divisions;
+  attribute set<DbReference *> accession_numbers;
+
+  index< propagate=on> on name;
+  index< propagate=on> on code;
+  index< propagate=on> on divisions;
+  index< propagate=on> on accession_numbers;
+};
+
+class Division extends Db {
+  attribute Db * db;
+};
+
+class EntryReference extends DbReference {
+  attribute DbObject * db_object;
+
+  index< propagate=on> on db_object;
+  instance_method <client, called_from=OQL> oid get_entry_oid()
+  %oql{
+    return this.db_object;
+  %}
+};
+
+class CrossReference extends DbReference {
+  attribute string status;
+  attribute DbObject * db_object;
+
+  index< propagate=on> on db_object;
+  instance_method <client, called_from=OQL> oid get_remote_oid()
+  %oql{
+    dbname := this.db.name;
+    id := this.id;
+    return getDbObject(dbname, id);
+  %}
+
+  instance_method <client, called_from=OQL> oid get_entry_oid()
+  %oql{
+    return this.get_remote_oid();
+   %}
+};
+
+class KeyWord {
+  attribute string kvalue;
+  attribute bag<DbObject *> db_objects;
+
+  index< propagate=on> on kvalue;
+  index< propagate=on> on db_objects;
+};
+
+class Author {
+  attribute string name;
+  attribute set<DbObject *> db_objects;
+
+  index< propagate=on> on name;
+};
+
+class Reference extends DbObject {
+  attribute string title;
+  attribute string location;
+
+  index< propagate=on> on title;
+  index< propagate=on> on location;
+};
+
+class Citation extends Reference {
+  attribute int32 num;
+  attribute Location * positions;
+};
+
+class Location {
+};
+
+class CommentLocation extends Location {
+  attribute string comment;
+};
+
+class BioObject extends DbObject {
+  attribute set<Organism *> organisms;
+  attribute set<Organelle *> organelles;
+
+  index< propagate=on> on organisms;
+  index< propagate=on, type=btree> on organelles;
+};
+
+class Organism {
+  attribute string genus;
+  attribute ostring names[];
+  attribute Taxon * taxonomy;
+  attribute bag<BioObject *> bioobjects;
+
+  index< propagate=on> on genus;
+  index< propagate=on> on bioobjects;
+  index< propagate=on> on taxonomy;
+  index< propagate=on> on names.s;
+};
+
+class Taxon {
+  attribute string name;
+  attribute Taxon * parent;
+  attribute set<Taxon *> children;
+  attribute set<Organism *> organisms;
+  attribute Taxonomy * taxonomy;
+
+  index< propagate=on> on name;
+  index< propagate=on> on children;
+  index< propagate=on> on organisms;
+};
+
+class Taxonomy {
+  attribute string title;
+  attribute set<Taxon *> taxons;
+};
+
+class Organelle {
+  attribute string name;
+  attribute Organism * organism;
+  attribute bag<BioObject *> bioobjects;
+
+  index< propagate=on> on name;
+  index< propagate=on> on organism;
+  index< propagate=on> on bioobjects;
+};
+
+enum SequenceStrand {
+  unknown_orientation = 0,
+  direct = 1,
+  complementary = 2,
+  both = 3,
+  both_reverse = 4
+};
+
+enum CompositionType {
+  join = 0,
+  order = 1,
+  group = 2,
+  oneof = 3
+};
+
+enum MoleculeType {
+  mol_unknown_type = 0,
+  mol_dna = 1,
+  mol_rna = 2,
+  mol_aa = 3,
+  mol_na = 4,
+  mol_other_type = 255
+};
+
+enum MoleculeTopology {
+  mol_unknown_topology = 0,
+  mol_linear = 1,
+  mol_circular = 2,
+  mol_tandem = 3,
+  mol_other_topology = 255
+};
+
+class SequenceLocation extends Location {
+  attribute SequenceStrand strand;
+};
+
+class RangeSequenceLocation extends SequenceLocation {
+  attribute int32 from_beyond;
+  attribute int32 from_location;
+  attribute int32 to_location;
+  attribute int32 to_beyond;
+};
+
+class SiteSequenceLocation extends SequenceLocation {
+  attribute int32 after_base;
+};
+
+class SingleBaseFromRangeSequenceLocation extends SequenceLocation {
+  attribute RangeSequenceLocation  location;
+};
+
+class SingleBaseFromSetSequenceLocation extends SequenceLocation {
+  attribute int32 bases[];
+};
+
+class RemoteSequenceLocation extends SequenceLocation {
+  attribute CrossReference * sequence;
+};
+
+class RemoteLocatedSequenceLocation extends RemoteSequenceLocation {
+  attribute SequenceLocation * location;
+};
+
+class RemoteLabeledSequenceLocation extends RemoteSequenceLocation {
+  attribute string label;
+};
+
+class ReferenceSequenceLocation extends SequenceLocation {
+  attribute string base_string;
+};
+
+class CompositeSequenceLocation extends SequenceLocation {
+  attribute array<SequenceLocation *> locations;
+  attribute CompositionType composition_type;
+};
+
+class FeatureQualifier {
+  attribute string<21> name;
+  attribute string qvalue;
+};
+
+class Feature {
+  attribute string<17> key;
+  attribute SequenceLocation * location;
+  attribute string description;
+  attribute FeatureQualifier qualifiers[];
+};
+
+class SequenceObject extends BioObject {
+  attribute MoleculeType molecule;
+  attribute Feature feature_table[];
+  attribute int32 length;
+  attribute string sequence;
+  attribute BioLibrary * library;
+  attribute Clone * clone;
+  attribute MoleculeTopology topology;
+
+  index< propagate=on, type=hash> on molecule;
+  index< propagate=on, type=btree> on length;
+  index< propagate=on> on library;
+  index< propagate=on> on clone;
+  index< propagate=on> on feature_table.key;
+  index< propagate=on> on feature_table.description;
+  index< propagate=on> on feature_table.qualifiers.name;
+  index< propagate=on> on feature_table.qualifiers.qvalue;
+};
+
+class SequenceAlignment {
+  attribute DbReference * sequence_ref;
+  attribute int32 start;
+  attribute int32 end;
+  attribute int32 length;
+  attribute float score;
+  attribute string aligned_portion;
+  attribute Experiment * computation;
+
+  index< propagate=on, type=btree> on length;
+  index< propagate=on> on sequence_ref;
+  index< propagate=on> on computation;
+};
+
+class NucleicSequenceComposition {
+  attribute int32 a;
+  attribute int32 c;
+  attribute int32 g;
+  attribute int32 t;
+  attribute int32 other;
+};
+
+class NucleicSequence extends SequenceObject {
+  attribute NucleicSequenceComposition  composition;
+};
+
+class Gene extends BioObject {
+  attribute ostring names[];
+  attribute set<ProteicSequence *> proteinSequences;
+
+  index< propagate=on> on proteinSequences;
+};
+
+class ProteicSequence extends SequenceObject {
+  attribute int32 molweight;
+  attribute set<Gene *> genes;
+  attribute set<CrossReference *> domains;
+  index< propagate=on> on genes;
+};
+
+class ProteinFamily extends BioObject {
+  attribute SequenceAlignment alignment[];
+  attribute int32 number_of_domains;
+
+  index< propagate=on, type=btree> on number_of_domains;
+};
+
+class BioLibrary {
+  attribute string name;
+  attribute string id;
+  index< propagate=on> on name;
+  index< propagate=on> on id;
+};
+
+class EST extends NucleicSequence {
+  attribute string<10> end;
+
+  index< propagate=on> on end;
+};
+
+class Compound {
+  attribute string name;
+
+  index< propagate=on> on name;
+};
+
+class ReactionSubstrate {
+  attribute Compound * substrate;
+  attribute int32 stoechiometry;
+};
+
+class Reaction {
+  attribute ReactionSubstrate reactants[];
+  attribute ReactionSubstrate products[];
+  attribute string description;
+};
+
+class Cofactor {
+  attribute set<Compound *> compounds;
+  index< propagate=on> on compounds;
+};
+
+class Enzyme extends DbObject {
+  attribute ostring alternate_names[];
+  attribute Reaction  reaction;
+  attribute Cofactor cofactors[];
+};
+
+class CytoElement extends BioObject {
+};
+
+class CytoBand extends CytoElement {
+};
+
+class Chromosome extends CytoElement {
+};
+
+enum MapElementType {
+  is_framework = 0,
+  is_multipoint = 1,
+  is_pairwise = 2,
+  is_placement = 3
+};
+
+enum MarkerType {
+  is_unclassified = 0,
+  is_genetic = 1,
+  is_EST = 2,
+  is_full_cDNA = 3,
+  is_CDS = 4,
+  is_alternative_genetic = 5,
+  is_mRNA = 6,
+  is_CpGisland = 7,
+  is_other = 8,
+  is_SNP = 9
+};
+
+class MapObject extends BioObject {
+  attribute set<MapElement *> on_maps;
+};
+
+class MapElement {
+  attribute MapObject * mappable;
+  attribute GenomeMap * map;
+  attribute MapElementType position_type;
+  attribute float dist_top;
+  attribute float dist_bottom;
+  attribute float lod_top;
+  attribute float lod_bottom;
+
+  index< propagate=on, type=hash> on position_type;
+  index< propagate=on> on mappable;
+  constraint<notnull, propagate=on> on mappable;
+  index< propagate=on> on map;
+  constraint<notnull, propagate=on> on map;
+};
+
+class GenomeMap extends BioObject {
+  attribute Chromosome * chromosome;
+  attribute float lod_score;
+  attribute array<MapElement *> elements;
+  index< propagate=on, type=btree> on lod_score;
+  index< propagate=on> on chromosome;
+};
+
+class Clone extends MapObject {
+};
+
+class Experiment extends DbObject {
+};
+
+class Panel extends BioObject {
+  attribute int32 nb_elements;
+  attribute Clone clones[];
+};
+
+class Marker extends MapObject {
+  attribute MarkerType types[];
+};
+
+class Assay {
+  attribute BioObject * bioobject;
+  attribute Experiment * protocol;
+
+  index< propagate=on> on bioobject;
+  index< propagate=on> on protocol;
+};
+
+class STS extends Marker {
+  attribute string CA_primer;
+  attribute string GT_primer;
+  attribute int32 PCR_length;
+};
+
+class RhMap extends GenomeMap {
+  attribute Panel * panel;
+  index< propagate=on> on panel;
+};
+
+class MapInterval {
+  attribute MapElement * mapobj1;
+  attribute MapElement * mapobj2;
+
+  index< propagate=on> on mapobj1;
+  index< propagate=on> on mapobj2;
+};
+
+enum DataClass {
+  standard = 0,
+  preliminary = 1
+
+};
+
+class EmblEntry extends NucleicSequence {
+  attribute DataClass data_class;
+};
+
+class SwissprotEntry extends ProteicSequence {
+  attribute DataClass data_class;
+  attribute string crc;
+};
+
+enum DomainType {
+  is_pattern = 0,
+  is_matrix = 1,
+  is_rule = 2
+
+};
+
+class DbScan {
+  attribute Db * db;
+  attribute int32 nb_sequences;
+  attribute int32 total_sequences;
+  attribute int32 total_hits;
+  attribute int32 positive_sequences;
+  attribute int32 positive_hits;
+  attribute int32 unknown_sequences;
+  attribute int32 unknown_hits;
+  attribute int32 false_positive_sequences;
+  attribute int32 false_positive_hits;
+  attribute int32 false_negative_sequences;
+  attribute int32 false_negative_hits;
+  attribute int32 partial_sequences;
+  attribute int32 partial_hits;
+  attribute set<CrossReference *> hits;
+};
+
+class PrositeEntry extends ProteinFamily {
+  attribute set<Documentation *> documentation;
+  attribute DomainDefinition * definition;
+  attribute DbScan  proteins;
+  attribute set<Taxon *> taxonomic_range;
+  attribute int32 max_nb_of_repeats;
+  attribute Feature sites[];
+  attribute bool skip_flag;
+  attribute set<CrossReference *> structure_3D;
+  attribute DomainType domain_type;
+
+  index< propagate=on, type=hash> on domain_type;
+  index< propagate=on, type=btree> on max_nb_of_repeats;
+  index< propagate=on> on documentation;
+  index< propagate=on, type=btree> on proteins.total_sequences;
+  index< propagate=on, type=btree> on proteins.total_hits;
+  index< propagate=on, type=btree> on proteins.positive_sequences;
+  index< propagate=on, type=btree> on proteins.positive_hits;
+  index< propagate=on, type=btree> on proteins.unknown_sequences;
+  index< propagate=on, type=btree> on proteins.unknown_hits;
+  index< propagate=on, type=btree> on proteins.false_positive_sequences;
+  index< propagate=on, type=btree> on proteins.false_positive_hits;
+  index< propagate=on, type=btree> on proteins.false_negative_sequences;
+  index< propagate=on, type=btree> on proteins.false_negative_hits;
+  index< propagate=on, type=btree> on proteins.partial_sequences;
+  index< propagate=on, type=btree> on proteins.partial_hits;
+  index< propagate=on> on proteins.db;
+};
+
+class Documentation extends DbObject {
+  attribute string title;
+  attribute string text;
+  attribute set<DbObject *> entries;
+  index< propagate=on> on title;
+  index< propagate=on> on entries;
+};
+
+class DomainDefinition {
+};
+
+class DomainRule extends DomainDefinition {
+  attribute string rule;
+  index< propagate=on> on rule;
+};
+
+class DomainProfile extends DomainRule {
+  attribute string matrix;
+  attribute string matrix_type;
+  attribute string scaling_db;
+  attribute Feature  region;
+  index< propagate=on> on matrix;
+};
+
+class DomainPattern extends DomainRule {
+  attribute string pattern;
+  index< propagate=on> on pattern;
+};
+
+class ProtomatResults {
+  attribute string<32> code;
+  attribute int32 width;
+  attribute int32 sequences;
+  attribute float proba;
+  attribute int32 score;
+  attribute int32 strength;
+};
+
+class BlocksEntry extends ProteinFamily {
+  attribute int32 distance_from_previous_block1;
+  attribute int32 distance_from_previous_block2;
+  attribute Experiment * computation;
+  attribute ProtomatResults  protomat_results;
+
+  index< propagate=on, type=btree> on distance_from_previous_block1;
+  index< propagate=on, type=btree> on distance_from_previous_block2;
+  index< propagate=on> on computation;
+  index< propagate=on, type=btree> on protomat_results.code;
+  index< propagate=on, type=btree> on protomat_results.width;
+  index< propagate=on, type=btree> on protomat_results.sequences;
+  index< propagate=on, type=btree> on protomat_results.score;
+  index< propagate=on, type=btree> on protomat_results.strength;
+};
+
+class FrequentString {
+  attribute string name;
+  attribute int32 occurences;
+};
+
+class FamilyObtention {
+  attribute string description;
+  attribute CrossReference * protein_family;
+};
+
+class ProdomEntry extends ProteinFamily {
+  attribute FrequentString frequent_protein_name[];
+  attribute int32 alignment_length;
+  attribute int32 diameter;
+  attribute int32 radius_of_gyration;
+  attribute SequenceAlignment  sequence_closest_to_consensus;
+  attribute FamilyObtention  obtention;
+  attribute string consensus_sequence;
+
+  index< propagate=on, type=btree> on alignment_length;
+  index< propagate=on, type=btree> on diameter;
+  index< propagate=on, type=btree> on radius_of_gyration;
+  index< propagate=on> on frequent_protein_name.name;
+  index< propagate=on> on obtention.protein_family;
+};
+
+enum FamilyType {
+  family = 0,
+  domain = 1,
+  repeat = 2,
+  motif = 3
+
+};
+
+class PfamScore {
+  attribute float gathering_method[2];
+  attribute float lowest_sequence_score;
+  attribute float lowest_domain_score;
+  attribute float highest_sequence_score;
+  attribute float highest_domain_score;
+};
+
+class PfamEntry extends ProteinFamily {
+  attribute string source;
+  attribute PfamEntry * seed;
+  attribute string alignment_method;
+  attribute string building_method;
+  attribute FamilyType family_type;
+  attribute PfamEntry * full;
+  attribute PfamScore  ls;
+  attribute PfamScore  fs;
+
+  index< propagate=on> on source;
+  index< propagate=on> on alignment_method;
+  index< propagate=on> on building_method;
+  index< propagate=on> on seed;
+  index< propagate=on, type=btree> on ls.lowest_sequence_score;
+  index< propagate=on, type=btree> on ls.lowest_domain_score;
+  index< propagate=on, type=btree> on ls.highest_sequence_score;
+  index< propagate=on, type=btree> on ls.highest_domain_score;
+  index< propagate=on, type=btree> on fs.lowest_sequence_score;
+  index< propagate=on, type=btree> on fs.lowest_domain_score;
+  index< propagate=on, type=btree> on fs.highest_sequence_score;
+  index< propagate=on, type=btree> on fs.highest_domain_score;
+};
+
+class RhMarker extends Marker {
+  attribute set<RhAssay *> rh_assays;
+  attribute set<ChrAssay *> chrom_assign;
+};
+
+class RhAssay extends Assay {
+  attribute RhSTS * sts;
+  attribute Panel * panel;
+  attribute string score;
+  attribute int32 number_of_trials;
+
+  index< propagate=on, type=btree> on number_of_trials;
+  index< propagate=on> on sts;
+  index< propagate=on> on panel;
+};
+
+class RhSTS extends STS {
+  attribute set<RhAssay *> rh_assays;
+};
+
+class ChrAssay extends Assay {
+  attribute Chromosome * chromosome;
+  attribute string comments;
+  index< propagate=on> on chromosome;
+};
+
+class CloneLibrary extends BioLibrary {
+  attribute ostring tissues[];
+  attribute string vector;
+};
+
+class ExpressionKeyWord extends KeyWord {
+  attribute set<SequenceCluster *> clusters;
+  index< propagate=on> on clusters;
+};
+
+class SequenceCluster extends DbObject {
+  attribute int32 nb_sequences;
+  attribute Gene * gene;
+  attribute set<CytoBand *> cytobands;
+  attribute bag<CrossReference *> locus;
+  attribute set<ExpressionKeyWord *> expression;
+  attribute set<STS *> sts;
+  attribute SequenceAlignment protein_similarity[];
+  attribute set<SequenceObject *> sequences;
+  attribute set<Chromosome *> chromosomes;
+
+  index< propagate=on, type=btree> on nb_sequences;
+  index< propagate=on> on gene;
+  index< propagate=on> on chromosomes;
+  index< propagate=on> on cytobands;
+  index< propagate=on> on expression;
+  index< propagate=on> on sts;
+  index< propagate=on> on sequences;
+  index< propagate=on> on locus;
+};
+
+enum MoleculeStrand {
+  mol_unknown_strand = 0,
+  mol_single = 1,
+  mol_double = 2,
+  mol_mixed = 3,
+  mol_other_strand = 255
+};
+
+enum MoleculeInfo {
+  mol_unknown_info = 0,
+  mol_genomic = 1,
+  mol_pre_RNA = 2,
+  mol_mRNA = 3,
+  mol_rRNA = 4,
+  mol_tRNA = 5,
+  mol_snRNA = 6,
+  mol_scRNA = 7,
+  mol_peptide = 8,
+  mol_other_genetic = 9,
+  mol_genomic_mRNA = 10,
+  mol_cRNA = 11,
+  mol_snoRNA = 12,
+  mol_transcribed_RNA = 13,
+  mol_other_info = 255
+};
+
+class GenbankEntry extends SequenceObject {
+  attribute int32 gi;
+  attribute MoleculeStrand strand;
+  attribute MoleculeInfo molInfo;
+  index< propagate=on> on gi;
+};
+
+class GenbankSequence extends GenbankEntry {
+  attribute array<GenbankCDS *> cds;
+};
+
+class GenbankContig extends GenbankSequence {
+  attribute SequenceAlignment sequences[];
+};
+
+class GenbankCDS extends GenbankEntry {
+  attribute int32 frame;
+  attribute int32 translation_table;
+  attribute GenbankSequence * source;
+  attribute SequenceLocation * location;
+};
+
+class TeraprotEntry extends SwissprotEntry {
+  attribute int32 matid;
+  attribute TeraProteome * proteome;
+  attribute set<TeraprotCluster *> clusters;
+  index< propagate=on> on description;
+};
+
+class TeraprotCluster extends BioObject {
+  attribute set<TeraprotEntry *> proteins;
+};
+
+class TeraProteome {
+  attribute string<128> name;
+  attribute string file;
+  attribute int32 matid;
+  attribute set<TeraprotEntry *> proteins;
+  index< propagate=on, type=btree> on name;
+  index< propagate=on> on file;
+};
+
+class TeraprotOrganism extends Organism {
+  attribute set<TeraProteome *> proteomes;
+};
+
+class TeraprotTaxon extends Taxon {
+  attribute set<TeraProteome *> proteomes;
+};
+\end{verbatim}
+
+\end{document}

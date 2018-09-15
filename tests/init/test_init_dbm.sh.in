@@ -1,0 +1,6 @@
+top_builddir=@top_builddir@
+
+. $top_builddir/tests/lib/shell/eyedb-functions.sh
+
+init_dbm
+

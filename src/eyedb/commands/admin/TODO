@@ -1,0 +1,67 @@
+
+eyedbadmin TODO list:
+
+- missing tests:
+  eyedbadmin database export
+  eyedbadmin database import
+  eyedbadmin index update
+
+
+- finish implementation of 'eyedbadmin index move':
+-- missing RPC in protocol:
+-- add options --collapse and --defragment
+  eyedbadmin index move <dbname> <index name> <dest dataspace> [DONE, MISSING PROTOCOL]
+
+
+- implement 'eyedbadmin collection *': 
+eyedbadmin collection updateimpl DATABASE COLLECTION hash|btree [HINTS]   [DONE]
+eyedbadmin collection simulimpl [--full] [--format=FORMAT] DATABASE COLLECTION hash|btree [HINTS]   [DONE]
+eyedbadmin collection listimpl DATABASE COLLECTION...   [DONE]
+eyedbadmin collection statsimpl [--full] [--format=FORMAT] DATABASE COLLECTION...   [DONE]
+eyedbadmin collection getdefdsp DATABASE COLLECTION   [DONE]
+eyedbadmin collection setdefdsp DATABASE COLLECTION DATASPACE   [DONE]
+eyedbadmin collection getdefimpl DATABASE [CLASSNAME|ATTRIBUTE_PATH]...   [DONE]
+eyedbadmin collection setdefimpl DATABASE ATTRIBUTE_PATH hash|btree [HINTS] [propagate=on|off]   [DONE]
+
+eyedbadmin collection getloca [--stats] [--loca] DATABASE COLLECTION   [DONE]
+(replaces eyedbloca getcollloca <dbname> --stats|--loca|--all <name>|<oid>)
+eyedbadmin collection move DATABASE COLLECTION DESTDATASPACE [DONE]
+
+
+- implement 'eyedbadmin class *'
+eyedbadmin class getdefdsp DATABASE CLASS   [DONE]
+(replaces eyedbloca getdefinstdsp <dbname> <class name>)
+
+eyedbadmin class setdefdsp DATABASE CLASS DATASPACE   [DONE]
+(replaces eyedbloca setdefinstdsp <dbname> <class name> <dest dataspace>)
+
+eyedbadmin class move [--subclasses] DATABASE CLASS DATASPACE   [DONE]
+(replaces eyedbloca mvinst <dbname> [--subclasses] <class name> <dest dataspace>)
+
+eyedbadmin class getloca [--stats] [--loca] [--subclasses] DATABASE CLASS   [DONE]
+(replaces eyedbloca getinstloca --stats|--loca|--all [--subclasses] <dbname> <class name>)
+
+
+- implement 'eyedbadmin object *'
+eyedbadmin object getloca [--stats] [--loca] DBNAME OQL   [DONE]
+(replaces eyedbloca getobjloca --stats|--loca|--all <dbname> <oql construct>)
+
+eyedbadmin object move DATABASE OQL DATASPACE   [DONE]
+(replaces eyedbloca mvobj <dbname> <oql construct> <dest dataspace>)
+
+
+- implement 'eyedbadmin constraint *'
+eyedbadmin constraint create ???
+eyedbadmin constraint delete ???
+eyedbadmin constraint list ???
+
+- implement 'eyedbadmin attribute *'  [NOT YET]
+eyedbadmin attribute getdefdsp DATABASE CLASS::ATTRIBUTE
+(replaces eyedbloca getdefattrdsp <dbname> <class>::<attr>)
+
+eyedbadmin attribute setdefdsp DATABASE CLASS::ATTRIBUTE DATASPACE
+(replaces eyedbloca setdefattrdsp <dbname> <class>::<attr> <dest dataspace>)
+
+eyedbadmin attribute move ???
+
+eyedbadmin attribute getloca ???

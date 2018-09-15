@@ -1,0 +1,555 @@
+/* 
+   EyeDB Object Database Management System
+   Copyright (C) 1994-1999,2004,2005 SYSRA
+   
+   EyeDB is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+   
+   EyeDB is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+   
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA 
+*/
+
+/*
+   Author: Eric Viara <viara@sysra.com>
+*/
+
+//
+// utils.odl
+//
+// Utility native classes
+//
+
+// ---------------------------------------------------------------------------
+//
+// Image Class
+//
+// ---------------------------------------------------------------------------
+
+enum image_type [ImageType] {
+  GIF_IMG_TYPE [GIF_IMG_TYPE] = 1,
+  JPEG_IMG_TYPE [JPEG_IMG_TYPE],
+  PM_IMG_TYPE [PM_IMG_TYPE],
+  PBM_IMG_TYPE [PBM_IMG_TYPE],
+  X11BITMAP_IMG_TYPE [X11BITMAP_IMG_TYPE],
+  BMP_IMG_TYPE [BMP_IMG_TYPE],
+  TIFF_IMG_TYPE [TIFF_IMG_TYPE]
+};
+
+class image [Image] {
+  string name;
+  image_type #type;
+  byte data[];
+  int w;
+  int h;
+};
+
+// ---------------------------------------------------------------------------
+//
+// WEB Contributions
+//
+// ---------------------------------------------------------------------------
+
+class URL [CURL] {
+  string proto;
+  string url;
+  %C++{
+  CURL(const char *proto, const char *url);
+  %}
+};
+
+class w_config [WConfig] {
+  string name;
+  string user;
+  string conf;
+};
+
+// ---------------------------------------------------------------------------
+//
+// Date Classes
+//
+// ---------------------------------------------------------------------------
+
+enum month [Month] {
+  JANUARY [January] = 1,
+  FEBRUARY [February] = 2,
+  MARCH [March] = 3,
+  APRIL [April] = 4,
+  MAY [May] = 5,
+  JUNE [June] = 6,
+  JULY [July] = 7,
+  AUGUST [August] = 8,
+  SEPTEMBER [September] = 9,
+  OCTOBER [October] = 10,
+  NOVEMBER [November] = 11,
+  DECEMBER [December] = 12    
+};
+
+enum weekday [Weekday] {
+  SUNDAY [Sunday] = 0,
+  MONDAY [Monday] = 1,
+  TUESDAY [Tuesday] = 2,
+  WEDNESDAY [Wednesday] = 3,
+  THURSDAY [Thursday] = 4,
+  FRIDAY [Friday] = 5,
+  SATURDAY [Saturday] = 6
+};
+
+class date [Date] {
+  attribute int32 julian; // julian day limited to 584554 years
+
+  classmethod<client, called_from=OQL> date date(); // current date
+  classmethod<client, called_from=OQL> date date(in date d); 
+  classmethod<client, called_from=OQL> date date(in int32 julian_day);
+  classmethod<client, called_from=OQL> date date(in int32 year, in month m, in int16 day);
+  classmethod<client, called_from=OQL> date date(in string d); // ISO date format YYYY-MM-DD
+  classmethod<client, called_from=OQL> int32 julian(in string d); // ISO date format YYYY-MM-DD
+  instmethod<client, called_from=OQL> int32 year(); 
+  instmethod<client, called_from=OQL> int16 month();
+  instmethod<client, called_from=OQL> int16 day();
+  instmethod<client, called_from=OQL> int16 day_of_year();
+  instmethod<client, called_from=OQL> month month_of_year();
+  instmethod<client, called_from=OQL> weekday day_of_week();
+  instmethod<client, called_from=OQL> string toString(); // returns YYYY-MM-DD
+  instmethod<client, called_from=OQL> int16 is_leap_year();
+  instmethod<client, called_from=OQL> int16 is_equal(in date d);
+  instmethod<client, called_from=OQL> int16 is_greater(in date d);
+  instmethod<client, called_from=OQL> int16 is_greater_or_equal(in date d);
+  instmethod<client, called_from=OQL> int16 is_less(in date d);
+  instmethod<client, called_from=OQL> int16 is_less_or_equal(in date d);
+  instmethod<client, called_from=OQL> int16 is_between(in date d1, in date d2);
+  instmethod<client, called_from=OQL> date next(in weekday day);
+  instmethod<client, called_from=OQL> date previous(in weekday day);
+  instmethod<client, called_from=OQL> date add_days(in int32 days);
+  instmethod<client, called_from=OQL> date substract_days(in int32 days);
+  instmethod<client, called_from=OQL> int32 substract_date(in date d);
+  instmethod<client, called_from=OQL> void set_julian(in int32 julian_day);
+
+  %C++{
+  private:
+    char string_date[16];
+
+    virtual void userCopy(const Object &);
+    virtual void userInitialize();
+    void setClientData();
+
+  public:
+    static Date * date(Database * db); // current date
+    static Date * date(Database * db, const Date & d); 
+    static Date * date(Database * db, eyedblib::int32 julian_day);
+    static Date * date(Database * db, eyedblib::int32 year, Month::Type m, eyedblib::int16 day);
+    static Date * date(Database * db, const char * d); // ISO date format YYYY-MM-DD
+    static eyedblib::int32 julian(const char * d); // ISO date format YYYY-MM-DD
+    eyedblib::int32 year() const;
+    eyedblib::int16 month() const;
+    eyedblib::int16 day() const;
+    eyedblib::int16 day_of_year() const;
+    Month::Type month_of_year() const;
+    Weekday::Type day_of_week() const;
+    const char * toString() const; // returns YYYY-MM-DD
+    Bool is_leap_year() const;
+    Bool is_equal(const Date & d) const;
+    Bool is_greater(const Date & d) const;
+    Bool is_greater_or_equal(const Date & d) const;
+    Bool is_less(const Date & d) const;
+    Bool is_less_or_equal(const Date & d) const;
+    Bool is_between(const Date & d1, const Date & d2) const;
+    Date & next(Weekday::Type day);
+    Date & previous(Weekday::Type day);
+    Date & add_days(eyedblib::int32 days);
+    Date & substract_days(eyedblib::int32 days);
+    eyedblib::int32 substract_date(const Date & d) const;
+    Status set_julian(eyedblib::int32 julian_day);
+    %}
+};
+
+class time [Time] {
+  attribute int64 usecs; // temps GMT limited to 24 hours
+  attribute int16 tz; // time zone in minutes
+
+  classmethod<client, called_from=OQL> void get_local_time_zone(out int16 tz_hour, out int16 tz_min);
+  classmethod<client, called_from=OQL> time gmt_time(); // current gmt time
+  classmethod<client, called_from=OQL> time local_time(); // current local time
+  classmethod<client, called_from=OQL> time time(in time t);
+  classmethod<client, called_from=OQL> time time(in int64 usec);
+  classmethod<client, called_from=OQL> time time(in int64 usec, in int16 tz);
+  classmethod<client, called_from=OQL> time time(in int16 hours, in int16 min, in int16 sec, in int16 msec);
+  classmethod<client, called_from=OQL> time time(in int16 hours, in int16 min, in int16 sec, in int16 msec, in int16 usec);
+  classmethod<client, called_from=OQL> time time(in int16 hours, in int16 min, in int16 sec, in int16 msec, in int16 tz_hour, in int16 tz_minute);
+  classmethod<client, called_from=OQL> time time(in int16 hours, in int16 min, in int16 sec, in int16 msec, in int16 usec, in int16 tz_hour, in int16 tz_minute);
+  classmethod<client, called_from=OQL> time time(in string t); // time format : "HH:MM[:ss[,mmm[,uuu]]] [GMT[(+|-)HH[:MM]]]"
+  classmethod<client, called_from=OQL> int64 usec_time(in string t); // date format: same as time(string t)
+  instmethod<client, called_from=OQL> int16 hour();
+  instmethod<client, called_from=OQL> int16 minute();
+  instmethod<client, called_from=OQL> int16 second();
+  instmethod<client, called_from=OQL> int16 millisecond(); 
+  instmethod<client, called_from=OQL> int16 tz_hour();
+  instmethod<client, called_from=OQL> int16 tz_minute();
+  instmethod<client, called_from=OQL> string toString(); // returns "HH:MM:ss,mmm,uuu GMT+HH:MM"
+  instmethod<client, called_from=OQL> int16 is_equal(in time t);
+  instmethod<client, called_from=OQL> int16 is_greater(in time t);
+  instmethod<client, called_from=OQL> int16 is_greater_or_equal(in time t);
+  instmethod<client, called_from=OQL> int16 is_less(in time t);
+  instmethod<client, called_from=OQL> int16 is_less_or_equal(in time t);
+  instmethod<client, called_from=OQL> int16 is_between(in time t1, in time t2);
+  instmethod<client, called_from=OQL> time add_interval(in time_interval i);
+  instmethod<client, called_from=OQL> time substract_interval(in time_interval i);
+  instmethod<client, called_from=OQL> time_interval substract_time(in time t);
+  instmethod<client, called_from=OQL> int16 gmt_hour();
+  instmethod<client, called_from=OQL> int16 gmt_minute();
+  instmethod<client, called_from=OQL> int16 microsecond();
+  instmethod<client, called_from=OQL> void set_usecs(in int64 usecs, in int16 tz);
+
+  %C++{
+  private:
+    char string_time[48];
+
+    virtual void userCopy(const Object &);
+    virtual void userInitialize();
+    void setClientData();
+  public:
+
+  Status set_usecs(eyedblib::int64 usecs, eyedblib::int16 tz);
+  static void get_local_time_zone(eyedblib::int16 * tz_hour, eyedblib::int16 * tz_min);
+  static Time * gmt_time(Database * db); // current gmt time
+  static Time * local_time(Database * db); // current local time
+  static Time * time(Database * db, const Time & t);
+  static Time * time(Database * db, eyedblib::int64 usec);
+  static Time * time(Database * db, eyedblib::int64 usec, eyedblib::int16 tz);
+  static Time * time(Database * db, eyedblib::int16 hours, eyedblib::int16 min, eyedblib::int16 sec, eyedblib::int16 msec);
+  static Time * time(Database * db, eyedblib::int16 hours, eyedblib::int16 min, eyedblib::int16 sec, eyedblib::int16 msec, eyedblib::int16 usec);
+  static Time * time(Database * db, eyedblib::int16 hours, eyedblib::int16 min, eyedblib::int16 sec, eyedblib::int16 msec, eyedblib::int16 tz_hour, eyedblib::int16 tz_minute);
+  static Time * time(Database * db, eyedblib::int16 hours, eyedblib::int16 min, eyedblib::int16 sec, eyedblib::int16 msec, eyedblib::int16 usec, eyedblib::int16 tz_hour, eyedblib::int16 tz_minute);
+  static Time * time(Database * db, const char * t); // time format : "HH:MM[:ss[,mmm[,uuu]]] [GMT[(+|-)HH[:MM]]]"
+  static eyedblib::int64 usec_time(const char * t); // date format: same as time(string t)
+  eyedblib::int16 hour() const;
+  eyedblib::int16 minute() const;
+  eyedblib::int16 second() const;
+  eyedblib::int16 millisecond() const; 
+  eyedblib::int16 tz_hour() const;
+  eyedblib::int16 tz_minute() const;
+  const char * toString() const; // returns "HH:MM:ss,mmm,uuu GMT+HH:MM"
+  Bool is_equal(const Time & t) const;
+  Bool is_greater(const Time & t) const;
+  Bool is_greater_or_equal(const Time & t) const;
+  Bool is_less(const Time & t) const;
+  Bool is_less_or_equal(const Time & t) const;
+  Bool is_between(const Time & t1, const Time &t2) const;
+  Time & add_interval(const TimeInterval & i);
+  Time & substract_interval(const TimeInterval & i);
+  TimeInterval * substract_time(const Time & t);
+  eyedblib::int16 gmt_hour() const;
+  eyedblib::int16 gmt_minute() const;
+  eyedblib::int16 microsecond() const;
+  %}
+};
+
+class time_stamp [TimeStamp] {
+  attribute int64 usecs; // temps GMT limited to 584554 years
+  attribute int16 tz; // time zone in minutes
+
+  classmethod<client, called_from=OQL> time_stamp gmt_time_stamp(); // current gmt time
+  classmethod<client, called_from=OQL> time_stamp local_time_stamp(); // current local time
+  classmethod<client, called_from=OQL> time_stamp time_stamp(in time_stamp ts);
+  classmethod<client, called_from=OQL> time_stamp time_stamp(in int64 usec);
+  classmethod<client, called_from=OQL> time_stamp time_stamp(in int64 usec, in int16 tz);
+  classmethod<client, called_from=OQL> time_stamp time_stamp(in int32 julian_day, in int64 usec);
+  classmethod<client, called_from=OQL> time_stamp time_stamp(in int32 julian_day, in int64 usec, in int16 tz);
+  classmethod<client, called_from=OQL> time_stamp time_stamp(in date d, in time t);
+  classmethod<client, called_from=OQL> time_stamp time_stamp(in date d);
+  classmethod<client, called_from=OQL> time_stamp time_stamp(in date d, in int16 tz_hour, in int16 tz_min);
+  classmethod<client, called_from=OQL> time_stamp time_stamp(in string ts);
+  classmethod<client, called_from=OQL> int64 usec_time_stamp(in string ts);
+  instmethod<client, called_from=OQL> date date();
+  instmethod<client, called_from=OQL> time time();
+  instmethod<client, called_from=OQL> int32 year();
+  instmethod<client, called_from=OQL> int16 month();
+  instmethod<client, called_from=OQL> int16 day();
+  instmethod<client, called_from=OQL> int16 hour();
+  instmethod<client, called_from=OQL> int16 minute();
+  instmethod<client, called_from=OQL> int16 second();
+  instmethod<client, called_from=OQL> int16 millisecond(); 
+  instmethod<client, called_from=OQL> int16 tz_hour();
+  instmethod<client, called_from=OQL> int16 tz_minute();
+  instmethod<client, called_from=OQL> string toString(); // returns Date.toString() + " " + Time.toString()
+  instmethod<client, called_from=OQL> time_stamp plus(in time_interval i);
+  instmethod<client, called_from=OQL> time_stamp minus(in time_interval i);
+  instmethod<client, called_from=OQL> int16 is_equal(in time_stamp ts);
+  instmethod<client, called_from=OQL> int16 is_greater(in time_stamp ts);
+  instmethod<client, called_from=OQL> int16 is_greater_or_equal(in time_stamp ts);
+  instmethod<client, called_from=OQL> int16 is_less(in time_stamp ts);
+  instmethod<client, called_from=OQL> int16 is_less_or_equal(in time_stamp ts);
+  instmethod<client, called_from=OQL> int16 is_between(in time_stamp ts1, in time_stamp ts2);
+  instmethod<client, called_from=OQL> int16 gmt_hour();
+  instmethod<client, called_from=OQL> int16 gmt_minute();
+  instmethod<client, called_from=OQL> int16 microsecond();
+  instmethod<client, called_from=OQL> void set_usecs(in int64 usec, in int16 tz);
+  instmethod<client, called_from=OQL> time_interval substract(in time_stamp ts);
+
+
+  %C++{
+ private:
+  Time ts_time;
+  Date ts_date;
+  char string_time_stamp[64];
+
+  virtual void userCopy(const Object &);
+  virtual void userInitialize();
+  void setClientData();
+ public:
+  static TimeStamp * gmt_time_stamp(Database * db); // current gmt time
+  static TimeStamp * local_time_stamp(Database * db); // current local time
+  static TimeStamp * time_stamp(Database * db, const TimeStamp &);
+  static TimeStamp * time_stamp(Database * db, eyedblib::int64 usec);
+  static TimeStamp * time_stamp(Database * db, eyedblib::int64 usec, eyedblib::int16 tz);
+  static TimeStamp * time_stamp(Database * db, eyedblib::int32 julian_day, eyedblib::int64 usec);
+  static TimeStamp * time_stamp(Database * db, eyedblib::int32 julian_day, eyedblib::int64 usec, eyedblib::int16 tz);
+  static TimeStamp * time_stamp(Database * db, const Date & d, const Time & t);
+  static TimeStamp * time_stamp(Database * db, const Date & d);
+  static TimeStamp * time_stamp(Database * db, const Date & d, eyedblib::int16 tz_hour, eyedblib::int16 tz_min);
+  static TimeStamp * time_stamp(Database * db, const char * t);
+  static eyedblib::int64 usec_time_stamp(const char * ts);
+  const Date & date() const;
+  const Time & time() const;
+  eyedblib::int32 year() const;
+  eyedblib::int16 month() const;
+  eyedblib::int16 day() const;
+  eyedblib::int16 hour() const;
+  eyedblib::int16 minute() const;
+  eyedblib::int16 second() const;
+  eyedblib::int16 millisecond() const;
+  eyedblib::int16 tz_hour() const;
+  eyedblib::int16 tz_minute() const;
+  const char * toString() const; // returns Date.toString() + " " + Time.toString()
+  TimeStamp & plus(const TimeInterval & i);
+  TimeStamp & minus(const TimeInterval & i);
+  Bool is_equal(const TimeStamp & ts) const;
+  Bool is_greater(const TimeStamp & ts) const;
+  Bool is_greater_or_equal(const TimeStamp & ts) const;
+  Bool is_less(const TimeStamp & ts) const;
+  Bool is_less_or_equal(const TimeStamp & ts) const;
+  Bool is_between(const TimeStamp & ts1, const TimeStamp & ts2) const;
+  eyedblib::int16 gmt_hour() const;
+  eyedblib::int16 gmt_minute() const;
+  eyedblib::int16 microsecond() const;
+  Status set_usecs(eyedblib::int64 usec, eyedblib::int16 tz);
+  TimeInterval * substract(const TimeStamp & ts);
+  %}
+};
+
+class time_interval [TimeInterval] {
+  attribute int64 usecs; // time interval between 2 dates
+                         // days, hours, min, sec, ms, us
+
+  classmethod<client, called_from=OQL> time_interval time_interval(in int64 usecs);
+  classmethod<client, called_from=OQL> time_interval time_interval(in int32 day, in int16 hours, in int16 min, in int16 sec, in int16 msec, in int16 usec);
+  instmethod<client, called_from=OQL> int32 day();
+  instmethod<client, called_from=OQL> int16 hour();
+  instmethod<client, called_from=OQL> int16 minute();
+  instmethod<client, called_from=OQL> int16 second();
+  instmethod<client, called_from=OQL> int16 millisecond();
+  instmethod<client, called_from=OQL> int16 microsecond();
+  instmethod<client, called_from=OQL> int16 is_zero();
+  instmethod<client, called_from=OQL> string toString(); // format : "[D ]HH:MM:ss,mmm,uuu"
+  instmethod<client, called_from=OQL> time_interval plus(in time_interval i);
+  instmethod<client, called_from=OQL> time_interval minus(in time_interval i);
+  instmethod<client, called_from=OQL> time_interval product(in int64 val);
+  instmethod<client, called_from=OQL> time_interval quotient(in int64 val);
+  instmethod<client, called_from=OQL> int16 is_equal(in time_interval i);
+  instmethod<client, called_from=OQL> int16 is_greater(in time_interval i);
+  instmethod<client, called_from=OQL> int16 is_greater_or_equal(in time_interval i);
+  instmethod<client, called_from=OQL> int16 is_less(in time_interval i);
+  instmethod<client, called_from=OQL> int16 is_less_or_equal(in time_interval i);
+  instmethod<client, called_from=OQL> void set_usecs(in int64 usecs);
+ 
+
+  
+  %C++{
+  private:
+    char string_time_interval[32];
+
+    virtual void userCopy(const Object &);
+    virtual void userInitialize();
+    void setClientData();
+  public:
+
+  static TimeInterval * time_interval(Database *, eyedblib::int64 usecs);
+  static TimeInterval * time_interval(Database *, eyedblib::int32 day, eyedblib::int16 hours, eyedblib::int16 min, eyedblib::int16 sec, eyedblib::int16 msec, eyedblib::int16 usec);
+  eyedblib::int32 day() const;
+  eyedblib::int16 hour() const;
+  eyedblib::int16 minute() const;
+  eyedblib::int16 second() const;
+  eyedblib::int16 millisecond() const;
+  eyedblib::int16 microsecond() const;
+  Bool is_zero() const;
+  const char * toString() const; // format : "[D ]HH:MM:ss,mmm,uuu"
+  TimeInterval & plus(const TimeInterval & i);
+  TimeInterval & minus(const TimeInterval & i);
+  TimeInterval & product(eyedblib::int64 val);
+  TimeInterval & quotient(eyedblib::int64 val);
+  Bool is_equal(const TimeInterval & i) const;
+  Bool is_greater(const TimeInterval & i) const;
+  Bool is_greater_or_equal(const TimeInterval & i) const;
+  Bool is_less(const TimeInterval & i) const;
+  Bool is_less_or_equal(const TimeInterval & i) const;
+  Status set_usecs(eyedblib::int64 usecs);
+  %}
+
+};
+
+// ---------------------------------------------------------------------------
+//
+// Ostring Classes
+//
+// ---------------------------------------------------------------------------
+
+class ostring [OString] {
+  string s;
+
+  classmethod<client, called_from=OQL> ostring ostring();
+  classmethod<client, called_from=OQL> ostring ostring(in string s);
+  classmethod<client, called_from=OQL> ostring ostring(in string s, in int len);
+  classmethod<client, called_from=OQL> ostring ostring(in string s, in int offset, in int len);
+  classmethod<client, called_from=OQL> ostring ostring(in ostring s);
+  classmethod<client, called_from=OQL> ostring ostring(in char s);
+  classmethod<client, called_from=OQL> ostring ostring(in int s);
+  classmethod<client, called_from=OQL> ostring ostring(in double s);
+  
+  classmethod<client, called_from=OQL> int strlen(in string s);
+  classmethod<client, called_from=OQL> int strcmp(in string s1, in string s2);
+  classmethod<client, called_from=OQL> int strstr(in string s1, in string s2);
+  classmethod<client, called_from=OQL> string substr(in string s, in int offset, in int len);
+  classmethod<client, called_from=OQL> string toLower(in string s);
+  classmethod<client, called_from=OQL> string toUpper(in string s);
+  classmethod<client, called_from=OQL> string rtrim(in string s);
+  classmethod<client, called_from=OQL> string ltrim(in string s);
+
+  classmethod<client, called_from=OQL> ostring concat(in string s1, in string s2);
+
+  instmethod<client, called_from=OQL> void setChar(in char c, in int offset) %oql{
+    this.s[offset] := c;
+  %}
+
+  instmethod<client, called_from=OQL> char getChar(in int offset) %oql{
+    return this.s[offset];
+  %}
+
+  instmethod<client, called_from=OQL> ostring append(in string s);
+  instmethod<client, called_from=OQL> ostring append(in string s, in int len);
+  instmethod<client, called_from=OQL> ostring append(in string s, in int offset, in int len);
+
+  instmethod<client, called_from=OQL>ostring prepend(in string s);
+  instmethod<client, called_from=OQL> ostring prepend(in string s, in int len);
+  instmethod<client, called_from=OQL> ostring prepend(in string s, in int offset, in int len);
+  
+  instmethod<client, called_from=OQL> ostring insert(in int offset, in string s);
+  instmethod<client, called_from=OQL> ostring insert(in int offset, in string, in int len);
+  instmethod<client, called_from=OQL> ostring insert(in int offset, in string, in int offset2, in int len);
+
+  instmethod<client, called_from=OQL> int first(in string s);
+  instmethod<client, called_from=OQL> int last(in string s);
+  instmethod<client, called_from=OQL> int find(in string s, in int offset);
+
+  instmethod<client, called_from=OQL> ostring substr(in int offset, in int len);
+  instmethod<client, called_from=OQL> ostring substr(in string regexp, in int offset);
+
+  instmethod<client, called_from=OQL> ostring erase(in int offset, in int len);
+  instmethod<client, called_from=OQL> ostring replace(in int offset, in int len, in string);
+  instmethod<client, called_from=OQL> ostring replace(in int offset, in int len, in string, in int len2);
+  instmethod<client, called_from=OQL> ostring replace(in int offset, in int len, in string, in int offset2, in int len2);
+  instmethod<client, called_from=OQL> ostring replace(in string s1, in string s2); // replace global!
+  instmethod<client, called_from=OQL> void reset();
+
+  instmethod<client, called_from=OQL> ostring assign(in string s) %oql{
+	this->s := s;
+	return this;
+  %}
+     
+  instmethod<client, called_from=OQL> ostring assign(in string s, in int len);
+  instmethod<client, called_from=OQL> ostring assign(in string s, in int offset, in int len);
+
+  instmethod<client, called_from=OQL> ostring toLower();
+  instmethod<client, called_from=OQL> ostring toUpper();
+
+  instmethod<client, called_from=OQL> ostring rtrim();
+  instmethod<client, called_from=OQL> ostring ltrim();
+
+  instmethod<client, called_from=OQL> int compare(in string s);
+  instmethod<client, called_from=OQL> int compare(in string s, in int to);
+  instmethod<client, called_from=OQL> int compare(in string s, in int from, in int to);
+
+  instmethod<client, called_from=OQL> int is_null();
+  instmethod<client, called_from=OQL> int match(in string regexp);
+  instmethod<client, called_from=OQL> int length();
+  instmethod<client, called_from=OQL> string[] split(in string separator);
+  instmethod<client, called_from=OQL> string[] regexp_split(in string regexp_separator);
+
+  %C++{
+    static OString * ostring(Database * db);
+    static OString * ostring(Database * db, const char * s);
+    static OString * ostring(Database * db, const char * s, int len);
+    static OString * ostring(Database * db, const char * s, int offset, int len);
+    static OString * ostring(Database * db, const OString & s);
+    static OString * ostring(Database * db, char s);
+    static OString * ostring(Database * db, int s);
+    static OString * ostring(Database * db, double s);    
+    static OString * concat(Database * db, const char * s1, const char * s2);
+    static char * substr(const char *, int offset, int len);
+    static char * toLower(const char *);
+    static char * toUpper(const char *);
+    static char * rtrim(const char *);
+    static char * ltrim(const char *);    
+    
+    Status setChar(char c, int offset);
+    char getChar(int offset) const;
+
+    OString & append(const char * s);
+    OString & append(const char * s, int len);
+    OString & append(const char * s, int offset, int len);
+    OString & prepend(const char * s);
+    OString & prepend(const char * s, int len);   
+    OString & prepend(const char * s, int offset, int len);   
+    OString & insert(int offset, const char *);
+    OString & insert(int offset, const char *, int len);    
+    OString & insert(int offset, const char *, int offset2, int len);    
+        
+    int first(const char *) const;
+    int last(const char *) const;
+    int find(const char *, int offset) const;
+    OString * substr(int offset, int len) const;
+    OString * substr(const char * regexp, int offset) const;
+
+    OString & erase(int offset, int len);
+    OString & replace(int offset, int len, const char *);
+    OString & replace(int offset, int len, const char *, int len2);
+    OString & replace(int offset, int len, const char *, int offset2, int len2);
+    OString & replace(const char * s1, const char * s2);
+    OString & assign(const char *);
+    OString & assign(const char *, int len);
+    OString & assign(const char *, int offset, int len);
+    Status reset();
+    
+    OString & toLower();
+    OString & toUpper();
+    
+    OString & rtrim();
+    OString & ltrim();
+
+    int compare(const char *) const;
+    int compare(const char *, int to) const;
+    int compare(const char *, int from, int to) const;
+    Bool is_null() const;
+    Bool match(const char * regexp) const;
+
+    int length() const;
+    char ** split(const char * separator, int & nb_pieces) const; 
+    char ** regexp_split(const char * regexp_separator, int & nb_pieces) const;
+    %}
+};

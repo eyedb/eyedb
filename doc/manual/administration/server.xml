@@ -1,0 +1,759 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd"
+[
+<!ENTITY eyedb "EyeDB">
+<!ENTITY eyedbctl "<command>eyedbctl</command>">
+]
+>
+
+<book>
+  <title>EyeDB Administration Guide</title>
+
+  <chapter id="server">
+    <title>Server administration</title>
+
+    <para>
+      The first step in &eyedb; administration adresses the server administration: as all existing database management systems, &eyedb; adopts a client/server architecture to provide databases integrity and concurrent accesses. Every database operation requires that a server is up and running; this chapter explains how to start and stop the server, get its status and manage its configuration.
+    </para>
+
+
+    <section>
+      <title>The &eyedbctl; command</title>
+
+      <para>
+	The &eyedb; server is started, stopped and examined using the &eyedbctl; command. This command is installed in <filename class="directory">/usr/sbin</filename> for standard &eyedb; installations.
+      </para>
+
+      <para>
+	The &eyedbctl; command has the following syntax:
+	<cmdsynopsis>
+	  &eyedbctl;
+	  <arg choice="plain"><replaceable>command</replaceable></arg>
+	  <arg choice="opt" rep="repeat">options</arg>
+	</cmdsynopsis>
+	where <command>command</command> is one of <command>start</command>, <command>stop</command> or <command>status</command>.
+      </para>
+
+      <para>
+	The following options are the most usefull:
+	<itemizedlist>
+	  <listitem>
+	    <para id="eyedbctl-listen" xreflabel="eyedbctl --listen option">
+	      <cmdsynopsis>
+		<arg choice="plain">
+		  --listen=
+		  <arg choice="plain" rep="repeat">
+		    <group>
+		      <arg choice="plain">
+			<arg choice="opt"><replaceable>hostname:</replaceable></arg>
+			<arg choice="plain"><replaceable>port</replaceable></arg>
+		      </arg>
+		      <arg choice="plain">
+			<replaceable>unix socket name</replaceable>
+		      </arg>
+		    </group>
+		    ,
+		  </arg>
+		</arg>
+	      </cmdsynopsis>
+	      specifies the port the server is listening on. This port can be either a TCP port, specified by a hostname (defaults to "localhost") and a TCP port number, or a Unix socket, specified by a file name.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--access-file=<replaceable>file</replaceable></arg>
+		</cmdsynopsis> specifies the server access file for network configuration (see <xref linkend="server-network-access-file"/>)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--server-conf=<replaceable>file</replaceable></arg>
+		</cmdsynopsis> specifies the server configuration file (see <xref linkend="server-configuration-file"/>)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--nod</arg>
+		</cmdsynopsis> no daemon mode, do not close file descriptors 0, 1 band 2
+	    </para>
+	  </listitem>
+	</itemizedlist>
+      </para>
+
+    </section>
+
+
+    <section>
+      <title>Starting and stopping the server</title>
+
+      <section>
+	<title>Starting &eyedb; server</title>
+
+	<para>
+	  The &eyedb; server is started using the following command:
+	  <cmdsynopsis>
+	    &eyedbctl;
+	    <command>start</command>
+	    <arg choice="opt" rep="repeat">options</arg>
+	  </cmdsynopsis>	  
+	</para>
+
+	<example id="eyedbctl-start">
+	  <title>&eyedbctl; start</title>
+	  <screen><userinput>eyedbctl start</userinput>
+Starting EyeDB Server
+ Version      V2.8.8
+ Compiled     Feb 14 2009 00:16:45
+ Architecture i686-pc-linux-gnu
+ Program Pid  19433
+	  </screen>
+	</example>
+
+	<para>
+	  By default, the &eyedb; server listens to incoming client connections on 2 ports:
+	  <itemizedlist>
+	    <listitem><para>a TCP/IP socket bound to port 6240</para></listitem>
+	    <listitem><para>a Unix socket bound to file name <filename>/var/lib/eyedb/pipes/eyedbd</filename> for standard installation,  or <filename>PREFIX/var/lib/eyedb/pipes/eyedbd</filename> where <filename>PREFIX</filename> is the installation prefix that has been set during configuration</para></listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  The listening ports can be set:
+	  <itemizedlist>
+	    <listitem><para>using &eyedbctl; command options --listen (see <xref linkend="eyedbctl-listen"/>)</para></listitem>
+	    <listitem><para>using server configuration file (see <xref linkend="server-configuration-file"/>)</para></listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbctl-start--listen">
+	  <title>&eyedbctl; start with --listen option</title>
+	  <screen><userinput>eyedbctl start --listen=localhost:10000,/var/tmp/eyedb-socket</userinput>
+Starting EyeDB Server
+ Version      V2.8.8
+ Compiled     Feb 14 2009 00:16:45
+ Architecture i686-pc-linux-gnu
+ Program Pid  19560
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Stopping &eyedb; server</title>
+
+	<para>
+	  The &eyedb; server is stopped using the following command:
+	  <cmdsynopsis>
+	    &eyedbctl;
+	    <command>stop</command>
+	    <arg choice="opt" rep="repeat">options</arg>
+	  </cmdsynopsis>	  
+	</para>
+
+	<example id="eyedbctl-stop">
+	  <title>&eyedbctl; stop</title>
+	  <screen><userinput>eyedbctl stop</userinput>
+Killing EyeDB Server Pid 19433
+	  </screen>
+	</example>
+
+	<para>
+	  If the server was started with the <command>--listen</command> option to set the listening port, the <emphasis>same</emphasis> option must be passed to &eyedbctl; when stopping the server.
+	</para>
+
+	<example id="eyedbctl-stop--listen">
+	  <title>&eyedbctl; stop with --listen option</title>
+	  <screen>
+<userinput>eyedbctl stop</userinput>
+No EyeDB Server is running on localhost:6240
+<userinput>eyedbctl stop --listen=localhost:10000,/var/tmp/eyedb-socket</userinput>
+Killing EyeDB Server Pid 19560
+	  </screen>
+	</example>
+
+      </section>
+
+    </section>
+
+    <section>
+      <title>Getting server information</title>
+
+      <para>
+	Once &eyedb; server has been launched, information can be obtained on server status (server uptime, listening ports, clients...) using &eyedbctl;.
+      </para>
+
+      <para>
+	Independently from server status, the &eyedb; server can be launched with logging option, that allows to trace precisely all server actions (client connections, transactions...).
+      </para>
+
+      <section>
+	<title>Getting &eyedb; server status</title>
+
+	<para>
+	  The &eyedb; server status can be obtained using the following command:
+	  <cmdsynopsis>
+	    &eyedbctl;
+	    <command>status</command>
+	    <arg choice="opt" rep="repeat">options</arg>
+	  </cmdsynopsis>	  
+	  This command will print on its standard output informations about the &eyedb; server currently running: server PID and user, version, listening ports and list of connected clients.
+	</para>
+
+	<example id="eyedbctl-status">
+	  <title>&eyedbctl; status</title>
+	  <screen>
+<userinput>eyedbctl status</userinput>
+
+EyeDB Server running since Thu Mar  5 16:08:45 2009
+
+  Version       V2.8.8
+  Date          Feb 14 2009 00:16:45
+  Architecture  i686-pc-linux-gnu
+  Program Pid   19433
+  Running Under francois
+
+  Listening on  localhost:6240
+                localhost:/home/francois/projects/eyedb/install/var/lib/eyedb/pipes/eyedbd
+  Datafile Directory /home/francois/projects/eyedb/install/var/lib/eyedb/db
+
+  No Clients connected.
+	  </screen>
+	</example>
+
+
+	<para>
+	  Same as for stopping server, if the server was started with the <command>--listen</command> option to set the listening port, the <emphasis>same</emphasis> option must be passed to &eyedbctl; when getting server status.
+	</para>
+
+	<example id="eyedbctl-status--listen">
+	  <title>&eyedbctl; status with --listen option</title>
+	  <screen>
+<userinput>eyedbctl status --listen=localhost:10000,/var/tmp/eyedb-socket</userinput>
+EyeDB Server running since Thu Mar  5 16:09:07 2009
+
+  Version       V2.8.8
+  Date          Feb 14 2009 00:16:45
+  Architecture  i686-pc-linux-gnu
+  Program Pid   19560
+  Running Under francois
+
+  Listening on  localhost:10000
+                localhost:/var/tmp/eyedb-socket
+  Datafile Directory /home/francois/projects/eyedb/install/var/lib/eyedb/db
+
+  No Clients connected.
+	  </screen>
+	</example>
+
+	<para>
+	  If clients are connected, the server status will show the list of connected clients, giving for each client a list of open databases.
+	</para>
+
+	<example id="eyedb-status-clients">
+	  <title>&eyedbctl; status with connected clients</title>
+	  <screen>
+<userinput>eyedbctl status</userinput>
+EyeDB Server running since Thu Mar  5 16:46:55 2009
+
+  Version       V2.8.8
+  Date          Feb 14 2009 00:16:45
+  Architecture  i686-pc-linux-gnu
+  Program Pid   20332
+  Running Under francois
+
+  Listening on  localhost:6240
+                localhost:/home/francois/projects/eyedb/install/var/lib/eyedb/pipes/eyedbd
+  Datafile Directory /home/francois/projects/eyedb/install/var/lib/eyedb/db
+
+  1 Client connected
+
+Client #0
+  Connected on Thu Mar  5 16:53:01 2009
+  Host:Port    localhost:/home/francois/projects/eyedb/install/var/lib/eyedb/pipes/eyedb
+  User Name    francois
+  Program Name eyedboql
+  Client Pid   20377
+  EyeDB Server Pid 20378
+  Open Databases 'EYEDBDBM' [mode=sread/local]
+                   'EYEDBDBM' [mode=sread/local]
+                   'EYEDBDBM' [mode=sread/local]
+                   'test' [mode=sread] [userauth=francois]
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Configuring &eyedb; server logging</title>
+
+	<para>
+	  The &eyedb; server can log its activities with a fine grain control over what is logged (client connections, transactions, index...). This logging can be done into a file or into a special file such as <filename>/dev/stderr</filename>. 
+	</para>
+
+	<para>
+	  The following options of &eyedbctl; are used to control server logging:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--logdev=<replaceable>logfile</replaceable></arg>
+		</cmdsynopsis>
+		specifies output log file (can be either a plain file, or a special file like <filename>/dev/stderr</filename>
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--logmask=<replaceable>mask</replaceable></arg>
+		</cmdsynopsis>
+		specifies log mask (see <xref linkend="eyedbctl-log-mask"/> for log mask values)
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--logdate=<group><arg choice="plain">on</arg><arg choice="plain">off</arg></group></arg>
+		</cmdsynopsis>
+		controls display of date in output log
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--logtimer=<group><arg choice="plain">on</arg><arg choice="plain">off</arg></group></arg>
+		</cmdsynopsis> 
+		controls display of time in output log
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--logpid=<group><arg choice="plain">on</arg><arg choice="plain">off</arg></group></arg>
+		</cmdsynopsis>
+		controls display of process pid in output log
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--logprog=<group><arg choice="plain">on</arg><arg choice="plain">off</arg></group></arg>
+		</cmdsynopsis>
+		controls display of program name in output log
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para id="eyedbctl-log-mask" xreflabel="log mask values">
+	  Log mask is either an hexadecimal number or a combination of symbols prefixed by + (to enable the corresponding log) or - (to disable the corresponding log). The list of allowed symbols can be obtained by running <command>eyedbctl start --logmask=help</command>. For instance, specifying <command>--logmask=+server+connection</command> will log all server and connection events.
+	</para>
+
+	<para>
+	  <xref linkend="log-mask-example"/> shows an example of launching &eyedb; server with logging enabled, running an &eyedb; command (here: <command>eyedbadmin</command>) and examining the log file (here <filename>/var/tmp/eyedbd.log</filename>) with the <command>tail</command>.
+	</para>
+
+	<example id="log-mask-example">
+	  <title>Launching &eyedb; server with logging enabled</title>
+	  <screen>
+<userinput>eyedbctl start --logdev=/var/tmp/eyedbd.log --logdate=on --logpid=on --logprog=on --logmask=+server+connection</userinput>
+Starting EyeDB Server
+ Version      V2.8.8
+ Compiled     Feb 14 2009 00:16:45
+ Architecture i686-pc-linux-gnu
+ Program Pid  7484
+<userinput>eyedbadmin database list</userinput>
+...
+<userinput>tail -f /var/tmp/eyedbd.log </userinput>
+Thu Mar  5 19:19:04 2009 [thread 7484#-1216465216] eyedbd : rpc_multiConnManage 0
+Thu Mar  5 19:19:04 2009 [thread 7484#-1216465216] eyedbd : rpc_multiConnManage 1
+Thu Mar  5 19:19:04 2009 [thread 7484#-1216465216] eyedbd : rpc_multiConnManage 2
+Thu Mar  5 19:19:04 2009 [thread 7484#-1216465216] eyedbd : new connection : fd = 0, fd = 1, fd = 2
+Thu Mar  5 19:19:04 2009 [thread 7522#-1216465216] eyedbd : rpc_makeThread which=0, fd=0
+CONN Thu Mar  5 19:19:04 2009 [thread 7522#-1225118832] eyedbd : new thread -1225118832 [fd = 0, which=0], stack = 0xb6fa239c
+CONN Thu Mar  5 19:19:04 2009 [thread 7522#-1225118832] eyedbd : connected host='localhost:/home/francois/projects/eyedb/install/var/lib/eyedb/pipes/eyedbd', username='francois', progname='eyedbadmin', pid=7521
+Thu Mar  5 19:19:04 2009 [thread 7522#-1216465216] eyedbd : rpc_makeThread which=1, fd=1
+CONN Thu Mar  5 19:19:04 2009 [thread 7522#-1564058736] eyedbd : new thread -1564058736 [fd = 1, which=1], stack = 0xa2c6539c
+Thu Mar  5 19:19:04 2009 [thread 7522#-1216465216] eyedbd : rpc_makeThread which=2, fd=2
+CONN Thu Mar  5 19:19:04 2009 [thread 7522#-1580647536] eyedbd : new thread -1580647536 [fd = 2, which=2], stack = 0xa1c9339c
+Thu Mar  5 19:19:04 2009 [thread 7522#-1564058736] eyedbd : -1564058736 thread EXIT
+Thu Mar  5 19:19:04 2009 [thread 7522#-1564058736] eyedbd : rpc_garbClientInfo(which = 0, fd = 1, ci = 0x9ce8100)
+Thu Mar  5 19:19:04 2009 [thread 7522#-1564058736] eyedbd : refcnt = 3, fd_cnt = 3
+Thu Mar  5 19:19:04 2009 [thread 7522#-1564058736] eyedbd : close connection fd=1
+...
+	  </screen>
+	</example>
+
+
+      </section>
+
+    </section>
+
+    <section>
+      <title>Server configuration</title>
+
+      <para>
+	The &eyedb; server has a number of <emphasis>configuration switches</emphasis> that allow to specify server parameters such as listening ports, directory for temporary files, databases directory...
+      </para>
+
+      <para>
+	Each &eyedb; server configuration switch value is determined using, in this order: 
+	<itemizedlist>
+	  <listitem><para>&eyedbctl; options</para></listitem>
+	  <listitem><para>server configuration file</para></listitem>
+	  <listitem><para>environment variables</para></listitem>
+	  <listitem><para>compile-time defaults</para></listitem>
+	</itemizedlist>
+      </para>
+
+      <section id="server-configuration-file">
+	<title>Server configuration file</title>
+
+	<para>
+	  The server configuration file is a file that contains a list of configuration switches definition. The syntax of the configuration file is given informaly in <xref linkend="configuration-file-syntax"/>.
+	</para>
+
+	<figure id="configuration-file-syntax">
+	  <title>&eyedb; server configuration file syntax</title>
+	  <literallayout>
+file : line ...
+line : comment | definition
+comment : # LINE
+definition: VARIABLE = VALUE ;
+</literallayout>
+	</figure>
+
+	<para>
+	  A variable value can contain variable expansions; a variable expansion is a variable name surrounded by the character <literal>%</literal> as in: <varname>%variable%</varname>.
+	</para>
+	
+	<para>
+	  <xref linkend="server-configuration-file-example"/> gives an example of a &eyedb; server configuration file.
+	</para>
+
+	<example id="server-configuration-file-example">
+	  <title>&eyedb; server configuration file</title>
+	  <programlisting>
+# EyeDB server configuration file
+# 
+
+# Bases directory
+databasedir = /home/francois/projects/eyedb/install/var/lib/eyedb/db;
+
+# Temporary files directory
+tmpdir = /home/francois/projects/eyedb/install/var/lib/eyedb/tmp;
+
+# Path to .so files
+sopath = /home/francois/projects/eyedb/install/lib/eyedb;
+
+# Default EYEDBDBM database
+default_dbm = /home/francois/projects/eyedb/install/var/lib/eyedb/db/dbmdb.dbs;
+
+# Granted EYEDBDBM database
+granted_dbm = %default_dbm%;
+
+# Default file mask
+default_file_mask = "0";
+
+# Default file group
+default_file_group = "";
+
+# Maximum server memory size in Mb
+maximum_memory_size = 0;
+
+# Server access file
+access_file = /home/francois/projects/eyedb/install/etc/eyedb/Access;
+
+# Smd connection port
+smdport = /home/francois/projects/eyedb/install/var/lib/eyedb/pipes/smd;
+
+# Server listen ports and sockets list
+listen = localhost:6240,/home/francois/projects/eyedb/install/var/lib/eyedb/pipes/eyedbd;
+
+# OQL files path
+oqlpath = /home/francois/projects/eyedb/install/lib/eyedb/oql
+	  </programlisting>
+	</example>
+
+	<para>
+	  The &eyedb; server will try to load one of the following configuration files, in this order:
+	  <itemizedlist>
+	    <listitem><para>the file specified by &eyedbctl; --server-conf option</para></listitem>
+	    <listitem><para>the file specified by <envar>EYEDBDCONF</envar> environment variable</para></listitem>
+	    <listitem><para>user configuration file: the file <filename>~/.eyedb/eyedbd.conf</filename> where <filename>~</filename> represents the home directory of the user running the &eyedbctl; command</para></listitem>
+	    <listitem><para>the file <filename>eyedbd.conf</filename> located in the directory specified by <envar>EYEDBCONFDIR</envar> environment variable</para></listitem>
+	    <listitem><para>system-wide configuration file: the file <filename>eyedbd.conf</filename> located in directory <filename><varname>sysconfdir</varname>/eyedb</filename>, where <varname>sysconfdir</varname> is the system configuration directory specified at compilation time using the <command>configure</command> script. By default, the system-wide configuration file is <filename class="directory">/etc/eyedb/eyedbd.conf</filename></para></listitem>
+	    </itemizedlist>
+	</para>
+
+      </section>
+
+      <section>
+	<title>Server configuration switches list</title>
+
+	<para>
+	  The list of configuration switches that are use by the &eyedb; server is given in <xref linkend="server-configuration-switches"/>. This table gives the variable name that can appear in a configuration file, the corresponding &eyedbctl; option if applicable, the name of the environment variable and a description of the configuration switch meaning.
+	</para>
+
+	<table id="server-configuration-switches">
+	  <title>
+	    List of &eyedb; server configuration switches
+	  </title>
+	  <tgroup cols="3">
+	    <thead>
+	      <row>
+		<entry>
+		  Configuration variable name
+		</entry>
+		<entry>
+		  &eyedbctl; option
+		</entry>
+		<entry>
+		  environment variable
+		</entry>
+		<entry>
+		  Description
+		</entry>
+	      </row>
+	    </thead>
+	    <tbody>
+	      <row>
+		<entry>
+		  databasedir
+		</entry>
+		<entry>
+		  --databasedir
+		</entry>
+		<entry>
+		  EYEDBDATABASEDIR
+		</entry>
+		<entry>
+		  databases directory
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  tmpdir
+		</entry>
+		<entry>
+		  NA
+		</entry>
+		<entry>
+		  EYEDBTMPDIR
+		</entry>
+		<entry>
+		  temporary files directory
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  sopath
+		</entry>
+		<entry>
+		  NA
+		</entry>
+		<entry>
+		  EYEDBSOPATH
+		</entry>
+		<entry>
+		  path to .so files
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  default_dbm
+		</entry>
+		<entry>
+		  --default-dbm
+		</entry>
+		<entry>
+		  EYEDBDEFAULT_DBM
+		</entry>
+		<entry>
+		  default EYEDBDBM database
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  granted_dbm
+		</entry>
+		<entry>
+		  --granted-dbm
+		</entry>
+		<entry>
+		  EYEDBGRANTED_DBM
+		</entry>
+		<entry>
+		  granted EYEDBDBM database
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  default_file_mask
+		</entry>
+		<entry>
+		  --default-file-mask
+		</entry>
+		<entry>
+		  EYEDBDEFAULT_FILE_MASK
+		</entry>
+		<entry>
+		  default file mask
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  default_file_group
+		</entry>
+		<entry>
+		  --default-file-group
+		</entry>
+		<entry>
+		  EYEDBDEFAULT_FILE_GROUP
+		</entry>
+		<entry>
+		  default file group
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  maximum_memory_size
+		</entry>
+		<entry>
+		  --maximum-server-memory-size
+		</entry>
+		<entry>
+		  EYEDBMAXIMUM_MEMORY_SIZE
+		</entry>
+		<entry>
+		  maximum server memory size in Mb
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  access_file
+		</entry>
+		<entry>
+		  NA
+		</entry>
+		<entry>
+		  EYEDBACCESS_FILE
+		</entry>
+		<entry>
+		  server access file
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  smdport
+		</entry>
+		<entry>
+		  NA
+		</entry>
+		<entry>
+		  EYEDBSMDPORT
+		</entry>
+		<entry>
+		  smd connection port
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  listen
+		</entry>
+		<entry>
+		  --listen
+		</entry>
+		<entry>
+		  EYEDBLISTEN
+		</entry>
+		<entry>
+		  server listen ports and sockets list
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  oqlpath
+		</entry>
+		<entry>
+		  NA
+		</entry>
+		<entry>
+		  EYEDBOQLPATH
+		</entry>
+		<entry>
+		  OQL files path
+		</entry>
+	      </row>
+	    </tbody>
+	  </tgroup>
+	</table>
+
+      </section>
+
+    </section>
+
+    <section id="server-network-access-file">
+      <title>Server network access file</title>
+
+      <para>
+	When a &eyedb; client command or application attempts to connect to the &eyedb; server using a TCP connection, an <emphasis>access file</emphasis> is used to determine wheter the connection is authorized.
+      </para>
+
+      <para>
+	The location of the network access file is given by the <varname>access_file</varname> configuration switch, that can be specified either as a configuration variable in a configuration file or as an environment variable.
+      </para>
+
+      <para>
+	The syntax of this access file is the following:
+	<itemizedlist>
+	  <listitem><para>comments: all characters following a # are skipped</para></listitem>
+	  <listitem>
+	    <para>
+	      access rule, composed of an IP address or subnet mask <varname>address</varname>, followed by a list of user authorizations, where a user authorization can be:
+	      <itemizedlist>
+		<listitem><para>a &eyedb; user name: the designated user is authorized to connect to the &eyedb; server from the machine identified by <varname>address</varname></para></listitem>
+		<listitem><para>a &eyedb; user name prefixed by the ! character: the designated user is <emphasis>not</emphasis> authorized to connect to the &eyedb; server from the machine identified by <varname>address</varname></para></listitem>
+		<listitem><para>a &eyedb; user name prefixed by the = character: the designated user will be used for any connection opened from the machine identified by <varname>address</varname> if no authentication is provided</para></listitem>
+		<listitem><para>a + character: any &eyedb; user is authorized to connect from the machine identified by <varname>address</varname></para></listitem>
+	      </itemizedlist>
+	    </para>
+	  </listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	<xref linkend="server-network-access-file-example"/> gives an example of a &eyedb; server network access file.
+      </para>
+
+
+      <example id="server-network-access-file-example">
+	<title>&eyedb; server network access file</title>
+	<programlisting>
+# All users are authorized from domain localdomain:
+.localdomain       +
+
+# Any user, except user 'eyedbroot', are authorized from machine r2.somewhere.org:
+r2.somewhere.org   + !eyedbroot
+
+# User 'joe' is authorized from domain ircam.fr:
+.ircam.fr          joe
+
+# Users 'tom' and 'guest' are authorized from subnet mask 192.168.1.0; if no authenticatino is provided, user 'guest' is used:
+192.168.1.0        tom =guest
+	  </programlisting>
+	</example>
+
+    </section>
+
+  </chapter>
+
+<!--
+;;; Local Variables: ***
+;;; eval: (load-file "../docbook-common/emacs-macro") ***
+;;; End: ***
+-->
+
+</book>

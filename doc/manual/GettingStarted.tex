@@ -1,0 +1,1112 @@
+\input{start}
+\input{version}
+\newcommand{\mantitle}{\textsc{Getting Started}}
+\input{title}
+
+\tableofcontents
+%\listoftables
+
+\chapter*{Getting Started}
+
+
+We will introduce \eyedb by going through some simple 
+operations such as creating a database, defining an ODL schema,
+creating and updating objects, querying objects with OQL, adding
+indexes and constraints, and then writing simple C++ and Java
+client programs.\\
+\\
+We assume that \eyedb has been correctly installed on your
+computer. Refer to the installation guide for installation information.
+
+
+\sect{Starting the server}
+
+In the following sections, we assume that you are running all the \eyedb tools under
+the same Unix user as the one used when installing \eyedb, in order not to be forced to create a new \eyedb user and give this new user the necessary authorizations to create a database. In case this assumption is not valid, please refer to the administration guide for further information about creating a user and assigning a user database creation permission.\\
+\\
+For any \eyedb operation, a server must run on your computer. To check if a server is running, use the following command:
+\verbsize \begin{verbatim}
+% eyedbctl status
+\end{verbatim}
+\normalsize
+If a server is running, this command will print a message like:
+\verbsize \begin{verbatim}
+EyeDB Server running since Mon Dec 10 13:42:51 2007
+
+  Version       V2.8.4
+  Date          Dec 10 2007 12:51:35
+  Architecture  x86_64-unknown-linux-gnu
+  Program Pid   8778
+  Running Under eyedb
+
+  Listening on  localhost:6240
+                localhost:/var/lib/eyedb/pipes/eyedbd
+  Datafile Directory /share
+
+  No Clients connected.
+\end{verbatim}
+\normalsize
+If no server is running, it will print an error message such as:
+\verbsize \begin{verbatim}
+No EyeDB Server is running on localhost:6240
+\end{verbatim}
+\normalsize
+To start a server, just do this:
+\verbsize \begin{verbatim}
+% eyedbctl start
+\end{verbatim}
+\normalsize
+This command will print a message like:
+\verbsize \begin{verbatim}
+Starting EyeDB Server
+ Version      V2.8.4
+ Compiled     Dec 10 2007 12:51:35
+ Architecture x86_64-unknown-linux-gnu
+ Program Pid  8785
+\end{verbatim}
+\normalsize
+Then, you may try again \texttt{eyedbctl status}.\\
+\\
+If you get any trouble at this step, refer to the installation and to the
+administration manuals.
+
+\sect{Creating a database}
+
+The next step is to create a database to perform our tests.\\
+\\
+Before creating a database, you can check that you are authorized to perform this
+operation, using the \texttt{eyedbadmin} command, as in:
+\verbsize \begin{verbatim}
+% eyedbadmin user list
+name      : "francois" [strict unix user]
+sysaccess : SUPERUSER_SYSACCESS_MODE
+\end{verbatim}
+\normalsize
+If you are running the \texttt{eyedbadmin} command under the same
+Unix user as the one used when installing \eyedb, the command output
+will be a message like the one above, showing that you have
+\texttt{superuser} priviledge and are thus allowed to create a
+database.\\
+\\
+Creating a database is performed using the \texttt{eyedbadmin} tool, as in:
+\verbsize
+\begin{verbatim}
+% eyedbadmin database create foo
+\end{verbatim}
+where \texttt{foo} is the name of the database.\\
+\\
+Similarly, deleting a database is performed using the \texttt{eyedbadmin} tool, as in:
+\verbsize
+\begin{verbatim}
+% eyedbadmin database delete foo
+\end{verbatim}
+where \texttt{foo} is the name of the database.
+\sect{Defining a simple schema with ODL}
+
+Now that a database has been created, we are going to populate it with objects.\\
+\\
+The first step is to define the database schema.\\
+\\
+A standard example in databases is the well known
+\texttt{Person} class (or table in relational system) which contains
+a few attributes such as a firstname, a lastname, an age, an address, a spouse
+and a set of children.\\
+\\
+We will show the inheritance feature through the simple class \texttt{Employee}
+which inherits from the \texttt{Person} class and will contains a simple
+attribute: salary.\\
+\\
+Here is simple ODL schema for the classes \texttt{Address}, \texttt{Person} 
+and \texttt{Employee}:
+\verbsize \begin{verbatim}
+//
+// person.odl
+//
+
+class Address {
+  int num;
+  string street;
+  string town;
+  string country;
+};
+
+class Person {
+  string firstname;
+  string lastname;
+  int age;
+  Address addr;
+  Person * spouse inverse Person::spouse;
+  set<Person *> children;
+};
+
+class Employee extends Person {
+  long salary;
+};
+\end{verbatim}
+\normalsize
+A few comments about this schema:
+\begin{itemize}
+\item the \texttt{Address} class contains four attributes, one integer
+and three strings.
+\begin{itemize}
+\item {\bf integer}: there are three types of ODL integers: 
+\begin{enumerate}
+\item 16-bits integer, named \texttt{int16} or \texttt{short} 
+\item 32-bits integer, named \texttt{int32} or \texttt{int} 
+\item 64-bits integer, named \texttt{int64} or \texttt{long} 
+\end{enumerate}
+so the \texttt{num} attribute is a 32-bits integer.
+\item {\bf string}: an ODL string is under the form: \texttt{string} or
+\texttt{string<N>}. The
+first form means that the string is not bounded, the second form means
+that the string contains at most \texttt{N} characters.
+\end{itemize}
+\item the \texttt{Person} class contains six attributes: two strings, one
+32-bits integer, one \texttt{Person} object and one set of \texttt{Person}
+objects.
+\begin{itemize}
+\item the third attribute \texttt{addr} is of \texttt{Address} type and is
+a litteral because there is no \texttt{*} before the attribute name.
+A litteral is an object without identifier: the \texttt{addr} attribute
+is tied to a \texttt{Person} instance, it has no proper existence.
+\item the \texttt{spouse} attribute is an object, not a litteral, because
+it is preceded by a \texttt{*}. An object has an identifier and has its
+proper existence. The \texttt{*} means a reference or pointer to an
+object.
+The directive after the attribute name \texttt{inverse Person::spouse}
+is a relationship directive.
+\item the \texttt{children} attribute is a collection set of
+\texttt{Person} objects.
+\end{itemize}
+\item the \texttt{Employee} contains seven attributes: the six \texttt{Person}
+attributes because \texttt{Employee} inherits from \texttt{Person} and 
+64-bits integer attribute: \texttt{salary}.
+\end{itemize}
+To add the previous schema in the \texttt{foo} database, you need to
+use the \texttt{eyedbodl} tool as follows:
+\verbsize \begin{verbatim}
+% eyedbodl -d foo -u person.odl
+Updating 'person' schema in database foo...
+Adding class Address
+Adding class Person
+Adding class Employee
+
+Done
+\end{verbatim}
+\normalsize
+Note that you must pass the following command line options to the \texttt{eyedbodl} command: \texttt{-d foo} to specify to which database you are applying the schema and \texttt{-u} to update the database schema.\\
+\\
+To verify that the update has correctly worked, you can generate
+the ODL schema from the database, as follows:
+\verbsize \begin{verbatim}
+% eyedbodl -d foo --gencode=ODL²
+
+//
+// EyeDB Version 2.8.4 Copyright (c) 1995-2007 SYSRA
+//
+// UNTITLED Schema
+//
+// Generated by eyedbodl at Mon Dec 10 13:44:03 CET 2007
+//
+
+class Address (implementation <hash, hints = "key_count = 2048;">) {
+        attribute int32 num;
+        attribute string street;
+        attribute string town;
+        attribute string country;
+};
+
+class Person (implementation <hash, hints = "key_count = 2048;">) {
+        attribute string firstname;
+        attribute string lastname;
+        attribute int32 age;
+        attribute Address addr;
+        relationship Person* spouse inverse Person::spouse;
+        attribute set<Person*> children;
+};
+
+class Employee (implementation <hash, hints = "key_count = 2048;">) extends Person {
+        attribute int64 salary;
+};
+\end{verbatim}
+\normalsize
+Note that the exact output may differ a bit from what is displayed above, depending on the \eyedb version.\\
+\\
+By default, \texttt{eyedbodl} generates the ODL on the standard output.
+You see here that the displayed ODL is very similar to the original ODL except
+that the keywords \texttt{attribute} and \texttt{relationship} have been added
+before each attribute declaration.
+The \texttt{relationship} keyword means that the attribute has an \texttt{inverse}
+directive.\\
+\\
+Note that these two keywords are optional: it is why we have not use
+them in our example.\\
+\\
+Another way to check that the schema has been created within the database,
+is to use the \texttt{eyedboql} tool, as follows:
+\verbsize \begin{verbatim}
+% eyedboql -d foo -c "select schema" --print
+= bag(2546.2.120579:oid, 2553.2.112046:oid, 2568.2.515951:oid)
+struct Address {2546.2.120579:oid} : struct : agregat : instance : object { 
+        attribute int32 num;
+        attribute string street;
+        attribute string town;
+        attribute string country;
+};
+struct Person {2553.2.112046:oid} : struct : agregat : instance : object { 
+        attribute string firstname;
+        attribute string lastname;
+        attribute int32 age;
+        attribute Address addr;
+        relationship Person* spouse inverse Person::spouse;
+        attribute set<Person*> children;
+};
+struct Employee {2568.2.515951:oid} : Person : struct : agregat : instance : object { 
+        attribute string Person::firstname;
+        attribute string Person::lastname;
+        attribute int32 Person::age;
+        attribute Address Person::addr;
+        relationship Person* Person::spouse inverse Person::spouse;
+        attribute set<Person*> Person::children;
+        attribute int64 salary;
+};
+\end{verbatim}
+\normalsize
+Again, note that the exact output may differ a bit from what is displayed above, depending on the \eyedb version.\\
+\\
+Note that the object identifiers (\texttt{oid}) of the classes are displayed.
+\sect{Creating and updating objects with the OQL interpreter}
+
+Once a schema has been created in the database, we can create and update
+\texttt{Person} and \texttt{Employee} instances.\\
+\\
+Using the \texttt{eyedboql} monitor, we are going to perform the following
+operations:
+\begin{enumerate}
+\item create a person named ``john wayne''
+\item create a person named ``mary poppins''
+\item mary them
+\item create 3 ``john wayne'' children named ``baby1'', ``baby2'' and ``baby3''
+\end{enumerate}
+
+Here is the way to perform the first three step:
+\verbsize \begin{verbatim}
+% eyedboql -d foo -w
+Welcome to eyedboql.
+  Type `\help' to display the command list.
+  Type `\copyright' to display the copyright.
+? john := Person(firstname : "john", lastname : "wayne", age : 72);
+= 2585.2.196439:oid
+? mary := Person(firstname : "mary", lastname : "poppins", age : 68);
+= 2587.2.702511:oid
+? john.spouse := mary;
+= 2587.2.702511:oid
+\end{verbatim}
+\normalsize
+Note the \texttt{-w} option on the \texttt{eyedboql} command line, specifying that you open the \texttt{foo} database in write mode.\\
+\\
+A few comments:
+\idt \texttt{?} is the \texttt{eyedboql} prompt: of course, do not type
+this string!
+\idt \texttt{:=} is the affectation operator.
+\idt each time you create an object, its identifier (\texttt{oid}) is displayed
+on your terminal.
+\idt because of the relationship integrity constraint on the \texttt{spouse}
+attribute, the operation \texttt{john.spouse := mary} is equivalent to
+\texttt{mary.spouse := john}.\\
+\\
+To create the three ``john wayne'' children:
+\verbsize \begin{verbatim}
+? add Person(firstname : "baby1", age : 2) to john->children;
+= 2589.2.36448:oid
+? add Person(firstname : "baby2", age : 3) to john->children;
+= 2595.2.683802:oid
+? add Person(firstname : "baby3", age : 4) to john->children;
+= 2597.2.134950:oid
+\end{verbatim}
+\normalsize
+
+At this stage, it is interesting to perform the following operation:
+in another terminal, launch another \texttt{eyedboql} command on the same database \texttt{foo} and query all persons, as follows:
+\verbsize \begin{verbatim}
+% eyedboql -d foo -w -c "select Person;"
+= bag()
+\end{verbatim}
+\normalsize
+It may seem surprising that no person instance is returned, but in fact it is not: each interaction with the database occurs within a \emph{transaction}, and as long as this transaction has not been \emph{committed}, the database is not modified by the operations that have been done since the beginning of the transaction. To perform effectively these operations, you must \emph{commit} the transaction, by typing in the first \texttt{eyedboql} session:
+\verbsize \begin{verbatim}
+? \commit
+\end{verbatim}
+\normalsize
+If you now query the person instances in your second \texttt{eyedboql}
+session, the five person instances will be returned:
+\verbsize \begin{verbatim}
+eyedboql -d foo -w -c "select Person;"
+= bag(2597.2.134950:oid, 2595.2.683802:oid, 2589.2.36448:oid, 2587.2.702511:oid, 2585.2.196439:oid)
+\end{verbatim}
+\normalsize
+You can now quit the first \texttt{eyedboql} session with the following command:
+\verbsize \begin{verbatim}
+? \quit
+\end{verbatim}
+\normalsize
+
+\sect{Querying objects using the OQL interpreter}
+
+To query all persons in the database, launch an \texttt{eyedboql} session as in:
+\verbsize \begin{verbatim}
+% eyedboql -d foo
+Welcome to eyedboql.
+  Type `\help' to display the command list.
+  Type `\copyright' to display the copyright.
+? select Person;
+= bag(2597.2.134950:oid, 2595.2.683802:oid, 2589.2.36448:oid, 2587.2.702511:oid, 2585.2.196439:oid)
+\end{verbatim}
+\normalsize
+To query all persons whose firstname is ``john'':
+\verbsize \begin{verbatim}
+? select Person.firstname = "john";
+= bag(2585.2.196439:oid)
+? \print
+Person {2585.2.196439:oid} = { 
+        firstname = "john";
+        lastname = "wayne";
+        age = 72;
+        addr Address = { 
+                num = NULL;
+                street = NULL;
+                town = NULL;
+                country = NULL;
+        };
+        *spouse = {2587.2.702511:oid};
+        children set<Person*> = set { 
+                name = "";
+                count = 3;
+        };
+};
+\end{verbatim}
+\normalsize
+Note that the \texttt{\\print} command allows to display the contains of the
+last objects returned on your terminal.\\
+\\
+To query all persons whose firstname contains a \texttt{y}:
+\verbsize \begin{verbatim}
+? select Person.firstname ~ "y";
+= bag(2597.2.134950:oid, 2595.2.683802:oid, 2589.2.36448:oid, 2587.2.702511:oid)
+\end{verbatim}
+\normalsize
+
+\sect{Manipulating objects using OQL}
+
+The OQL interpreter can be used to manipulate object, for instance updating the attributes of objects returned by a query.\\
+\\
+First, launch an \texttt{eyedboql} session as in:
+\verbsize \begin{verbatim}
+% eyedboql -d foo -w
+Welcome to eyedboql.
+  Type `\help' to display the command list.
+  Type `\copyright' to display the copyright.
+?
+\end{verbatim}
+\normalsize
+The database must be opened in write mode, because we are going to modify the objects stored in the database.\\
+\\
+To change the \texttt{lastname} attribute of the person whose firstname is \texttt{mary}:
+\verbsize \begin{verbatim}
+? (select Person.firstname = "mary").lastname := "stuart";
+= bag("stuart")
+\end{verbatim}
+\normalsize
+To increment the \texttt{age} attribute of all persons, we use a \texttt{for} loop to iterate on the result of a query:
+\verbsize \begin{verbatim}
+? select Person.age;
+= bag(4, 3, 2, 68, 72)
+? for (p in (select Person)) { p.age += 1 ; };
+? select Person.age;
+= bag(5, 4, 3, 69, 73)
+\end{verbatim}
+\normalsize
+
+
+\sect{Updating the database schema}
+
+Once created, a database schema can be updated, to add or remove attributes, add or remove classes or schema, add indexes or contraints.
+\subsect{Adding indexes}
+To introduce the necessity of indexes, we propose to perform the following
+operations:
+\verbsize \begin{verbatim}
+? for (x in 1 <= 50000) new Person(firstname : "xx" + string(x));
+? select Person.firstname = "xx20";
+= bag(23336.2.420154:oid)
+? select Person.firstname = "xx10";
+= bag(23316.2.824639:oid)
+\end{verbatim}
+\normalsize
+The first operation creates 50000 person instances: as you can notice,
+this operation takes a few seconds. The two last operations query 
+person instance according to their firstname attribute. These operations
+also take a few seconds to perform and take a significant amount of CPU.\\
+\\
+A good idea is to affect an index on the attributes - for instance
+\texttt{firstname}, \texttt{lastname} and \texttt{age} - for which one wants
+to perform efficient query.\\
+\\
+This is very simple:
+\begin{itemize}
+\item add index specification to the class \texttt{Person} in 
+the \texttt{person.odl} file as follows:
+\verbsize \begin{verbatim}
+class Person {
+  string firstname;
+  char lastname;
+  int age;
+  Address addr;
+  ...
+  set<Person *> children;
+
+  index on firstname;
+  index on lastname;
+  index on age;
+};
+\end{verbatim}
+\normalsize
+\item then, use the \texttt{eyedbodl} tool to update the database schema:
+\verbsize \begin{verbatim}
+% eyedbodl -d foo -u person.odl
+Updating 'person' schema in database foo...
+Creating [NULL] hashindex 'index<type = hash, propagate = on> on Person.firstname' on class 'Person'...
+Creating [NULL] hashindex 'index<type = hash, propagate = on> on Person.lastname' on class 'Person'...
+Creating [NULL] btreeindex 'index<type = btree, propagate = on> on Person.age' on class 'Person'...
+
+Done
+\end{verbatim}
+\normalsize
+\end{itemize}
+Now, you can try again to query Person instances according to its
+firstname, lastname or age:
+\verbsize \begin{verbatim}
+% eyedboql -d foo -w
+? select Person.firstname = "xx20";
+= bag(23336.2.420154:oid)
+? select Person.firstname = "xx10";
+= bag(23316.2.824639:oid)
+\end{verbatim}
+\normalsize
+and you will notice that these operations are immediate.
+
+\subsect{Adding constraints}
+
+In the same way, you can add a \texttt{notnull} and an \texttt{unique} constraint
+on the \texttt{lastname} attribute within the class \texttt{Person}:
+\begin{itemize}
+\item add the constraint specification to the class \texttt{Person} within
+the \texttt{person.odl} file as follows:
+\verbsize \begin{verbatim}
+class Person {
+  string firstname;
+  string lastname;
+  int age;
+  Address addr;
+  ...
+
+  index on firstname;
+  index on lastname;
+  index on age;
+  constraint<notnull> on lastname;
+  constraint<unique> on lastname;
+};
+\end{verbatim}
+\normalsize
+\item then, use the \texttt{eyedbodl} tool to update the database schema:
+\verbsize \begin{verbatim}
+% eyedbodl -d foo -u person.odl
+Updating 'person' schema in database foo...
+Creating [NULL] notnull_constraint 'constraint<notnull, propagate = on> on Person.lastname' on class 'Person'...
+Creating [NULL] unique_constraint 'constraint<unique, propagate = on> on Person.lastname' on class 'Person'...
+
+Done
+\end{verbatim}
+\normalsize
+\end{itemize}
+Now try to create two person instances with the same \texttt{lastname} attribute:
+\verbsize \begin{verbatim}
+% eyedboql -d foo -w
+? new Person(lastname : "curtis");
+= 79902.2.884935:oid
+? new Person(lastname : "curtis");
+near line 2: 'new Person(lastname : "curtis")' => oql error: new operator 'new<oql$db> Person(lastname:"curtis"); ' : unique[] constraint error: attribute path 'Person.lastname'.
+\end{verbatim} %$
+\normalsize
+or with no \texttt{lastname} attribute:
+\verbsize \begin{verbatim}
+? new Person();
+near line 3: 'new Person()' => oql error: new operator 'new<oql$db> Person(); ' : notnull[] constraint error: attribute path 'Person.lastname'.
+\end{verbatim} %$
+\normalsize
+
+\subsect{Removing classes and schema}
+
+It is possible to remove a class in a schema using \texttt{eyedbodl}. For instance, to remove the class \texttt{Employee} in the already introduced schema:
+\verbsize \begin{verbatim}
+% eyedbodl -d foo -u --rmcls=Employee
+Updating 'UNTITLED' schema in database foo...
+Removing class Employee
+
+Done
+\end{verbatim}
+\normalsize
+You can then check the class removal by:
+\verbsize \begin{verbatim}
+% eyedbodl -d foo --gencode=ODL
+
+//
+// EyeDB Version 2.8.4 Copyright (c) 1995-2007 SYSRA
+//
+// UNTITLED Schema
+//
+// Generated by eyedbodl at Mon Dec 10 13:44:03 CET 2007
+//
+
+class Address (implementation <hash, hints = "key_count = 2048;">) {
+        attribute int32 num;
+        attribute string street;
+        attribute string town;
+        attribute string country;
+};
+
+class Person (implementation <hash, hints = "key_count = 2048;">) {
+        attribute string firstname;
+        attribute string lastname;
+        attribute int32 age;
+        attribute Address addr;
+        relationship Person* spouse inverse Person::spouse;
+        attribute set<Person*> children;
+
+        index<type = hash, hints = "key_count = 4096; initial_size = 4096; extend_coef = 1; size_max = 4096;", propagate = on> on Person.firstname;
+        index<type = hash, hints = "key_count = 4096; initial_size = 4096; extend_coef = 1; size_max = 4096;", propagate = on> on Person.lastname;
+        constraint<unique, propagate = on> on Person.lastname;
+        constraint<notnull, propagate = on> on Person.lastname;
+        index<type = btree, hints = "degree = 128;", propagate = on> on Person.age;
+};
+
+\end{verbatim}
+\normalsize
+It is as well possible to remove entirely the database schema:
+\verbsize \begin{verbatim}
+% eyedbodl -d foo -u --rmsch
+Updating 'UNTITLED' schema in database foo...
+Removing [2570.2.500986:oid] hashindex 'index<type = hash, hints = "key_count = 4096; initial_size = 4096; extend_coef = 1; size_max = 4096;", propagate = on> on Person.firstname' from class 'Person'...
+Removing [2585.2.286352:oid] hashindex 'index<type = hash, hints = "key_count = 4096; initial_size = 4096; extend_coef = 1; size_max = 4096;", propagate = on> on Person.lastname' from class 'Person'...
+Removing [2599.2.7912:oid] btreeindex 'index<type = btree, hints = "degree = 128;", propagate = on> on Person.age' from class 'Person'...
+Removing [2625.2.396262:oid] unique_constraint 'constraint<unique, propagate = on> on Person.lastname' from class 'Person'...
+Removing [2620.2.240536:oid] notnull_constraint 'constraint<notnull, propagate = on> on Person.lastname' from class 'Person'...
+Removing class Address
+Removing class Person
+Removing class set<Person*>
+
+Done
+\end{verbatim}
+\normalsize
+The result can be checked with:
+\verbsize \begin{verbatim}
+% eyedbodl -d foo --gencode=ODL
+
+//
+// EyeDB Version 2.8.4 Copyright (c) 1995-2007 SYSRA
+//
+// UNTITLED Schema
+//
+// Generated by eyedbodl at Mon Dec 10 13:44:03 CET 2007
+//
+\end{verbatim}
+\normalsize
+
+\sect{Using the C++ Binding}
+
+We are going to introduce now the C++ binding through the same schema
+and examples as previously.\\
+\\
+There are two ways to use the C++ binding: 
+\begin{enumerate}
+\item using the generic C++ binding
+\item using both the generic C++ binding and the specific \texttt{Person} C++ code generated from the ODL schema
+\end{enumerate}
+We will explain here only the second way, as it is far more simple and pratical than the first one. For more information on the generic C++ binding, please refer to the C++ binding manual.\\
+\\
+Writing a C++ program that can create, retrieve, modify and delete person instances that are stored in an \eyedb database involves the following steps:
+\begin{enumerate}
+\item generates the specific \texttt{Person} binding using the \texttt{eyedbodl} tool
+\item write the C++ client program
+\item compile the generated binding and the client program
+\end{enumerate}
+This example is located in the \texttt{examples/GettingStarted} subdirectory.
+
+\subsect{Generating the specific C++ binding}
+
+To generate the specific C++ binding, run the \texttt{eyedbodl} tool as follow:
+\verbsize \begin{verbatim}
+% eyedbodl --gencode=C++ --package=person schema.odl
+\end{verbatim}
+\normalsize
+The \texttt{--package} option is mandatory: you may give any name you want, this name will 
+be used as the prefix for generated files names. Without the \texttt{--package}
+option, the prefix used will be the name of the ODL file without its
+extension.\\
+\\
+\texttt{eyedbodl} generates a few files, all prefixed by \texttt{person}, the most important 
+being \texttt{person.h} and \texttt{person.cc}.\\
+\\
+If you have a look to the file \texttt{person.h},
+you will notice that the following classes have been generated:
+\begin{enumerate}
+\item the class \texttt{person}
+\item the class \texttt{personDatabase}
+\item the class \texttt{Root}
+\item the class \texttt{Address}
+\item the class \texttt{Person}
+\item the class \texttt{Employee}
+\end{enumerate}
+The first class, \texttt{person}, is the package class:
+\verbsize \begin{verbatim}
+class person {
+ public:
+  static void init();
+  static void release();
+  static eyedb::Status updateSchema(eyedb::Database *db);
+  static eyedb::Status updateSchema(eyedb::Schema *m);
+};
+\end{verbatim}
+\normalsize
+it is used to perform package initialization and schema update.
+Before any use of the \texttt{person} package, you need to call
+\texttt{person::init}.\\
+\\
+The second class, \texttt{personDatabase} is used to open, close and
+manipulate objects within a database containing the \texttt{person} schema.\\
+\\
+The \texttt{open} method has two
+purposes: the first one is to open the database, as the standard
+\texttt{eyedb::Database} will do; the second one is to check that the database
+schema is consistant with the generated runtime schema.
+Although it is possible to use the standard \texttt{Database} class to open
+a database containing the \texttt{person} schema, it is strongly recommended
+to use the \texttt{personDatabase} class.\\
+\\
+The third class, \texttt{Root}, is the root class for all the generated classes.
+This class is useful to perform safe down-casting during object loading.\\
+\\
+The three last classes, \texttt{Address}, \texttt{Person} and \texttt{Employee}
+are generated from the \texttt{person.odl} class specifications: for each
+attribute in the \texttt{person.odl}, a set of get and set methods is generated.\\
+\\
+For instance, for the \texttt{firstname} attribute, the following methods
+are generated:
+\verbsize \begin{verbatim}
+  eyedb::Status setFirstname(const std::string &);
+  std::string getFirstname(eyedb::Bool *isnull = 0, eyedb::Status * = 0) const;
+  eyedb::Status setFirstname(unsigned int a0, char);
+  char getFirstname(unsigned int a0, eyedb::Bool *isnull = 0, eyedb::Status * = 0)  const;
+\end{verbatim}
+\normalsize
+The two first methods manipulate the \texttt{firstname} attribute as a string
+while the two last ones manipulate each character within this string.\\
+\\
+There are two \texttt{set} methods and two \texttt{get} methods.
+
+\subsect{A minimal client program}
+We are now going to write a minimal client program which will perform
+the following operations:
+\begin{enumerate}
+\item initialize the \eyedb package and the \texttt{person} package
+\item open a connection with the \eyedb server
+\item open a database
+\item perform error management
+\item release the \eyedb package and the \texttt{person} package
+\end{enumerate}
+Here is the code for this minimal client:
+\verbsize \begin{verbatim}
+#include "person.h"
+
+int
+main(int argc, char *argv[])
+{
+  eyedb::init(argc, argv);      // initializes EyeDB package
+  person::init();               // initializes person package
+
+  eyedb::Exception::setMode(eyedb::Exception::ExceptionMode); // use exception mode
+
+  try {
+    eyedb::Connection conn;
+
+    conn.open();                // opens the connection
+
+    personDatabase db(argv[1]); // creates a database handle
+    db.open(&conn, eyedb::Database::DBRW); // opens the database in read/write mode
+  }
+
+  catch(Exception &e) {      // catch any exception and print it
+    e.print();
+  }
+
+  person::release();            // releases person package
+  eyedb::release();             // releases EyeDB package
+
+  return 0;
+}
+\end{verbatim}
+\normalsize
+Note that statement \texttt{Exception::setMode(...)} is mandatory
+if you want to use the exception error policy.\\
+\\
+To use this client, you must first compile it:
+\texttt{eyedbodl} has generated a makefile called Makefile.\emph{package}
+which can be used as is or can help
+you to design your own makefile.\\
+\\
+A template C++ file (\texttt{template\_}\emph{package}\texttt{.cc})
+has also been generated, closed to the
+previous minimal client program, which can be compiled with
+the generated makefile.\\
+\\
+Here is the generated \texttt{Makefile.person} ((\texttt{<<datadir>>} is the data directory, usually /usr/share):
+\verbsize \begin{verbatim}
+#
+# Makefile.person
+# 
+# person package
+#
+# Example of template Makefile that can help you to compile
+# the generated C++ file and the template program
+# Generated by eyedbodl at Sat Jan 28 17:53:48 2006
+#
+
+include <<datadir>>/eyedb/Makefile.eyedb
+
+CXXFLAGS += $(EYEDB_CXXFLAGS) $(EYEDB_CPPFLAGS)
+LDFLAGS  += ${EYEDB_LDFLAGS}
+LDLIBS   += ${EYEDB_LDLIBS}
+
+# if you use gcc
+GCC_FLAGS = -Wl,-R$(EYEDB_LIBDIR)
+
+# Example for compiling a client program:
+
+client_program = template_person
+
+$(client_program): person.o $(client_program).o
+        $(CXX) $(LDFLAGS) $(GCC_FLAGS) -o $@ $^ $(LDLIBS)
+\end{verbatim}
+\normalsize
+Important note: you need a recent version of GNU make to use this makefile.
+This makefile does not work with the standard SUN make.\\
+\\
+Once compiled, you can execute the program as follows:
+\verbsize \begin{verbatim}
+% ./persontest foo
+\end{verbatim}
+\normalsize
+We are going now to add a function to manipulate \texttt{Person} instances:
+\begin{enumerate}
+\item create a person named ``john wayne''
+\item create a person named ``mary poppins''
+\item mary them
+\item create 3 ``john wayne'' children named ``baby1'', ``baby2'' and ``baby3''
+\end{enumerate}
+These operations are performed in the following function:
+\verbsize \begin{verbatim}
+static void
+create(eyedb::Database *db)
+{
+  db->transactionBegin(); // starts a new transaction
+
+  Person *john = new Person(db);
+  john->setFirstname("john");
+  john->setLastname("wayne");
+  john->setAge(32);
+  john->getAddr()->setStreet("courcelles");
+  john->getAddr()->setTown("Paris");
+
+  Person *mary = new Person(db);
+  mary->setFirstname("mary");
+  mary->setLastname("poppins");
+  mary->setAge(30);
+  mary->getAddr()->setStreet("courcelles");
+  mary->getAddr()->setTown("Paris");
+
+  // mary them
+  john->setSpouse(mary);
+
+  // creates children
+  for (int i = 0; i < 5; i++) {
+    std::string name = std::string("baby") + str_convert(i+1);
+    Person *child = new Person(db);
+    child->setFirstname(name.c_str());
+    child->setLastname(name.c_str());
+    child->setAge(1+i);
+    john->addToChildrenColl(child);
+    child->release(); // release the allocated pointer
+  }
+
+  // store john and all its related instances within the database
+  john->store(eyedb::FullRecurs);
+
+  // release the allocated pointers
+  mary->release();
+  john->release();
+
+  db->transactionCommit(); // commits the current transaction
+}
+\end{verbatim}
+\normalsize
+A few remarks about this code:
+\begin{itemize}
+\item all operations - setting, getting attributes, storing, querying instances
+in a database - must be performed within a transaction.
+A transaction is initiated using the \texttt{Database::transactionBegin}
+method and is committed (resp. aborted) using the
+\texttt{Database::transactionCommit}
+(resp. \texttt{Database::transactionAbort}) method.
+\item to store any instance in the database, you need to call the 
+emph{store} (or \texttt{realize}) method on this instance.
+In our case, we use the argument \texttt{FullRecurs} indicating that
+we want all related instances (through relationship or indirect
+attribute) to be stored in the database.
+\item all runtime pointers allocated with the \texttt{new} operator must
+be deleted using the \texttt{release} method. The \texttt{delete} operator
+is forbidden: if you try to use it, an exception will be thrown at
+runtime.
+\end{itemize}
+We are now going to query and display all the person instances.\\
+\\
+Here is the corresponding code:
+\verbsize \begin{verbatim}
+static void
+read(eyedb::Database *db, const char *s)
+{
+  db->transactionBegin();
+
+  eyedb::OQL q(db, "select Person.lastname ~ \"%s\"", s);
+
+  eyedb::ObjectArray obj_arr;
+  q.execute(obj_arr);
+
+  for (int i = 0; i < obj_arr.getCount(); i++) {
+    Person *p = Person_c(obj_arr[i]);
+    if (p)
+      printf("person = %s %s, age = %d\n", p->getFirstname(),
+             p->getLastname(), p->getAge());
+  }
+
+  db->transactionCommit();
+}
+\end{verbatim}
+\normalsize
+An OQL construct can be used within the C++ code using the
+\texttt{OQL(Database *, const char *fmt, ...)} constructor.
+For instance, in the above example, assuming \texttt{s} is equal to \texttt{baby}, the code:
+\verbsize \begin{verbatim}
+  eyedb::OQL q(db, "select Person.lastname ~ \"%s\"", s);
+\end{verbatim}
+\normalsize
+will send the query \texttt{select Person.lastname ~ "baby"} to the OQL interpreter.\\
+\\
+This interpreter will perform the query and returned all the found objects.
+The returned objects can be found using the \texttt{OQL::execute} method
+as follows:
+\verbsize \begin{verbatim}
+  eyedb::ObjectArray obj_arr;
+  q.execute(obj_arr);
+\end{verbatim}
+\normalsize
+The returned objects are of type \texttt{eyedb::Object}, so you cannot use the
+\texttt{Person} methods such as \texttt{getFirstname()}, \texttt{getAge()}\ldots
+To use them, you need to perform a down-cast using the \texttt{Person\_c} static
+function as follows:
+\verbsize \begin{verbatim}
+  for (int i = 0; i < obj_arr.getCount(); i++) {
+    Person *p = Person_c(obj_arr[i]);
+    if (p) ...
+\end{verbatim}
+\normalsize
+If the object \texttt{obj\_arr[i]} is not of type \texttt{Person}, the returned
+pointer will be null. It is why we make a test on the value of \texttt{p}.
+If \texttt{p} is not null, we can use all the \texttt{Person} methods as follows:
+\verbsize \begin{verbatim}
+    printf("person = %s %s, age = %d\n", p->getFirstname(),
+           p->getLastname(), p->getAge());
+\end{verbatim}
+\normalsize
+
+To have more information about the C++ binding, please refer to the
+\eyedb C++ binding manual.
+
+\sect{Using the Java Binding}
+
+Although the C++ binding is more complete than the Java binding
+- essentially according to the administrative operations - the Java
+bindings allow to manipulate data without limitations.\\
+\\
+Using the Java binding is very similar to the C++ binding. Writing a
+Java program that can create, retrieve, modify and delete person
+instances that are stored in an \eyedb database involves the following
+steps:
+\begin{enumerate}
+\item generates the specific \texttt{Person} binding using the \texttt{eyedbodl} tool
+\item write the Java client program
+\item compile the generated binding and the client program
+\end{enumerate}
+This example is located in the \texttt{examples/GettingStarted} subdirectory.
+
+\subsect{Generating the Java code}
+
+The Java code is generated from the ODL schema definition using the following command:
+\verbsize \begin{verbatim}
+% eyedbodl --gencode=Java --package=person person.odl
+\end{verbatim}
+\normalsize
+The \texttt{--package} option is mandatory: this name will be used as the name of the Java package to which all generated Java classes will belong.\\
+\\
+This command will generate a number of Java file in subdirectory \texttt{person/},
+each generated file containing a Java class having the same name.
+
+If you have a look to the files in sub-directory \texttt{person},
+you will notice that the following classes have been generated:
+\begin{enumerate}
+\item the class \texttt{Address}
+\item the class \texttt{Database}
+\item the class \texttt{Employee}
+\item the class \texttt{Person}
+\item the class \texttt{set\_class\_Person\_ref}
+\end{enumerate}
+
+
+\subsect{A minimal client program}
+
+We are now going to write a minimal client program which will perform
+the following operations:
+\begin{enumerate}
+\item initialize the \eyedb and \texttt{person} packages
+\item connect to the \eyedb server
+\item open a database
+\item creates two person instances and mary them
+\end{enumerate}
+Here is the code for this minimal client:
+\verbsize \begin{verbatim}
+//
+// Persontest.java
+//
+
+import person.*;
+
+class PersonTest {
+  public static void main(String args[]) {
+
+    // Initialize the eyedb package and parse the default eyedb options
+    // on the command line
+    String[] outargs = org.eyedb.Root.init("PersonTest", args);
+     
+    // Check that a database name is given on the command line
+    int argc = outargs.length;
+    if (argc != 1) {
+        System.err.println("usage: java PersonTest dbname");
+        System.exit(1);
+    }
+
+    try {
+      // Initialize the person package
+      person.Database.init();
+
+      // Open the connection with the backend
+      org.eyedb.Connection conn = new org.eyedb.Connection();
+
+      // Open the database named outargs[0]
+      person.Database db = new person.Database(outargs[0]);
+      db.open(conn, org.eyedb.Database.DBRW);
+
+      db.transactionBegin();
+      // Create two persons john and mary
+      Person john = new Person(db);
+      john.setFirstname("john");
+      john.setLastname("travolta");
+      john.setAge(26);
+     
+      Person mary = new Person(db);
+      mary.setFirstname("mary");
+      mary.setLastname("stuart");
+      mary.setAge(22);
+     
+      // Mary them ;-)
+      john.setSpouse(mary);
+
+      // Store john and mary in the database
+      john.store(org.eyedb.RecMode.FullRecurs);
+
+      john.trace();
+
+      db.transactionCommit();
+    }
+    catch(org.eyedb.Exception e) { // Catch any eyedb exception
+       e.print();
+       System.exit(1);
+    }
+  }
+}
+\end{verbatim}
+\normalsize
+To use this client, you must first compile it using a standard Makefile, as follows 
+(replace \texttt{<<datadir>>} with the data directory, usually /usr/share):
+\verbsize \begin{verbatim}
+include <<datadir>>/eyedb/Makefile.eyedb
+
+all: PersonTest.class
+
+person/Database.java: schema.odl
+        $(EYEDB_ODL) --gencode=Java --package=person --output-dir=person $<
+
+PersonTest.class: PersonTest.java person/Database.java
+        CLASSPATH=$(EYEDB_CLASSPATH):. javac *.java person/*.java
+\end{verbatim} %%$ 
+\normalsize 
+Once compiled, you can execute the program as follows:
+\verbsize \begin{verbatim}
+% CLASSPATH=. eyedbjrun PersonTest person_g
+\end{verbatim}
+\normalsize
+The \texttt{eyedbjrun} script is a helper script that wraps the call to the Java 
+virtual machine with an appropriate CLASSPATH environment variable containing the path to \texttt{eyedb.jar} and passes the necessary options to the \texttt{PersonTest} class.\\
+\\
+A few remarks about the Java code:
+\begin{itemize}
+\item all operations - setting, getting attributes, storing, querying instances
+in a database - must be performed within a transaction.
+A transaction is initiated using the \texttt{Database::transactionBegin}
+method and is committed (resp. aborted) using the
+\texttt{Database::transactionCommit}
+(resp. \texttt{Database::transactionAbort}) method.
+\item to store any instance in the database, you need to call the 
+emph{store} (or \texttt{realize}) method on this instance.
+In our case, we use the argument \texttt{FullRecurs} indicating that
+we want all related instances (through relationship or indirect
+attribute) to be stored in the database.
+\end{itemize}
+The Java binding support both the standalone applications and the applets.\\
+\\
+To have more information about the Java binding, please refer to the
+\eyedb Java binding manual.
+
+\sect{Learning more about \eyedb}
+
+We have briefly introduce in this manual some of the main features
+of \eyedbX.\\
+\\
+More detailled information can be found in the other parts of the \eyedb manual:
+\begin{itemize}
+%\item Administration guide
+\item Object Definition Language (ODL) manual
+\item Object Query Language (OQL) manual
+\item C++ Binding manual
+\item Java Binding manual
+\end{itemize}
+
+
+\end{document}

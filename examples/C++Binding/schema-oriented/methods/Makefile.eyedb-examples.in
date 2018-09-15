@@ -1,0 +1,28 @@
+prefix=@prefix@
+include @datadir@/@PACKAGE@/Makefile.eyedb
+
+CXXFLAGS += $(EYEDB_CXXFLAGS) $(EYEDB_CPPFLAGS) -I../share
+LDFLAGS += ${EYEDB_LDFLAGS}
+LDLIBS += ${EYEDB_LDLIBS}
+
+all: personmthbe$(SO) personmthfe$(SO) methods
+
+methods: ../share/person.o methods.o
+	$(CXX) $(LDFLAGS) -Wl,-R$(EYEDB_LIBDIR) -o $@ $^ $(LDLIBS)
+
+personmthfe$(SO): personmthfe.o ../share/personstubsfe.o ../share/person.o $(EXTRALIBS)
+	$(CXX) $(CXXFLAGS) $(EYEDB_SOFLAGS) -o $@ $+
+
+personmthbe$(SO): personmthbe.o ../share/personstubsbe.o ../share/person.o $(EXTRALIBS)
+	$(CXX) $(CXXFLAGS) $(EYEDB_SOFLAGS) -o $@ $+
+
+init:
+	@for i in person.h person.cc person.o Makefile.person \
+        personstubsfe.cc personstubsbe.cc; \
+	do \
+		if [ ! -h $$i ]; then ln -s ../../../common/$$i $$i; fi\
+	done	
+
+clean:
+	rm -f *.o methods person.h person.cc *stubs*.cc *skel*.cc \
+	Makefile.person *.so

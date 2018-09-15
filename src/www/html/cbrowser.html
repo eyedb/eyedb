@@ -1,0 +1,66 @@
+
+<html>
+  <head>
+    <title>EyeDB Browser</title>
+  </head>
+
+<body bgcolor=#000055 text=#ffffff link=#ffff00 vlink=#ff9900><br><br>
+<br>
+<br>
+<strong>
+<font size=+2><center>Welcome to the E<small>YE</small>DB Browser Connection Window
+</center></font>
+</strong>
+<br>
+<br>
+<em>E<SMALL>YE</SMALL>DB is an OODBMS developped at <a href=http://www.sysra.com>
+Sysra Informatique</a> in collaboration with <a href=http://www.infobiogen.fr>Infobiogen</a>, the <a href=http://www.anvar.fr>ANVAR</a> and the <a href=http://www.aurif.fr/crif_accueil.html> Conseil Regional d'Ile de France</a>.
+<br>
+<br>
+E<SMALL>YE</SMALL>DB is a very efficient and reliable OODBMS, providing all standard OODBMS features.
+<br>
+<br>
+You can find information on E<SMALL>YE</SMALL>DB at
+<a href=http://www.sysra.com/eyedb>http://www.sysra.com/eyedb</a>.
+</em>
+<br>
+<br>
+To connect to a database, please enter a database name, an E<small>YE</small>DB username and password in the following form (user/password <em>guest</em> is
+the default):
+<center>
+<font size=+1>
+<form method=POST ACTION="http://www.infobiogen.fr/local/test/viara/cgi-bin/eyedbcgi.sh?-dbdlggen -pad xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+<table>
+<br>
+<tr>
+<th><b>Database Name</b></th>
+<th><INPUT ALIGN=right TYPE=text NAME="-db" size=14></th>
+</tr>
+<th><b>Opening Mode</b></th>
+<th>
+<select name="-mode">
+<option value="read">read</option>
+<option value="rw">rw</option>
+<option value="readadmin">read admin</option>
+<option value="rwadmin">rw admin</option>
+</select>
+</th>
+</tr>
+<th><b>Configuration</b></th>
+<th><INPUT ALIGN=right TYPE=text NAME="-conf" size=14></th>
+</tr>
+<th><b>User Name</b></th>
+<th><INPUT ALIGN=right TYPE=text NAME="-u" VALUE=eyedbroot size=14></th>
+</tr>
+<tr>
+<th><b>Password</b></th>
+<th><INPUT ALIGN=right TYPE=password NAME="-p" VALUE=eyedbroot  size=14></th>
+</tr>
+</table>
+</font>
+<INPUT TYPE="submit" VALUE="Open Database">
+</form>
+</center>
+</font>
+</body>
+</html>

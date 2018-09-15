@@ -1,0 +1,8 @@
+This testcase shows bug 2816255 [Removing schema using 'eyedbodl --rmsch' crashes]
+See:
+https://sourceforge.net/tracker/?func=detail&aid=2816255&group_id=127988&atid=710190
+
+To reproduce the bug:
+make init     # will re-create the database
+make check    # will run the testcase (a shell script)
+

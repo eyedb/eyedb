@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+srcdir=@srcdir@
+
+database='bugs_oql_triggers'
+
+$bindir/eyedboql -w -d $database <<EOF
+p := new Person_1( name: "John");
+p.name := "Jim";
+EOF

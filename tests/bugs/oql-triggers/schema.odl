@@ -1,0 +1,54 @@
+// bug #1: loops and crashes
+class Person_1 {
+      attribute string name;
+
+      trigger <update_before> u_b()
+%oql{
+	print("Update before:\n");
+	this.name := "Z_before";
+	print( this.toString());
+  %};
+
+      trigger <update_after> u_a()
+%oql{
+	print("Update after:\n");
+	this.name := "Z_after";
+	print( this.toString());
+  %};
+};
+
+// bug #2: this and pthis are the same
+class Person_2 {
+      attribute string name;
+
+      trigger <update_after> u_a()
+%oql{
+	print("Update after:\n");
+	print("*** this:\n");
+	print( this.toString());
+	print("*** pthis:\n");
+	print( pthis.toString());
+	if (this.name == pthis.name)
+	   throw "same value";
+  %};
+};
+
+// bug #3: load_before crashes
+class Person_3 {
+      attribute string name;
+
+      trigger<load_before> l_a()
+%oql{
+	print("Load before:\n");
+  %};
+};
+
+// bug #4: load_after prints bizarre message
+class Person_4 {
+      attribute string name;
+
+  trigger<load_after> l_b()
+%oql{
+	print("Load after:\n");
+  %};
+};

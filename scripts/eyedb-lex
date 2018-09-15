@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+# eyedb-lex
+#
+# Eric Viara Copyright SYSRA (c) 2000
+#
+
+if [ $# != 1 ]
+then
+  echo "usage: $0 file"
+  exit 1
+fi
+
+file=$1
+basefile=`basename $file`
+
+if [ "$USEFLEX" = 1 ]
+then
+  LEX=flex
+else
+  LEX=lex
+fi
+
+TEMP_FILE=lex.$basefile.c.in
+OUT_FILE=lex.$basefile.c
+if [ "$USEFLEX" = 1 ]
+then
+  $LEX -8 -o$TEMP_FILE $file.l
+else
+  $LEX -e -t $file.l > $TEMP_FILE
+fi
+
+type $LEX
+
+sed -e 's/yy/'$basefile'/g' $TEMP_FILE | awk '
+/'${basefile}'wunput\(wc\)/ {
+  printf("void '${file}'wunput(wchar_t wc)\n"); 
+  skip=1;next; 
+} 
+/'${basefile}'cgid\(c\)/ {
+  printf("'${file}'cgid(wchar_t c)\n"); 
+  skip=1;next; 
+} 
+/'${basefile}'lex\(\){/ {
+  printf("int '${file}'lex(){\n");
+  next; 
+}
+/register n;/ {
+  printf("register int n;\n");
+  next;
+}
+/register i = / {
+  printf("register int i = ");
+  for (i = 4; i <= NF; i++)
+    printf("%s ", $i);
+  printf("\n");
+  next;
+}
+{if (skip) {skip=0;next}; print;}' - > $OUT_FILE
+
+rm -f $TEMP_FILE

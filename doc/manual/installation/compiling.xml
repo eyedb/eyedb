@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd"
+[
+<!ENTITY eyedb "EyeDB">
+<!ENTITY configure "<command>configure</command>">
+]
+>
+
+<book>
+  <title>EyeDB Installation Guide</title>
+
+  <chapter id="compiling-eyedb">
+    <title>Compiling &eyedb;</title>
+
+    <section id="getting-sources">
+      <title>Getting &eyedb; sources</title>
+
+      <para>
+	The &eyedb; sources can be downloaded from project page on sourceforge (<ulink url="http://sourceforge.net/projects/eyedb"/>). By following the "download" link, you will get to the list of releases available for downloads. Source archives are provided under .tar.bz2 and .tar.gz format.
+      </para>
+
+      <para>
+	After downloading the source archive, unpack it using <command>tar</command>. This will create a directory named <filename class="directory">eyedb-VERSION</filename> where VERSION is the version number of &eyedb;, for example eyedb-2.8.7.
+      </para>
+
+    </section>
+
+    <section id="compilation-prerequisites">
+      <title>Compilation prerequisites</title>
+
+      <para>
+	For building &eyedb; the following software packages are required:
+	<itemizedlist>
+	  <listitem><para>GNU make; other make programs will <emphasis>not</emphasis> work.</para></listitem>
+	  <listitem><para>ANSI C++ compiler. Most platforms use GNU C++ compiler.</para></listitem>
+	  <listitem><para>flex lexical analyzer generator</para></listitem>
+	  <listitem><para>bison parser generator</para></listitem>
+	  <listitem><para>GNU readline library will be used if available for command line editing in the OQL monitor</para></listitem>
+	  <listitem><para>Python and the pexpect python module, if running &eyedb; test suites</para></listitem>
+	  <listitem><para>Java Development Kit, if building the Java binding</para></listitem>
+	  <listitem><para>xsltproc and XSL manpages stylesheet, if building the man pages</para></listitem>
+	  <listitem><para>xsltproc and XSL stylesheet, if building the HTML version of docbook manuals</para></listitem>
+	  <listitem><para>dblatex, if building PDF version of docbook manuals</para></listitem>
+	  <listitem><para>LaTeX, if building the documentation</para></listitem>
+	  <listitem><para>doxygen, if building the documentation for the C++ binding</para></listitem>
+	  <listitem><para>javadoc, if building the documentation for the Java binding</para></listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	These software packages are available on all the platforms supported by &eyedb;. For more information on how to install these packages, refer to the documentation of your operating system distribution.
+      </para>
+
+    </section>
+
+    <section id="configuring-eyedb">
+      <title>Configuring &eyedb;</title>
+
+      <para>
+	&eyedb; use GNU autotools (autoconf, automake, libtool) to ease compilation.
+      </para>
+
+      <para>
+	First step is to configure the source tree by running the &configure; script located at the root of the source tree.
+      </para>
+
+      <para>
+	The &configure; script accepts many options that allow fine grain control of the compilation and installation. For full help on options, run <command>configure --help</command>.
+      </para>
+
+      <para>
+	The following options of the &configure; script are the most usefull:
+	<itemizedlist>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--prefix=<replaceable>prefix</replaceable></arg>
+	      </cmdsynopsis>
+	      install all files and directories under directory <filename class="directory">prefix</filename> instead of default (<filename class="directory">/usr/local/eyedb</filename>)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--srcdir=<replaceable>DIR</replaceable></arg>
+	      </cmdsynopsis>
+	      find the sources in DIR (default is configure dir or ..)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--enable-debug</arg>
+	      </cmdsynopsis>
+	      compile with debug (default is no)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--enable-optimize=<replaceable>flag</replaceable></arg>
+	      </cmdsynopsis>
+	      compile with given optimization flag (default is no)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--enable-profile</arg>
+	      </cmdsynopsis>
+	      compile with profile (default is no)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--enable-java</arg>
+	      </cmdsynopsis>
+	      enable Java code compilation (default is yes)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--enable-doc</arg>
+	      </cmdsynopsis>
+	      enable documentation generation (default is yes)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--enable-swig</arg>
+	      </cmdsynopsis>
+	      enable SWIG bindings generation (default is no)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--with-semaphore-policy=<replaceable>posix|sysv_ipc</replaceable></arg>
+	      </cmdsynopsis>
+	      force semaphore implementation (if none given, the semaphore implementation is guessed by the &configure; script)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--with-databasedir=<replaceable>DIRECTORY</replaceable></arg>
+	      </cmdsynopsis>
+	      give databases directory (default is <filename class="directory">LOCALSTATEDIR/lib/eyedb/db</filename>)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--with-pipedir=<replaceable>DIRECTORY</replaceable></arg>
+	      </cmdsynopsis>
+	      give pipes directory (default is <filename class="directory">LOCALSTATEDIR/lib/eyedb/pipes</filename>)
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--with-tmpdir=<replaceable>DIRECTORY</replaceable></arg>
+	      </cmdsynopsis>
+	      give temporary directory (default is <filename class="directory">LOCALSTATEDIR/lib/eyedb/tmp</filename>)
+	    </para>
+	  </listitem>
+
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--with-eyedbd-user=<replaceable>USERNAME</replaceable></arg>
+	      </cmdsynopsis>
+	      give user the EyeDB server shall be run as (default is <computeroutput>eyedb</computeroutput>)
+	    </para>
+	  </listitem>
+
+	  <listitem>
+	    <para>
+	      <cmdsynopsis>
+		<arg choice="plain">--with-readline=<replaceable>readline|editline</replaceable></arg>
+	      </cmdsynopsis>
+	      use GNU readline or BSD editline for line editing (default is readline if available)
+	    </para>
+	  </listitem>
+	</itemizedlist>
+      </para>
+
+    </section>
+    <section id="building-eyedb">
+      <title>Building &eyedb;</title>
+
+      <para>
+	Building &eyedb; is simply done by running <command>make</command>. Remember that the <command>make</command> utility must be GNU make, which on some systems may be called <command>gmake</command>.
+      </para>
+
+      <para>
+	&eyedb; supports compiling in a separate build directory, which can be usefull if the source tree must be kept clean, is shared between several architecture or several compilation options (for instance debug and profile), is mounted read-only... To compile in a separate build directory, run &configure; with options --srcdir.
+      </para>
+
+    </section>
+
+  </chapter>
+
+<!--
+;;; Local Variables: ***
+;;; eval: (load-file "../docbook-common/emacs-macro") ***
+;;; End: ***
+-->
+
+</book>

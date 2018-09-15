@@ -1,0 +1,1 @@
+$TEXINPUTS = '.::@abs_top_srcdir@/doc/manual/latex-common:@abs_top_builddir@/doc/manual/latex-common:';

@@ -1,0 +1,1181 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd"
+[
+<!ENTITY eyedb "EyeDB">
+<!ENTITY eyedbadmin "<command>eyedbadmin</command>">
+]
+>
+
+<book>
+  <title>EyeDB Administration Guide</title>
+
+  <chapter id="database-advanced">
+    <title>Database advanced administration</title>
+    
+    <para>
+      This chapter explains &eyedb; databases advanced administration,
+      namely the <emphasis>datafiles</emphasis> and
+      <emphasis>dataspaces</emphasis> concepts that allow to create
+      multi-volumes large &eyedb; databases.
+    </para>
+
+    <para>
+      The first section describes &eyedb; databases architecture; the following sections deal with datafiles and dataspaces management commands.
+    </para>
+
+    <section>
+      <title>&eyedb; databases architecture</title>
+
+      <para>
+	&eyedb; databases organisation is based on two concepts:
+	<itemizedlist>
+	  <listitem><para><emphasis>dataspaces</emphasis>: logical organization units for organizing where classes, objects, indexes...  will be located</para></listitem>
+	  <listitem><para><emphasis>datafiles</emphasis>: physical files where data are stored</para></listitem>
+	</itemizedlist>
+      </para>
+
+      <para>
+	A database is composed of several dataspaces (at least one). When creating a database with no options, a dataspace named DEFAULT is automaticaly created.
+      </para>
+
+      <para>
+	A datafile is always associated to a <emphasis>single</emphasis> dataspace, whilst a dataspace can contain several datafiles (up to 32 datafiles currently). When creating a database with no options, a datafile named DEFAULT, whose filename is &lt;&lt;database_name&gt;&gt;.dat and size is 2 Gb, is automaticaly created; this datafile is associated with the default dataspace.
+      </para>
+
+      <para>
+	After database creation, new datafiles and dataspaces can be added at any time using the commands described in this section. Datafiles can be resized, moved, deleted and updated. Dataspaces can be deleted, renamed and updated.
+      </para>
+
+    </section>
+
+    <section id="managing-datafiles">
+      <title>Managing datafiles</title>
+
+      <para>
+	This section describes how to manage datafiles: create, list and delete datafiles, renaming, moving, resizing and defragmenting datafiles.
+      </para>
+
+      <para>
+	A datafile is identified by:
+	<itemizedlist>
+	  <listitem><para>an id (a number)</para></listitem>
+	  <listitem><para>a name, that can be used in place of the id to identify the datafile</para></listitem>
+	  <listitem><para>a file name, that is the operating system file name</para></listitem>
+	</itemizedlist>
+      </para>
+
+      <note>
+	<title>Datafile name and file name</title>
+	<para id="note-datafile-name" xreflabel="Note">
+	  The datafile name and its file name are two different things: the file name is simply the operating system file name, as in <filename>/var/tmp/foo.dat</filename> and the name is an identifier known by &eyedb; that can be used to identify the datafile as in <varname>FOO</varname>.
+	</para>
+      </note>
+
+      <section>
+	<title>Creating, listing and deleting datafiles</title>
+
+	<para>
+	  Creating a datafile is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>datafile create</command>
+	    <arg choice="opt">options</arg>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>datafile</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Options are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--filedir=<replaceable>directory</replaceable></arg>
+		</cmdsynopsis>
+		datafile directory
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--name=<replaceable>name</replaceable></arg>
+		</cmdsynopsis>
+		datafile name (see <xref linkend="note-datafile-name"/>)
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--size=<replaceable>size</replaceable></arg>
+		</cmdsynopsis>
+		datafile size in Mbytes
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--slotsize=<replaceable>slotsize</replaceable></arg>
+		</cmdsynopsis>
+		the allocation slot size in bytes
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--physical</arg>
+		</cmdsynopsis>
+		to specify that this datafile will contain physical Oids (see <xref linkend="database-tuning"/>)
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database to which the datafile will be attached
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>datafile</replaceable></arg>
+		</cmdsynopsis>
+		the datafile name (.dat file name extension is recommended)
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-datafile-create">
+	  <title>&eyedbadmin; datafile create</title>
+	  <screen>
+	    ## create a datafile
+	    <userinput>eyedbadmin datafile create test3 data1.dat</userinput>
+	    ## create a datafile with a name
+	    <userinput>eyedbadmin datafile create --name=DATA2 test3 data2.dat</userinput>
+	    ## create a datafile with a size of 30 Gb and a directory
+	    <userinput>eyedbadmin datafile create --filedir=/var/tmp --size=30000 test3 data3.dat</userinput>
+	    ## list the database
+	    <userinput>eyedbadmin database list --datafiles test3</userinput>
+	    test3.dat
+	    data1.dat
+	    data2.dat
+	    /var/tmp/data3.dat
+	  </screen>
+	</example>
+
+	<para>
+	  The list of the datafiles associated with a database can be obtained using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>datafile list</command>
+	    <arg choice="opt">options</arg>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req" rep="repeat"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Options are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--all</arg>
+		</cmdsynopsis>
+		list all informations about datafile
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--stats</arg>
+		</cmdsynopsis>
+		list only statistics on datafile
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database to which the datafile belongs
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req" rep="repeat"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+		</cmdsynopsis>
+		the datafiles to be listed, that can be specified either by its id or by its name
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-datafile-list">
+	  <title>&eyedbadmin; datafile list</title>
+	  <screen>
+	    ## List
+	    <userinput>eyedbadmin datafile list --all test3</userinput>
+	    Datafile #0
+	    Name      DEFAULT
+	    Dataspace #0 DEFAULT
+	    File      test3.dat
+	    Maxsize   2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize  16
+	    Oid Type  Logical
+
+	    Object Number        2561
+	    Total Busy Size      8439065b, ~8241Kb, ~8Mb
+	    Average Size         3295b, ~3Kb
+
+	    ... output deleted
+
+	    Datafile #1
+	    Name      &lt;unnamed&gt;
+	    File      data1.dat
+	    Maxsize   2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize  16
+	    Oid Type  Logical
+
+	    ... output deleted
+
+	    Datafile #2
+	    Name      DATA2
+	    File      data2.dat
+	    Maxsize   2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize  16
+	    Oid Type  Logical
+
+	    ... output deleted
+
+	    Datafile #3
+	    Name      &lt;unnamed&gt;
+	    File      /var/tmp/data3.dat
+	    Maxsize   31457280000b, ~30720000Kb, ~30000Mb, ~29Gb
+	    Slotsize  16
+	    Oid Type  Logical
+
+	    ... output deleted
+	  </screen>
+	</example>
+
+
+	<para>
+	  Deleting a datafile is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>datafile delete</command>
+	    <arg choice="req"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+	  </cmdsynopsis>
+	</para>
+	
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database to which the datafile belongs
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+		</cmdsynopsis>
+		the datafile to be deleted, that can be specified either by its id or by its name
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-datafile-delete">
+	  <title>&eyedbadmin; datafile delete</title>
+	  <screen>
+	    ## Delete datafile by id
+	    <userinput>eyedbadmin datafile delete test3 1</userinput>
+	    ## Delete datafile by name
+	    <userinput>eyedbadmin datafile delete test3 DATA2</userinput>
+	    ## List
+	    <userinput>eyedbadmin datafile list test3</userinput>
+	    Datafile #0
+	    Name      DEFAULT
+	    Dataspace #0 DEFAULT
+	    File      test3.dat
+	    Maxsize   2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize  16
+	    Oid Type  Logical
+
+	    ... output deleted
+
+	    Datafile #3
+	    Name      &lt;unnamed&gt;
+	    File      /var/tmp/data3.dat
+	    Maxsize   31457280000b, ~30720000Kb, ~30000Mb, ~29Gb
+	    Slotsize  16
+	    Oid Type  Logical
+
+	    ... output deleted
+	  </screen>
+	</example>
+
+
+      </section>
+
+      <section id="eyedbadmin-datafile-rename-move">
+	<title>Renaming and moving datafiles</title>
+
+	<para>
+	  A datafile has a name (see <xref linkend="note-datafile-name"/>); changing this name is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>datafile rename</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+	    <arg choice="req"><replaceable>new_name</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<example id="eyedbadmin-datafile-rename">
+	  <title>&eyedbadmin; datafile rename</title>
+	  <screen>
+	    ## Rename datafile
+	    <userinput>eyedbadmin datafile rename test3 3 DATA3</userinput>
+	    ## List
+	    <userinput>eyedbadmin datafile list test3</userinput>
+	    Datafile #0
+	    Name      DEFAULT
+	    Dataspace #0 DEFAULT
+	    File      test3.dat
+	    Maxsize   2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize  16
+	    Oid Type  Logical
+
+	    ... output deleted
+
+	    Datafile #3
+	    Name      DATA3
+	    File      /var/tmp/data3.dat
+	    Maxsize   31457280000b, ~30720000Kb, ~30000Mb, ~29Gb
+	    Slotsize  16
+	    Oid Type  Logical
+
+	    ... output deleted
+	  </screen>
+	</example>
+
+	<para>
+	  Moving a datafile is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>datafile move</command>
+	    <arg choice="opt">options</arg>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+	    <arg choice="req"><replaceable>new_datafile</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Options are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="plain">--filedir=<replaceable>directory</replaceable></arg>
+		</cmdsynopsis>
+		datafile directory
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database to which the datafile belongs
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+		</cmdsynopsis>
+		the datafile to be moved, that can be specified either by its id or by its name
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>datafile</replaceable></arg>
+		</cmdsynopsis>
+		the new datafile file name (.dat file name extension is recommended)
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-datafile-move">
+	  <title>&eyedbadmin; datafile move</title>
+	  <screen>
+	    ## Create destination directory
+	    <userinput>mkdir /var/tmp/test3</userinput>
+	    ## Move datafile
+	    <userinput>eyedbadmin datafile move --filedir=/var/tmp/test3 test3 DATA3 newdata3.dat</userinput>
+	    ## List
+	    <userinput>eyedbadmin datafile list test3</userinput>
+	    Datafile #0
+	    Name      DEFAULT
+	    Dataspace #0 DEFAULT
+	    File      test3.dat
+	    Maxsize   2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize  16
+	    Oid Type  Logical
+
+	    ... output deleted
+
+	    Datafile #3
+	    Name      DATA3
+	    File      /var/tmp/test3/newdata3.dat
+	    Maxsize   31457280000b, ~30720000Kb, ~30000Mb, ~29Gb
+	    Slotsize  16
+	    Oid Type  Logical
+
+	    ... output deleted
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Resizing and defragmenting datafiles</title>
+
+	<para>
+	  Datafile size is set at creation time; once created, the size of a datafile can be changed using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>datafile resize</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+	    <arg choice="req"><replaceable>new_size</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database to which the datafile belongs
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+		</cmdsynopsis>
+		the datafile to be resized, that can be specified either by its id or by its name
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>new_size</replaceable></arg>
+		</cmdsynopsis>
+		the new datafile size, in Mbytes
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+	
+	<example id="eyedbadmin-datafile-resize">
+	  <title>&eyedbadmin; datafile resize</title>
+	  <screen>
+	    ## List
+	    <userinput>eyedbadmin datafile list test3 DATA3</userinput>
+	    Datafile #3
+	    Name      DATA3
+	    File      /var/tmp/test3/newdata3.dat
+	    Maxsize   31457280000b, ~30720000Kb, ~30000Mb, ~29Gb
+	    Slotsize  16
+	    Oid Type  Logical
+
+	    ... output deleted
+	    ## Set new size to 40Gb
+	    <userinput>eyedbadmin datafile resize test3 DATA3 40000</userinput>
+	    ## List
+	    <userinput>eyedbadmin datafile list test3 DATA3</userinput>
+	    Datafile #3
+	    Name      DATA3
+	    File      /var/tmp/test3/newdata3.dat
+	    Maxsize   41943040000b, ~40960000Kb, ~40000Mb, ~39Gb
+	    Slotsize  16
+	    Oid Type  Logical
+
+	    ... output deleted
+	  </screen>
+	</example>
+
+	<para>
+	  Datafiles can become fragmented because of object deletion; the allocator used inside datafile is a bitmap allocator for better efficiency, but as a consequence there can be holes in the datafile that can impact performance. Defragmenting can be done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>datafile defragment</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database to which the datafile belongs
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+		</cmdsynopsis>
+		the datafile to be defragmented, that can be specified either by its id or by its name
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-datafile-defragment">
+	  <title>&eyedbadmin; datafile defragment</title>
+	  <screen>
+	    ## datafile can be given by their id
+	    <userinput>eyedbadmin datafile defragment test3 0</userinput>
+	    ## datafile can also be given by their name
+	    <userinput>eyedbadmin datafile defragment test3 DEFAULT</userinput>
+	    ## giving a non-existing datafile
+	    <userinput>eyedbadmin datafile defragment test3 42</userinput>
+	    eyedb error: datafile #42 not found in database test3
+	  </screen>
+	</example>
+
+      </section>
+      
+    </section>
+
+    <section id="managing-dataspaces">
+      <title>Managing dataspaces</title>
+
+      <para>
+	After being created, datafiles must be attached to <emphasis>dataspaces</emphasis>. Before attaching a datafile to a dataspace, the dataspace must have been created if it is not the default dataspace (which is created when creating the database).
+      </para>
+
+      <section>
+	<title>Creating, listing, and deleting dataspaces</title>
+
+	<para>
+	  This section explains how to create, listing and delete dataspaces. When creating or updating a dataspace, the list of datafiles contained in this dataspace must be specified; datafiles must therefore have been created before, refer to <xref linkend="managing-datafiles"/> for explainations on datafiles management.
+	</para>
+
+	<para>
+	  Creating a dataspace is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>dataspace create</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>dataspace</replaceable></arg>
+	    <arg choice="req" rep="repeat"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>dataspace</replaceable></arg>
+		</cmdsynopsis>
+		the name of the dataspace to be created
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req" rep="repeat"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+		</cmdsynopsis>
+		the datafiles to be attached to the dataspace, that can be specified either by its id or by its name
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-dataspace-create">
+	  <title>&eyedbadmin; dataspace create</title>
+	  <screen>
+	    ## create 2 datafiles
+	    <userinput>eyedbadmin datafile create test4 data1.dat</userinput>
+	    <userinput>eyedbadmin datafile create test4 data2.dat</userinput>
+	    ## create a dataspace, attaching the 2 datafiles to this dataspace
+	    <userinput>eyedbadmin dataspace create test4 DSP1 1 2</userinput>
+	  </screen>
+	</example>
+
+	<para>
+	  Obtaining the list of dataspaces is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>dataspace list</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>dataspace</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>dataspace</replaceable></arg>
+		</cmdsynopsis>
+		the name of the dataspace to be listed
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-dataspace-list">
+	  <title>&eyedbadmin; dataspace list</title>
+	  <screen>
+	    ## List all the dataspaces of database 'test4'
+	    <userinput>eyedbadmin dataspace list test4</userinput>
+	    Dataspace #0
+	    Name DEFAULT
+	    Datafile #0
+	    Name     DEFAULT
+	    File     test4.dat
+	    Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize 16
+	    Oid Type Logical
+	    Dataspace #1
+	    Name DSP1
+	    Datafile #1
+	    File     data1.dat
+	    Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize 16
+	    Oid Type Logical
+	    Datafile #2
+	    File     data2.dat
+	    Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize 16
+	    Oid Type Logical
+	  </screen>
+	</example>
+
+	<para>
+	  Deleting a dataspace is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>delete</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>dataspace</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>dataspace</replaceable></arg>
+		</cmdsynopsis>
+		the name of the dataspace
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-dataspace-delete">
+	  <title>&eyedbadmin; dataspace delete</title>
+	  <screen>
+	    ## delete dataspace named 'NEWDSP1'
+	    <userinput>eyedbadmin dataspace delete test4 NEWDSP1</userinput>
+	    ## list all dataspaces
+	    <userinput>eyedbadmin dataspace list test4</userinput>
+	    Dataspace #0
+	    Name DEFAULT
+	    Datafile #0
+	    Name     DEFAULT
+	    File     test4.dat
+	    Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize 16
+	    Oid Type Logical
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Updating and renaming dataspaces</title>
+
+	<para>
+	  Updating a dataspace is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>dataspace update</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>dataspace</replaceable></arg>
+	    <arg choice="req" rep="repeat"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>dataspace</replaceable></arg>
+		</cmdsynopsis>
+		the name of the dataspace
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req" rep="repeat"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+		</cmdsynopsis>
+		the datafiles to be attached to the dataspace, that can be specified either by its id or by its name
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-dataspace-update">
+	  <title>&eyedbadmin; dataspace update</title>
+	  <screen>
+	    ## create 2 more datafiles
+	    <userinput>eyedbadmin datafile create test4 data3.dat</userinput>
+	    <userinput>eyedbadmin datafile create test4 data4.dat</userinput>
+	    ## update the dataspace, attaching the 4 datafiles to the dataspace
+	    <userinput>eyedbadmin dataspace update test4 DSP1 1 2 3 4</userinput>
+	    ## list the updated dataspace
+	    <userinput>eyedbadmin dataspace list test4 DSP1</userinput>
+	    Dataspace #1
+	    Name DSP1
+	    Datafile #1
+	    File     data1.dat
+	    Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize 16
+	    Oid Type Logical
+	    Datafile #2
+	    File     data2.dat
+	    Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize 16
+	    Oid Type Logical
+	    Datafile #3
+	    File     data3.dat
+	    Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize 16
+	    Oid Type Logical
+	    Datafile #4
+	    File     data4.dat
+	    Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize 16
+	    Oid Type Logical
+	    ## update dataspace, leaving only the last 2 datafiles
+	    <userinput>eyedbadmin dataspace update test4 DSP1 3 4</userinput>
+	    ## list updated dataspace
+	    <userinput>eyedbadmin dataspace list test4 DSP1</userinput>
+	    Dataspace #1
+	    Name NEWDSP1
+	    Datafile #3
+	    File     data3.dat
+	    Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize 16
+	    Oid Type Logical
+	    Datafile #4
+	    File     data4.dat
+	    Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize 16
+	    Oid Type Logical
+	  </screen>
+	</example>
+
+	<para>
+	  Renaming a dataspace is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>dataspace rename</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>dataspace</replaceable></arg>
+	    <arg choice="req"><replaceable>new_dataspace</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>dataspace</replaceable></arg>
+		</cmdsynopsis>
+		the name of the dataspace
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>new_dataspace</replaceable></arg>
+		</cmdsynopsis>
+		the new name of the dataspace
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-dataspace-rename">
+	  <title>&eyedbadmin; dataspace rename</title>
+	  <screen>
+	    ## rename dataspace
+	    eyedbadmin dataspace rename test4 DSP1 NEWDSP1
+	    ## list renamed dataspace
+	    eyedbadmin dataspace list test4 NEWDSP1
+	    Dataspace #1
+	    Name NEWDSP1
+	    Datafile #3
+	    File     data3.dat
+	    Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize 16
+	    Oid Type Logical
+	    Datafile #4
+	    File     data4.dat
+	    Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize 16
+	    Oid Type Logical
+	  </screen>
+	</example>
+
+      </section>
+
+      <section>
+	<title>Getting and setting current datafile</title>
+
+	<para>
+	  A dataspace maintains an internal pointer to its <emphasis>current</emphasis> datafile, i.e. the datafile in which new data will be stored when creating an object, an index that hits into this dataspace.
+	</para>
+
+	<para>
+	  When a datafile is full, the pointer to the current datafile is moved to the next datafile in the dataspace that has space left for insertion. If all datafiles in the dataspace are full, then the insertion ends with an error.
+	</para>
+
+	<para>
+	  Using &eyedbadmin;, it is possible to examine and set the pointer to the current datafile. 
+	</para>
+
+	<para>
+	  Examining the current datafile is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>dataspace getcurdat</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>dataspace</replaceable></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>dataspace</replaceable></arg>
+		</cmdsynopsis>
+		the name of the dataspace
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-dataspace-getcurdat">
+	  <title>&eyedbadmin; dataspace getcurdat</title>
+	  <screen>
+	    <userinput>eyedbadmin dataspace getcurdat test4 DSP1</userinput>
+	    Datafile #1
+	    Name      &lt;unnamed&gt;
+	    Dataspace #1 DSP1
+	    File      data1.dat
+	    Maxsize   2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize  16
+	    Oid Type  Logical
+	  </screen>
+	</example>
+
+	<para>
+	  Setting the current datafile is done using the &eyedbadmin; command:
+	  <cmdsynopsis>
+	    &eyedbadmin;
+	    <command>dataspace setcurdat</command>
+	    <arg choice="req"><replaceable>database</replaceable></arg>
+	    <arg choice="req"><replaceable>dataspace</replaceable></arg>
+	    <arg choice="req" rep="repeat"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+	  </cmdsynopsis>
+	</para>
+
+	<para>
+	  Command arguments are:
+	  <itemizedlist>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>database</replaceable></arg>
+		</cmdsynopsis>
+		the database
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req"><replaceable>dataspace</replaceable></arg>
+		</cmdsynopsis>
+		the name of the dataspace
+	      </para>
+	    </listitem>
+	    <listitem>
+	      <para>
+		<cmdsynopsis>
+		  <arg choice="req" rep="repeat"><group><arg choice="req"><replaceable>datafile_id</replaceable></arg><arg choice="req"><replaceable>datafile_name</replaceable></arg></group></arg>
+		</cmdsynopsis>
+		the datafiles to be attached to the dataspace, that can be specified either by its id or by its name
+	      </para>
+	    </listitem>
+	  </itemizedlist>
+	</para>
+
+	<example id="eyedbadmin-dataspace-setcurdat">
+	  <title>&eyedbadmin; dataspace setcurdat</title>
+	  <screen>
+	    <userinput>eyedbadmin dataspace setcurdat test4 DSP1 3</userinput>
+	    <userinput>eyedbadmin dataspace getcurdat test4 DSP1</userinput>
+	    Datafile #3
+	    Name      &lt;unnamed&gt;
+	    Dataspace #1 DSP1
+	    File      data3.dat
+	    Maxsize   2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+	    Slotsize  16
+	    Oid Type  Logical
+	    francois@revard$ 
+	  </screen>
+	</example>
+
+	<section>
+	  <title>Getting and setting default dataspace for a database</title>
+
+	  <para>
+	    A database maintains an internal pointer to a <emphasis>default</emphasis> dataspace; this default dataspace will be used when inserting data that do not have an associated dataspace <xref linkend="managing-locations"/>.
+	  </para>
+
+	  <para>
+	    Using &eyedbadmin;, it is possible to examine and set the pointer to the default dataspace for a database.
+	  </para>
+
+	  <note>
+	    <title>Getting and setting default dataspace</title>
+	    <para>
+	      Getting and setting default dataspace is done using the <emphasis>database</emphasis> topic of the &eyedbadmin; command <xref linkend="eyedbadmin-command-syntax"/>, because the default dataspace is a property of the <emphasis>database</emphasis> and not of a particular dataspace.
+	    </para>
+	  </note>
+
+	  <para>
+	    Examining the default dataspace is done using the &eyedbadmin; command:
+	    <cmdsynopsis>
+	      &eyedbadmin;
+	      <command>database getdefdsp</command>
+	      <arg choice="req"><replaceable>database</replaceable></arg>
+	    </cmdsynopsis>
+	  </para>
+
+	  <para>
+	    Command arguments are:
+	    <itemizedlist>
+	      <listitem>
+		<para>
+		  <cmdsynopsis>
+		    <arg choice="req"><replaceable>database</replaceable></arg>
+		  </cmdsynopsis>
+		  the database
+		</para>
+	      </listitem>
+	    </itemizedlist>
+	  </para>
+
+	  <example id="eyedbadmin-database-getdefdsp">
+	    <title>&eyedbadmin; database getdefdsp</title>
+	    <screen>
+<userinput>eyedbadmin database getdefdsp test4</userinput>
+Dataspace #0
+Name DEFAULT
+   Datafile #0
+     Name     DEFAULT
+     File     test4.dat
+     Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+     Slotsize 16
+     Oid Type Logical
+	    </screen>
+	  </example>
+
+	  <para>
+	    Setting the default dataspace is done using the &eyedbadmin; command:
+	    <cmdsynopsis>
+	      &eyedbadmin;
+	      <command>database setdefdsp</command>
+	      <arg choice="req"><replaceable>database</replaceable></arg>
+	      <arg choice="req"><replaceable>dataspace</replaceable></arg>
+	    </cmdsynopsis>
+	  </para>
+
+	  <para>
+	    Command arguments are:
+	    <itemizedlist>
+	      <listitem>
+		<para>
+		  <cmdsynopsis>
+		    <arg choice="req"><replaceable>database</replaceable></arg>
+		  </cmdsynopsis>
+		  the database
+		</para>
+	      </listitem>
+	      <listitem>
+		<para>
+		  <cmdsynopsis>
+		    <arg choice="req"><replaceable>dataspace</replaceable></arg>
+		  </cmdsynopsis>
+		  the name of the dataspace that must become the default dataspace
+		</para>
+	      </listitem>
+	    </itemizedlist>
+	  </para>
+
+	  <example id="eyedbadmin-database-setdefdsp">
+	    <title>&eyedbadmin; database setdefdsp</title>
+	    <screen>
+<userinput>eyedbadmin database setdefdsp test4 DSP1</userinput>
+<userinput>eyedbadmin database getdefdsp test4</userinput>
+Dataspace #1
+Name DSP1
+   Datafile #1
+     File     data1.dat
+     Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+     Slotsize 16
+     Oid Type Logical
+   Datafile #2
+     File     data2.dat
+     Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+     Slotsize 16
+     Oid Type Logical
+   Datafile #3
+     File     data3.dat
+     Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+     Slotsize 16
+     Oid Type Logical
+   Datafile #4
+     File     data4.dat
+     Maxsize  2147483648b, ~2097152Kb, ~2048Mb, ~2Gb
+     Slotsize 16
+     Oid Type Logical
+	    </screen>
+	  </example>
+
+	</section>
+
+      </section>
+
+    </section>
+
+  </chapter>
+
+<!--
+;;; Local Variables: ***
+;;; eval: (load-file "../docbook-common/emacs-macro") ***
+;;; End: ***
+-->
+
+</book>

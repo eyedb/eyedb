@@ -1,0 +1,18 @@
+#
+# Makefile.eyedb
+#
+# Makefile that can be included by EyeDB examples
+#
+
+EYEDB_BINDIR = @bindir@
+EYEDB_INCLUDEDIR = @includedir@
+EYEDB_CPPFLAGS = -I$(EYEDB_INCLUDEDIR) @EYEDB_ARCH_CPPFLAGS@
+EYEDB_CXXFLAGS = @EYEDB_ARCH_CXXFLAGS@ 
+EYEDB_SOFLAGS = @EYEDB_ARCH_SOFLAGS@
+EYEDB_LIBDIR = @libdir@
+EYEDB_LDFLAGS = -L$(EYEDB_LIBDIR)
+EYEDB_LDLIBS = -leyedb -leyedbrpcfe -leyedbsm -leyedbutils @EYEDB_ARCH_LIBS@
+
+EYEDB_ODL = $(EYEDB_BINDIR)/eyedbodl
+
+EYEDB_CLASSPATH = $(EYEDB_LIBDIR)/eyedb/java/eyedb.jar

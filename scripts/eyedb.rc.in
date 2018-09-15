@@ -1,0 +1,60 @@
+#!/bin/sh
+#
+
+NAME=eyedb
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+sbindir=@sbindir@
+EYEDBD_USER=@EYEDBD_USER@
+
+. /lib/lsb/init-functions
+
+start() {
+    log_begin_msg "Starting $NAME..."
+
+    # Start EyeDB daemon under specified user
+    su -l $EYEDBD_USER -s /bin/bash -c "${sbindir}/eyedbctl start > /dev/null 2>&1"
+
+    RETVAL=$?
+    log_end_msg $RETVAL
+}
+
+stop() {
+    log_begin_msg "Stopping $NAME..."
+
+    # Stop EyeDB daemon (that should be running under specified user)
+    su -l $EYEDBD_USER -s /bin/bash -c "${sbindir}/eyedbctl stop > /dev/null 2>&1"
+
+    RETVAL=$?
+    log_end_msg $RETVAL
+    echo
+}
+
+status() {
+    su -l $EYEDBD_USER -s /bin/bash -c "${sbindir}/eyedbctl status"
+    RETVAL=$?
+}
+
+RETVAL=0
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        RETVAL=1
+esac
+
+exit $RETVAL

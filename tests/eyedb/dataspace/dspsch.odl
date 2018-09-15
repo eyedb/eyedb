@@ -1,0 +1,49 @@
+
+//
+// dspsch.odl
+//
+// Used for tests on dataspaces
+//
+
+class O0 {
+  int n0;
+  string data0;
+};
+
+class O1 {
+  int n1;
+  string data1;
+  instance_method<client> int f1(in O1 o1, out string s);
+  instance_method<server> int f2(in int n, out O3 o3);
+};
+
+class O2 {
+  int n2;
+  string data2;
+};
+
+class O3 {
+  int n3;
+  string data3;
+};
+
+class O4 {
+  int n4;
+  string data4;
+};
+
+class O5 {
+  int n5;
+  string data5;
+};
+
+class O1_1 extends O1 {
+  int n1_1;
+  string data1_1;
+};
+
+class O1_1_1 extends O1_1 {
+  int n1_1_1;
+  string data1_1_1;
+};
+

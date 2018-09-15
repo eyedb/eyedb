@@ -1,0 +1,13 @@
+prefix=@prefix@
+include @datadir@/@PACKAGE@/Makefile.eyedb
+
+all: person/Person.class
+
+person/Person.java: schema.odl
+	$(EYEDB_ODL) --gencode=Java --package=person --output-dir=person $<
+
+person/Person.class: person/Person.java
+	CLASSPATH=$(EYEDB_CLASSPATH):. @JAVAC@ person/*.java
+
+clean:
+	rm -f person/*.class person/*.java

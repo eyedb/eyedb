@@ -1,0 +1,161 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+  <!ENTITY eyedbloca "<command>eyedbloca</command>">
+]>
+
+<refentry id="eyedbloca">
+  <refentryinfo>
+    <date>March 2007</date>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>eyedbloca</refentrytitle>
+    <manvolnum>1</manvolnum>
+    <refmiscinfo>EyeDB database</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>&eyedbloca;</refname>
+    <refpurpose>client for administering EyeDB databases</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      &eyedbloca;
+      <arg choice="req"><replaceable>subcommand</replaceable></arg> 
+      <arg choice="opt"><replaceable>common-options</replaceable></arg> 
+      <arg choice="opt"><replaceable>subcommand-options</replaceable></arg> 
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <para>&eyedbloca; is a client for performing administrative operations on EyeDB databases.</para>
+
+    <para>&eyedbloca; accepts the following sub-commands:
+    <variablelist>
+
+      <varlistentry>
+	<term><command>getattrloca</command></term>
+	<listitem><para>See <command>eyedbgetattrloca(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>getcollloca</command></term>
+	<listitem><para>See <command>eyedbgetcollloca(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>getdefattrdsp</command></term>
+	<listitem><para>See <command>eyedbgetdefattrdsp(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>getdefcolldsp</command></term>
+	<listitem><para>See <command>eyedbgetdefcolldsp(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>getdefdsp</command></term>
+	<listitem><para>See <command>eyedbgetdefdsp(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>getdefidxdsp</command></term>
+	<listitem><para>See <command>eyedbgetdefidxdsp(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>getdefinstdsp</command></term>
+	<listitem><para>See <command>eyedbgetdefinstdsp(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>getidxloca</command></term>
+	<listitem><para>See <command>eyedbgetidxloca(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>getinstloca</command></term>
+	<listitem><para>See <command>eyedbgetinstloca(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>getobjloca</command></term>
+	<listitem><para>See <command>eyedbgetobjloca(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>setdefattrdsp</command></term>
+	<listitem><para>See <command>eyedbsetdefattrdsp(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>setdefcolldsp</command></term>
+	<listitem><para>See <command>eyedbsetdefcolldsp(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>setdefdsp</command></term>
+	<listitem><para>See <command>eyedbsetdefdsp(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>setdefidxdsp</command></term>
+	<listitem><para>See <command>eyedbsetdefidxdsp(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>setdefinstdsp</command></term>
+	<listitem><para>See <command>eyedbsetdefinstdsp(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>mvattr</command></term>
+	<listitem><para>See <command>eyedbmvattr(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>mvcoll</command></term>
+	<listitem><para>See <command>eyedbmvcoll(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>mvidx</command></term>
+	<listitem><para>See <command>eyedbmvidx(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>mvinst</command></term>
+	<listitem><para>See <command>eyedbmvinst(1)</command></para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command>mvobj</command></term>
+	<listitem><para>See <command>eyedbmvobj(1)</command></para></listitem>
+      </varlistentry>
+
+    </variablelist>
+    </para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>Exit status</title>
+  </refsect1>
+
+  <refsect1>
+    <title>Examples</title>
+  </refsect1>
+
+  <refsect1>
+    <title>See also</title>
+  </refsect1>
+
+  <refsect1>
+    <title>Authors</title>
+  </refsect1>
+
+</refentry>

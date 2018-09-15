@@ -1,0 +1,803 @@
+\input{start}
+\input{version}
+\newcommand{\mantitle}{\textsc{Java Binding}}
+\input{title}
+
+\tableofcontents
+
+\chapter*{The Java Binding}
+
+%\sect{Basic Concepts of the Java Binding}
+
+The Java binding maps the \eyedb object model into Java by introducing
+a generic API
+%%The Java binding is expressed as a generic API
+%%including about one hundred and fifty classes,
+and a tool to generate a speficic Java API from a given schema,
+built upon the generic API.
+\\
+\\
+The generic Java API is made up of about one hundred and fifty classes such
+as some abstract classes as the \texttt{object} and \texttt{class} classes
+and some more concrete classes such as the \texttt{database} and \texttt{image}
+classes.
+\\
+\\
+Each type in the \eyedb object model is implemented as a Java class whithin
+the Java API: there is a one for one mapping between the object model and
+the Java API.
+\\
+This mapping follows a very simple naming schema: each Java class mapped from
+a type has the name of this type prefixed by \texttt{org.eyedb.}.
+\\
+For instance, the \texttt{object} type in the \eyedb object model is
+mapped on the \texttt{org.eyedb.Object} Java class, while the
+\texttt{agregat} is mapped to the \texttt{org.eyedb.Agregat} Java class.
+\\
+\\
+%We are going to introduce the main classes and methods through some simple
+%examples.
+%As we have seen previously, \eyedb provides currently two language bindings: C++
+%and Java.
+%\\
+%\\
+%The C++ binding has been fully described in a previous chapter.
+%\\
+%\\
+The use of the Java language for an \eyedb binding has been motivated by
+several reasons:
+\bi
+\item Java is architecture independent.
+\item Java is indeed valuable for distributed network environment.
+\item Java has a very rich builtin library.
+\item Java is secure.
+\item Java is easier to program than C++.
+\ei
+%Contrary to C++, Java provides run-time facilities to manipulate classes
+%(class {\bf Class} and the {\bf reflect} package), but it seems
+%more coherent to keep the soul of the C++ binding.
+%\\
+%\\
+%Therefore, the
+The Java binding is very close from the C++ binding: the
+class interfaces are identical, the functionalities
+are the same; only the language is slightly different.
+\sect{Getting Started}
+We will introduce the Java binding through a simple example of
+defining an ODL schema, generating the java stubs and then writing
+a client program.
+We will explain only what is necessary to understand the example
+to avoid begin swamped by unnecessary details.
+\\
+\\
+The example that we will develop in this section is the same that
+has been developped in the C++ binding chapter, a couple of classes
+\texttt{Person} and \texttt{Car}.
+\subsect{Programming Steps}
+The following programming steps are typically required to write a Java
+client program dealing with the given schema:
+\begin{enumerate}
+\item Define the schema, using the \eyedb Object Definition Language.
+\item Generate the Java stubs, using the {\bf eyedbodl} tool.
+\item Write a client program using the generated Java package.
+\end{enumerate}
+We will illustrate these steps in the remainder of this chapter.
+\subsect{The ODL Schema}
+The ODL schema for our application can be described as follows:
+
+{\verbsize \begin{verbatim}
+/* person.odl */
+
+class Person {
+  string name;
+  int age;
+  Person *spouse inverse Person::spouse;
+  Person *father;
+  set<Person *> children inverse Person::father;
+  set<Car *> cars inverse Car::owner;
+
+  index on name;
+  index on age;
+  constraint<notnull> on name;
+  constraint<unique> on name;
+};
+
+class Car {
+  string brand;
+  int num;
+  Person *owner inverse Person::cars;
+
+  index on brand;
+  index on num;
+};
+\end{verbatim}
+}
+This schema describes two classes \texttt{Person} and \texttt{Car}, one 1 to 1
+relationship (attribute \texttt{spouse} in class \texttt{Person}) and two 1 to many
+relationships (from \texttt{Person::father} to \texttt{Person::children}
+and from \texttt{Car::owner} to \texttt{Person::cars}).
+
+\subsect{Compiling the ODL Schema}
+The ODL schema must be compiled, both to check the schema and to bind
+it into some Java code so that it can be used in a client program.
+\\
+\\
+The \texttt{person.odl} file can be compiled using the following command:
+%\verbsize
+\begin{verbatim}
+eyedbodl --gencode=JAVA --package=person person.odl
+\end{verbatim}
+or :
+\begin{verbatim}
+eyedbodl --gencode=JAVA --package=person -d person
+\end{verbatim}
+The \texttt{eyedbodl} tool contains a lot of command line options to
+control the generated code.
+\\
+\\
+There are two mandatory options:\\
+\begin{tabbing}
+\emph{odlfile}\texttt{|}-\texttt{|}\texttt{-d} \emph{dbname}\texttt{|}\texttt{--database=}\emph{dbname} \= : \= Input ODL file (or - for standard input) or the database name\\
+\texttt{--package=}\emph{package}          \> : \> Package name\\
+\end{tabbing}
+and some optionnal options:
+\begin{tabbing}
+\texttt{--gencode-error-policy=exception} \= : \= Exception oriented error policy\kill
+\texttt{--output-dir=}\emph{dirname}       \> : \> Output directory for generated files\\
+\texttt{--output-file-prefix=}\emph{prefix}\> : \> Ouput file prefix (default is the package name)\\
+\texttt{--class-prefix=}\emph{prefix}     \> : \>  Prefix to be put at the begining of each runtime class\\
+\texttt{--db-class-prefix=}\emph{prefix}  \> : \>  Prefix to be put at the begining of each database class\\
+\texttt{--attr-style=}implicit       \> : \>  Attribute methods have the attribute name\\
+\texttt{--attr-style=}explicit       \> : \>  Attribute methods have the attribute name prefixed by get/set (default)\\
+\texttt{--schema-name=}\emph{schname}     \> : \>  Schema name (default is \emph{package})\\
+\texttt{--export}                    \> : \>  Export class instances in the .h file\\
+\texttt{--dynamic-attr}              \> : \>  Uses a dynamic fetch for attributes in the get and set methods\\
+\texttt{--down-casting=yes}          \> : \>  Generates the down casting methods (the default)\\
+\texttt{--down-casting=no}           \> : \>  Does not generate the down casting methods\\
+\texttt{--attr-cache=yes}            \> : \>  Use a second level cache for attribute value\\
+\texttt{--attr-cache=no}             \> : \>  Does not use a second level cache for attribute value (the default)\\
+\texttt{--namespace=}\emph{namespace}     \> : \>  Define classes with the namespace \emph{namespace}\\
+\texttt{--c-suffix=}\emph{suffix}         \> : \>  Use \emph{suffix} as the C file suffix\\
+\texttt{--h-suffix=}\emph{suffix}         \> : \>  Use \emph{suffix} as the H file suffix\\
+\texttt{--gen-class-stubs}           \> : \>  Generates a file class\_stubs.h for each class\\
+\texttt{--class-enums=yes}           \> : \>  Generates enums within a class\\
+\texttt{--class-enums=no}            \> : \>  Do not generate enums within a class (default)\\
+\texttt{--gencode-error-policy=status}\> : \> Status oriented error policy (the default)\\
+\texttt{--gencode-error-policy=exception} \> : \> Exception oriented error policy\\
+\texttt{--rootclass=}\emph{rootclass}     \> : \>  Use \emph{rootclass} name for the root class instead of the package name\\
+\texttt{--no-rootclass}           \> : \>     Does not use any root class\\
+\end{tabbing}
+
+\subsect{The Java produced}
+The ODL compiler will then produce the following Java files in the \texttt{person} directory:
+\bi
+\item Person.java
+\item Car.java
+\item Database.java
+\item set\_class\_Car\_ref.java
+\item set\_class\_Person\_ref.java
+\ei
+The Person.java file produced by the ODL compiler contains the following
+(only the method interfaces are shown, not the body):
+{\verbsize \begin{verbatim}
+//
+// class Person
+//
+// package person
+//
+// Automatically Generated by eyedbodl at ...
+//
+
+package person;
+
+public class Person extends org.eyedb.Struct {
+
+  public Person(org.eyedb.Database db);
+  public Person(org.eyedb.Struct x, boolean share);
+  public Person(Person x, boolean share);
+
+  public void setName(String _name);
+  public void setName(int a0, char _name) throws org.eyedb.Exception;
+  public String getName();
+
+  public void setAge(int _age) throws org.eyedb.Exception;
+  public int getAge()  throws org.eyedb.Exception;
+
+  public void setSpouse(Person _spouse) throws org.eyedb.Exception;
+  public Person getSpouse() throws org.eyedb.Exception;
+  public void setSpouse_oid(org.eyedb.Oid _oid) throws org.eyedb.Exception;
+  public org.eyedb.Oid getSpouse_oid() throws org.eyedb.Exception;
+ 
+  public org.eyedb.CollSet getChildrenColl() throws org.eyedb.Exception;
+  public int getChildrenCount() throws org.eyedb.Exception;
+  public Person getChildrenAt(int ind) throws org.eyedb.Exception;
+  public void setChildrenColl(org.eyedb.CollSet _children) throws org.eyedb.Exception;
+  public void addToChildrenColl(Person _children) throws org.eyedb.Exception;
+  public void addToChildrenColl(org.eyedb.Oid _oid) throws org.eyedb.Exception;
+  public void rmvFromChildrenColl(Person _children) throws org.eyedb.Exception;nn
+  public void rmvFromChildrenColl(org.eyedb.Oid _oid) throws org.eyedb.Exception;nn
+
+  // and so on. father and cars set and get methods.
+  // ...
+
+  // protected and private parts
+  // ...
+};
+\end{verbatim}
+}
+eyedbodl has generated three constructors (including two copy constructors),
+and get and set methods for each attributes.
+
+\subsect{Compiling the Java stubs}
+The generated code must be compiled using the \texttt{javac} compiler.
+\\
+The Java CLASSPATH must include both the \eyedb Java class path and
+the current directory.
+The \eyedb Java class is generally installed at
+\emph{libdir}/eyedb/java/eyedb.jar where \emph{libdir} is
+the object code library directory, usualy \emph{prefix}/lib.
+{\verbsize \begin{verbatim}
+export CLASSPATH=<libdir>/eyedb/java/eyedb.jar
+javac -depend -d. person/Database.java 
+\end{verbatim}
+}
+
+\subsect{Writing a Client}
+Here is a simple example of a Java client which opens a database,
+creates 2 person instances and mary them:
+{\verbsize \begin{verbatim}
+//
+// class TestP.java
+//
+
+import person.*;
+
+class TestP {
+  public static void main(String args[]) {
+
+    // Initialize the eyedb package and parse the default eyedb options
+    // on the command line
+    String[] outargs = org.eyedb.Root.init("TestP", args);
+     
+    // Check that a database name is given on the command line
+    int argc = outargs.length;
+    if (argc != 1) {
+        System.err.println("usage: java TestP dbname");
+        System.exit(1);
+    }
+
+    try {
+      // Initialize the person package
+      person.Database.init();
+
+      // Open the connection with the backend
+      org.eyedb.Connection conn = new org.eyedb.Connection();
+
+      // Open the database named outargs[0]
+      person.Database db = new person.Database(outargs[0]);
+      db.open(conn, org.eyedb.Database.DBRW);
+
+      db.transactionBegin();
+      // Create two persons john and mary
+      Person john = new Person(db);
+      john.setName("john");
+      john.setAge(32);
+     
+      Person mary = new Person(db);
+      mary.setName("mary");
+      mary.setAge(30);
+     
+      // Mary them :-)
+      john.setSpouse(mary);
+
+      // Store john and mary in the database
+      john.store(org.eyedb.RecMode.FullRecurs);
+
+      db.transactionCommit();
+    }
+    catch(org.eyedb.Exception e) { // Catch any eyedb exception
+       e.print();
+       System.exit(1);
+    }
+  }
+}
+\end{verbatim}
+}
+The client contains the followin line at the beginning of all
+its modules:
+{\verbsize \begin{verbatim}
+import person.*;
+\end{verbatim}
+}
+This line means that you are imported the generated \texttt{person} package.
+\\
+\\
+NOTE : those package importations are not essential, as you can refer to the
+generated classes using the \texttt{person.} prefix; and that you can refer
+to the standard \eyedb package using the \texttt{org.eyedb.} prefix.
+\\
+\\
+Before any \eyedb method call, you need to initialize the \eyedb
+package by calling the \texttt{org.eyedb.Root.init} method, as follows:
+{\verbsize \begin{verbatim}
+      String[] outargs = org.eyedb.Root.init("TestP", args);
+\end{verbatim}
+}
+This method will take out from \texttt{args} all the \eyedb options
+such as \texttt{--host=<host>, --port=<port>}
+(refer to the environment chapter).
+\\
+\\
+The returned array \texttt{outargs} will contain the command line arguments
+except those that have been recognized as \eyedb options.
+\\
+\\
+If you do not call the \texttt{org.eyedb.Root.init} method, the \eyedb java binding
+will not work.
+\\
+\\
+Then, you need to initialiaze the person generated package, as follows:
+{\verbsize \begin{verbatim}
+      person.Database.init()
+\end{verbatim}
+}
+Once again, if you do not call this method, the \eyedb java binding will
+not work properly.
+\\
+\\
+Then, you need to open a connection with the \eyedb backend
+{\verbsize \begin{verbatim}
+      org.eyedb.Connection conn = new org.eyedb.Connection();
+\end{verbatim}
+}
+The constructor \texttt{org.eyedb.Connection()} will try to connect to the backend
+using the host and port given on the command line.
+\\
+In case of failure, an \texttt{org.eyedb.Exception} is thrown.
+\\
+\\
+To open the database whose name is \texttt{outargs[0]}, you must first
+create a \texttt{person.Database} object, then call the \texttt{open}
+method on this object as follows:
+{\verbsize \begin{verbatim}
+      person.Database db = new person.Database(outargs[0]);
+      db.open(conn, org.eyedb.Database.DBRW);
+\end{verbatim}
+}
+The \texttt{org.eyedb.Database.DBRW} flag indicates that we wants to open
+the database in the read/write mode.
+\\
+\\
+Once that the database has been opened, we begin a transaction as follows:
+{\verbsize \begin{verbatim}
+      db.transactionBegin();
+\end{verbatim}
+}
+This method call is necessary for any database access in read or write
+mode.
+\\
+\\
+To create two persons whose name are \texttt{john} and \texttt{mary} and
+to mary them, you need to use the generated constructors and methods
+as follows:
+{\verbsize \begin{verbatim}
+      Person john = new Person(db);
+      john.setName("john");
+      john.setAge(32);
+     
+      Person mary = new Person(db);
+      mary.setName("mary");
+      mary.setAge(30);
+     
+      john.setSpouse(mary);
+\end{verbatim}
+}
+Note that at this step, the persons \texttt{john} and \texttt{mary} have
+{\bf not} been stored in the database.
+\\
+Those person references are runtime references, not persistant references.
+\\
+\\
+To store them permanently in the database:
+{\verbsize \begin{verbatim}
+      john.store(org.eyedb.RecMode.FullRecurs);
+\end{verbatim}
+}
+The \texttt{org.eyedb.RecMode.FullRecurs} argument means that all the object
+references included in the \texttt{john} object will be stored too ; so
+the \texttt{mary} reference which is the \texttt{john} spouse, will be stored too.
+\\
+\\
+At this step, if you exit the program, the current transaction will
+be automatically aborted (rolled back).
+\\
+So the \texttt{john} and \texttt{mary} persons will not be effectively stored
+in the database.
+\\
+\\
+To commit the transaction, you must do the following:
+{\verbsize \begin{verbatim}
+      db.transactionCommit();
+\end{verbatim}
+}
+Note that all the constructors and methods previously called, may
+throw an \texttt{org.eyedb.Exception} in case of failure.
+\\
+The following code catches the exceptions, print them and exit the program:
+{\verbsize \begin{verbatim}
+    catch(org.eyedb.Exception e) {
+       e.print();
+       System.exit(1);
+    }
+\end{verbatim}
+}
+
+\subsect{Compiling the client}
+The client must be compiled as follows:
+{\verbsize \begin{verbatim}
+javac -d . TestP.java
+\end{verbatim}
+}
+\subsect{Updating the schema}
+Before running the client for the first time, we need to create a test database
+and to update its schema according to the ODL description.
+\\
+\\
+Note that to create a database, the \eyedb user under which you are working,
+must has the \texttt{dbcreate} system mode (refer to the administration
+section).
+\\
+\\
+To create a database \texttt{foo}:
+\verbsize \begin{verbatim}
+eyedbdbcreate foo
+user authentication : <user name>
+password authentication : <user passwd>
+\end{verbatim}
+\normalsize
+To update the schema person.odl in the database \texttt{foo}:
+{\verbsize \begin{verbatim}
+eyedbodl --u -d foo person.odl
+Updating <unnamed> Schema in database foo...
+Done
+\end{verbatim}
+}
+
+\subsect{Running the client}
+To run properly, an \eyedb program needs some environment information such
+as the \eyedb host and port, the \eyedb user and password.
+\\
+\\
+When we run a C++ program, the \eyedb runtime takes this environment
+from the UNIX environment variables.
+\\
+\\
+There is not such mechanisms for a Java program: the \texttt{getenv()} function
+does not exist in Java.
+\\
+\\
+So, we need to give all the environment using the command line arguments
+as follows:
+\verbsize \begin{verbatim}
+eyedbjrun foo
+\end{verbatim}
+\normalsize
+After the program has run, let's verify that the objects have really been
+created in the \texttt{foo} database, using the \texttt{eyedboql} tool:
+{\verbsize \begin{verbatim}
+eyedboql
+Welcome to eyedboql. Type `!help' to display the command list.
+? \open foo
+? select Person;
+47886.20.803967:oid, 47887.20.2361599:oid
+? \print full
+47886.20.803967:oid Person = { 
+        name = "john";
+        age = 32;
+        *spouse 47887.20.2361599:oid Person = { 
+                name = "mary";
+                age = 30;
+                *spouse 47886.20.803967:oid Person = { 
+                        <trace cycle>
+                };
+                *father NULL;
+                *children NULL;
+                *cars NULL;
+        };
+        *father NULL;
+        *children NULL;
+        *cars NULL;
+};
+47887.20.2361599:oid Person = { 
+        name = "mary";
+        age = 30;
+        *spouse 47886.20.803967:oid Person = { 
+                name = "john";
+                age = 32;
+                *spouse 47887.20.2361599:oid Person = { 
+                        <trace cycle>
+                };
+                *father NULL;
+                *children NULL;
+                *cars NULL;
+        };
+        *father NULL;
+        *children NULL;
+        *cars NULL;
+};
+? \quit
+\end{verbatim}
+}
+As there is a unique constraint on the Person \texttt{name} attribute,
+if you run the program again, you will catch the following exception:
+{\verbsize \begin{verbatim}
+TestP.run foo
+org.eyedb.StoreException: unique[] constraint error : attribute
+`name' in the agregat class `Person'
+\end{verbatim}
+}
+\subsect{An advanced example}
+You can use \eyedb OQL withing the Java Binding, using the \texttt{org.eyedb.OQL}
+class.
+\\
+\\
+For instance, the following program looks for the \texttt{Person} instance whose
+name is given on the command line.
+\\
+Then, it looks for the \texttt{Person} instances whose age is
+less than 3 years old, adds them to the children collection of the previous
+\texttt{Person} instance, and increments their age.
+{\verbsize \begin{verbatim}
+//
+// class TestPC.java
+//
+
+import person.*;
+
+class TestPC {
+  public static void main(String args[]) {
+
+    // Initialize the eyedb package and parse the default eyedb options
+    // on the command line
+    String[] outargs = org.eyedb.Root.init("TestPC", args);
+     
+    // Check that a database name is given on the command line
+    int argc = outargs.length;
+    if (argc != 2) {
+        System.err.println("usage: java TestPC dbname person-name");
+        System.exit(1);
+    }
+
+    try {
+      // Initialize the person package
+      person.Database.init();
+
+      // Open the connection with the backend
+      org.eyedb.Connection conn = new org.eyedb.Connection();
+
+      // Open the database named outargs[0]
+      person.Database db = new person.Database(outargs[0]);
+      db.open(conn, org.eyedb.Database.DBRW);
+
+      db.transactionBegin();
+      // Looks for the Person john
+
+      String pname = outargs[1];
+      org.eyedb.OQL q = new org.eyedb.OQL(db, "select Person.name = \"" + pname + "\"");
+
+      org.eyedb.ObjectArray obj_array = new org.eyedb.ObjectArray();
+
+      q.execute(obj_array);
+
+      if (obj_array.getCount() == 0) {
+          System.err.println("TestPC: cannot find person `" + pname + "'");
+          System.exit(1);
+      }
+
+      Person john = (Person)obj_array.getObjects()[0];
+
+      // Looks for Person whose age is less than 3
+      // and add them to the john children collection
+
+      q = new org.eyedb.OQL(db, "select Person.age < 3");
+
+      obj_array = new org.eyedb.ObjectArray();
+
+      q.execute(obj_array);
+
+      for (int i = 0; i < obj_array.getCount(); i++) {
+          Person child = (Person)obj_array.getObjects()[i];
+          child.setAge(child.getAge() + 1);
+          john.addToChildrenColl(child);
+      }
+
+      // Update john and its children in the database
+      john.store(org.eyedb.RecMode.FullRecurs);
+
+      db.transactionCommit();
+    }
+    catch(org.eyedb.Exception e) { // Catch any eyedb exception
+       e.print();
+       System.exit(1);
+    }
+  }
+}
+\end{verbatim}
+}
+The following steps (and code) are identical to the previous example:
+\bi
+\item importing package \texttt{person}
+\item initializing \eyedb package and \texttt{person} packages
+\item opening the connection
+\item opening the database
+\item beginning a transaction
+\ei
+The first difference comes using the \texttt{org.eyedb.OQL} constructor call:
+{\verbsize \begin{verbatim}
+      String pname = outargs[1];
+      org.eyedb.OQL q = new org.eyedb.OQL(db, "select Person.name = \"" + pname + "\"");
+\end{verbatim}
+}
+This constructor makes a \eyedb OQL query in the opened database.
+\\
+\\
+Nothing is returned from this query, but an exception is thrown if the query
+is invalid.
+\\
+\\
+To get back the result of this query (i.e. the Person whose \texttt{name}
+is \texttt{pname}), one needs to scan the query.
+\\
+\\
+Several \texttt{org.eyedb.OQL} methods allows us to scan the query:
+{\verbsize \begin{verbatim}
+  public void scan(org.eyedb.ValueArray value_array)
+    throws org.eyedb.TransactionException;
+
+  public void scan(org.eyedb.OidArray oid_array)
+    throws org.eyedb.TransactionException;
+
+  public void scan(org.eyedb.ObjectArray obj_array)
+    throws org.eyedb.TransactionException, org.eyedb.LoadObjectException;
+
+  public void scan(org.eyedb.ObjectArray obj_array, org.eyedb.RecMode rcm)
+    throws org.eyedb.TransactionException, org.eyedb.LoadObjectException;
+
+  public void scan(org.eyedb.ValueArray value_array, int count, int start)
+    throws org.eyedb.TransactionException;
+
+  public void scan(org.eyedb.OidArray oid_array, int count, int start)
+    throws org.eyedb.TransactionException;
+
+  public void scan(org.eyedb.ObjectArray obj_array, int count, int start)
+    throws org.eyedb.TransactionException, org.eyedb.LoadObjectException;
+
+  public void scan(org.eyedb.ObjectArray obj_array, int count, int start,
+                   org.eyedb.RecMode rcm)
+    throws org.eyedb.TransactionException, org.eyedb.LoadObjectException;
+\end{verbatim}
+}
+The \texttt{scan} methods which deals with a \texttt{org.eyedb.ValueArray} are
+the most general.
+\\
+\\
+These methods allows us to get back anything: integer, float, string, char,
+oid.
+\\
+For instance, if you make a query such as:
+{\verbsize \begin{verbatim}
+     org.eyedb.OQL q = new org.eyedb.OQL(db, \"list(1, 2, 3, "hello world",
+                               3.45, 'c', (select Person.age < 3));
+\end{verbatim}
+}
+the returned values will be:
+\bi
+\item 3 integers
+\item 1 string
+\item 1 float
+\item 1 character
+\item some Person oids
+\ei
+In this case, it seems raisonnable to use a \texttt{scan} method which
+deals with a \texttt{org.eyedb.ValueArray}, as follows:
+{\verbsize \begin{verbatim}
+     org.eyedb.ValueArray valarr = new org.eyedb.ValueArray();
+     q.execute(valarr);   
+
+     for (int i = 0; i < valarr.getCount(); i++) {
+         org.eyedb.Value value = valarr.getValues()[i];
+         if (value.type == org.eyedb.Value.INT)
+           // ...
+         else if (value.type == org.eyedb.Value.FLOAT)
+           // ...
+         else if (value.type == org.eyedb.Value.OID)
+           // ...
+         else if (value.type == org.eyedb.Value.CHAR)
+           // ...
+     }
+\end{verbatim}
+}
+In the \texttt{TestPC.java} example, as we know that only objects could
+be returned, a more simple \texttt{scan} method may be used, as follows:
+{\verbsize \begin{verbatim}
+      org.eyedb.OQL q = new org.eyedb.OQL(db, "select Person.name = \"" + pname + "\"");
+
+      org.eyedb.ObjectArray obj_array = new org.eyedb.ObjectArray();
+
+      q.execute(obj_array);
+
+      if (obj_array.getCount() == 0) {
+          System.err.println("TestPC: cannot find person `" + pname + "'");
+          System.exit(1);
+      }
+\end{verbatim}
+}
+In the case of no objects has been found, we display an error message and
+then leaves the program.
+\\
+\\
+In the case of, at least, one object has been found, we cast the \texttt{org.eyedb.Object} instance in a Person instance, as follows:
+{\verbsize \begin{verbatim}
+      Person john = (Person)obj_array.getObjects()[0];
+\end{verbatim}
+}
+This cast is a reasonnable cast for several reasons:
+\begin{enumerate}
+\item As the query is \texttt{"Person.name = \\"" + pname + "\\""}, the expected
+returned values are \texttt{Person} instances.
+\item As the database has been opened using an instance
+of the \texttt{person.Database} class, a \texttt{Person} instance has been
+actually constructed using the generated stubs.
+\\
+If we had used an instance of the generic \texttt{org.eyedb.Database} class, this
+cast would has been illegal, as the \texttt{Person} class is unknown from
+the generic \eyedb package!
+\item Contrary to C++, Java performs secure dynamic casting, so if the
+returned object is not a \texttt{Person} instance, an invalid cast exception
+will be thrown.
+\end{enumerate}
+Then:
+\bi
+\item we look for the \texttt{Person} instances whose \texttt{age} is less
+than \texttt{3}:
+{\verbsize \begin{verbatim}
+      q = new org.eyedb.OQL(db, "select Person.age < 3");
+
+      obj_array = new org.eyedb.ObjectArray();
+
+      q.execute(obj_array);
+\end{verbatim}
+}
+\item one increments their \texttt{age}.
+{\verbsize \begin{verbatim}
+      for (int i = 0; i < obj_array.getCount(); i++) {
+          Person child = (Person)obj_array.getObjects()[i];
+          child.setAge(child.getAge() + 1);
+\end{verbatim}
+}
+\item one adds them to the \texttt{children} collection of the previous
+\texttt{Person} instance found.
+{\verbsize \begin{verbatim}
+          john.addToChildrenColl(child);
+      }
+\end{verbatim}
+}
+\item one stores all in the database.
+{\verbsize \begin{verbatim}
+      john.store(org.eyedb.RecMode.FullRecurs);
+\end{verbatim}
+}
+\item one commits the transaction.
+{\verbsize \begin{verbatim}
+      db.transactionCommit();
+\end{verbatim}
+}
+\ei
+
+\end{document}
+\sect{The \eyedb Java API Reference Manual}
+The \eyedb Java API Reference Manual is available online in the file:
+\\
+\$EYEDBROOT/java/doc/packages.html
+
+

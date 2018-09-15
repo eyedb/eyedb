@@ -1,0 +1,2602 @@
+\input{start}
+\input{version}
+\newcommand{\mantitle}{\textsc{C++ Binding} }
+\input{title}
+
+\tableofcontents
+
+\chapter*{The EyeDB C++ Binding}
+
+%%\eyedb provides currently two language bindings: C++ and Java.
+%%\\
+%%The C++ binding is the native language binding as \eyedb is fully written
+%%in C++.
+The C++ binding maps the \eyedb object model into C++ by introducing
+a generic API
+%%The C++ binding is expressed as a generic API
+%%including about one hundred of classes,
+and a tool to generate a speficic C++ API from a given schema,
+built upon the generic API.
+\\
+\\
+The generic C++ API is made up of about one hundred of classes such
+as some abstract classes as the \texttt{object} and \texttt{class} classes
+and some more concrete classes such as the \texttt{database} and \texttt{image}
+classes.
+\\
+\\
+Each type in the \eyedb object model is implemented as a C++ class whithin
+the C++ API: there is a one for one mapping between the object model and
+the C++ API.
+\\
+This mapping follows a very simple naming scheme: each C++ class mapped from
+a type has the name of this type prefixed by the namespace \texttt{eyedb}.
+\\
+For instance, the \texttt{object} type in the \eyedb object model is
+mapped to the \texttt{eyedb::Object} C++ class and the \texttt{agregat}
+type is mapped to the \texttt{eyedb::Agregat} C++ class.
+\\
+\\
+To avoid writing each time the full qualified type name
+(i.e. \texttt{eyedb::}\emph{type}), you may use the C++ instruction
+\texttt{using namespace eyedb}.
+\\
+\\
+We are going to introduce the main classes and methods through some simple
+examples.
+\sect{The Generic C++ API}
+\subsect{Initialization}
+The minimal \eyedb C++ program is as follows:
+\verbsize
+\begin{verbatim}
+#include <eyedb/eyedb.h>
+
+int
+main(int argc, char *argv[])
+{
+  eyedb::init(argc, argv);
+  // ...
+  eyedb::release();
+  return 0;
+}
+\end{verbatim}
+\normalsize
+A few remarks about this code:
+\be
+\item the file \texttt{eyedb/eyedb.h} contains the whole \eyedb C++ API; except
+for some specific administration or hacker tasks, it is not necessary
+to include any other eyedb files.
+\item the \eyedb C++ layer must be initialized using one of the static method
+\texttt{init} of the namespace \texttt{eyedb}:
+\be
+\item static void eyedb::init()
+\item static void eyedb::init(int \&argc, char *argv[])
+\ee
+The first method only initializes the \eyedb layer while the second
+one performs also some command line option processing.
+For instance, the option \texttt{--port=<port>} allows you to use
+the port \texttt{<port>} as the default connection port to the \eyedb
+server, while the option \texttt{-logdev=stderr} displays log information
+on the standard error.
+\\
+\\
+The option \texttt{--help-eyedb-options} displays a brief usage for each standard options:
+\verbsize
+\begin{verbatim}
+  -U <user>|@, --user=<user>|@       User name
+  -P [<passwd>], --passwd[=<passwd>] Password
+  --host=<host>                      eyedbd host
+  --port=<port>                      eyedbd port
+  --inet                             Use the tcp_port variable if port is not set
+  --dbm=<dbmfile>                    EYEDBDBM database file
+  --conf=<conffile>                  Configuration file
+  --logdev=<logfile>                 Output log file
+  --logmask=<mask>                   Output log mask
+  --logdate=on|off                   Control date display in output log
+  --logtimer=on|off                  Control timer display in output log
+  --logpid=on|off                    Control pid display in output log
+  --logprog=on|off                   Control progname display in output log
+  --error-policy=<value>             Control error policy: status|exception|abort|stop|echo
+  --trans-def-mag=<magorder>         Default transaction magnitude order
+  --arch                             Display the client architecture
+  -v, --version                      Display the version
+  --help-eyedb-options               Display this message
+\end{verbatim}
+\normalsize
+Note that all the standard command line options recognized in the
+\texttt{argc/argv} array are suppressed from this array by
+\texttt{eyedb::init(int \&argc, char *argv[])}.
+\item the last statement \texttt{eyedb::release()} allows you to release all
+the \eyedb allocated resources and to close opened databases and connections.
+Note that this statement is optionnal as all \eyedb allocated resources,
+opened databases and connections will be automatically released or closed
+in the \texttt{exit()} function.
+\ee
+\subsect{Connection Setting-up}
+To manage objects within a database we need to open this database.
+But before opening any database we need to establish a connection with
+the \eyedb server.
+\\
+The connection to the \eyedb server is realized through the
+\texttt{eyedb::Connection} class as follows:
+\verbsize
+\begin{verbatim}
+  eyedb::Connection conn;
+  conn.open();
+\end{verbatim}
+\normalsize
+A few remarks about this code:
+\be
+\item the construction of an \texttt{eyedb::Connection} instance (first line of code)
+does not perform any actual actions: it only constructs a runtime instance.
+\item to establish the connection, one needs to use the
+\texttt{eyedb::Connection::open(const char *host=0, const char *port=0)} method.
+This method has two optionnal arguments: \texttt{host} and \texttt{port}.
+\\
+If these arguments are not specified, their values are taken from the
+configuration or
+from the command line options \texttt{--host=<host>} and
+\texttt{--port=<port>} if specified.
+\item in case of an error happened during the connection setting-up,
+a status is returned or an exception is raised depending on the
+chosen error policy. The default error policy is the \texttt{status error
+policy} which means that each \eyedb method returns a status
+implemented by the \texttt{eyedb::Status} class. The special status
+\texttt{eyedb::Success} (in fact a null pointer) means that the operation
+has been performed successfully:
+\bi
+\item
+\verbsize
+\begin{verbatim}
+  eyedb::Status s;
+  eyedb::Connection conn;
+  s = conn.open();
+  if (s) {
+    cerr << status;
+    return 1;
+  }
+\end{verbatim}
+\normalsize
+\ei
+The \texttt{exception error policy} means that each \eyedb method throws
+an exception, implemented by the class \texttt{eyedb::Exception}, when an error
+happened:
+\bi
+\item
+\verbsize
+\begin{verbatim}
+  try {
+    eyedb::Connection conn;
+    conn.open();
+  }
+  catch(eyedb::Exception &e) {
+    cerr << e;
+    return 1;
+  }
+\end{verbatim}
+\normalsize
+\ei
+Note that \texttt{eyedb::Status} is an alias for \texttt{const eyedb::Exception *}.
+To use the \texttt{exception error policy}, one needs to call the following
+method before any operation:
+\verbsize
+\begin{verbatim}
+  eyedb::Exception::setMode(eyedb::Exception::ExceptionMode);
+\end{verbatim}
+\normalsize
+Although the exception error policy is not currently the default one in
+\eyedbX, we recommend to use it: it makes code clearer and safer.
+\\
+In the following examples we use the \texttt{exception error policy}
+to avoid any error management noise in the introduced C++ code.
+\ee
+\subsect{Database Opening}
+To open a database one uses the \texttt{eyedb::Database} class as follows:
+\verbsize
+\begin{verbatim}
+  const char *dbname = argv[1];
+  eyedb::Database db(dbname);
+  db.open(&conn, eyedb::Database::DBRW);
+\end{verbatim}
+\normalsize
+\be
+\item as the \texttt{eyedb::Connection} constructor, the \texttt{eyedb::Database}
+constructor does not perform any actual operation: it constructs
+a runtime instance.
+\item to open a database one uses the \texttt{eyedb::Database::open} methods
+which takes the following arguments:
+\be
+\item a pointer to an opened \texttt{eyedb::Connection} instance.
+\item the opening flag which can be either \texttt{eyedb::Database::DBRead} for
+read-only opening or \texttt{eyedb::Database::DBRW} for read-write opening.
+\\
+Note that there are a dozen of opening modes that are introduced in
+the reference manual.
+\item the user authentication
+\item the password authentication
+\ee
+The two last arguments are optionnal: if not specified, their values
+are taken from the configuration file or from the command line options
+\texttt{--user=<user>} and \texttt{--passwd=<passwd>}, or from
+the standard input when using \texttt{--passwd} without given value.
+\ee
+Note that an \eyedb client can manage several connections and
+several databases on each connection, for instance:
+\verbsize
+\begin{verbatim}
+  eyedb::Connection conn_local;
+  conn_local.open();
+  eyedb::Connection conn_remote;
+  conn_remote.open("arzal.zoo.com", 7620);
+
+  eyedb::Database db_1("foo");
+  db_1.open(&conn_local, eyedb::Database::DBRW);
+
+  eyedb::Database db_2("EYEDBDBM");
+  db_2.open(&conn_local, eyedb::Database::DBRead, "guest", "guest");
+
+  eyedb::Database db_3("droopy");
+  db_2.open(&conn_remote, eyedb::Database::DBRW, "droopy", "xyztu");
+\end{verbatim}
+\normalsize
+\subsect{Transaction Management}
+Any object operation - storing or loading for instance -
+within a database must be done in the scope of a transaction.
+\\
+\\
+A transaction is an unit with atomicity, coherency and integrity.
+\be
+\item {\bf Atomicity} means that the transaction modifications are either
+realized (commit) or not realized at all (rollback or abort).
+\item {\bf Coherency} means that a transaction starts from a coherent database
+state, and leaves the database in a coherent state.
+\item {\bf Integrity} means that a transaction modification is not lost, even
+in case of a process, operating system or hardware failure.
+\ee
+A transaction scope is composed of a starting point, \texttt{transactionBegin},
+and an ending point, \texttt{transactionCommit} or \texttt{transactionAbort}:
+\verbsize
+\begin{verbatim}
+  eyedb::Database db(dbname);
+  db.open(&conn, eyedb::Database::DBRW);
+
+  db.transactionBegin();
+  // ... object operations
+  db.transactionCommit();
+\end{verbatim}
+\normalsize
+A call to \texttt{eyedb::Database::transactionCommit()} means that all the
+operations performed in the transaction scope will be stored in
+the database, while a call to \texttt{eyedb::Database::transactionAbort()} means
+that all the operations will be forgotten.
+\\
+\\
+Currently, \eyedb does not support nested transactions but it allows you
+to write code such as:
+\verbsize
+\begin{verbatim}
+  db.transactionBegin();     // level 0 begin
+  // ... object operations
+     db.transactionBegin();  // level 1 begin
+     // ... object operations
+     db.transactionAbort();  // level 1 abort
+  // ... object operations
+  db.transactionCommit();    // level 0 commit
+\end{verbatim}
+\normalsize
+But the abort at level 1 is without effect: it will
+not be performed; only the commit at level 0 will be performed.
+\\
+\\
+One can give parameters to the transaction that one begins by setting an
+optional argument of type \texttt{eyedb::TransactionParams} to the
+\texttt{transactionBegin} method. The \texttt{TransactionParams} type is
+composed of the following public attributes :
+\be
+\item the \texttt{trsmode} argument controls the transaction mode,
+\item the \texttt{lockmode} argument controls the object lock policy,
+\item the \texttt{recovmode} argument controls the recovery mode,
+\item the \texttt{magorder} argument controls the size of the allocated
+tables for the transaction,
+\item the \texttt{ratioalrt} argument controls the  error returned if
+ratioalrt != 0 and trans object number > ratioalrt * magorder
+\item the \texttt{wait\_timeout} argument controls 
+wait timeout value.
+\ee
+For instance :
+\begin{verbatim}
+ TransactionParams params; // create params with default values
+ params.lockmode = eyedb::ReadNWriteX; // objects are not locked for reading
+                                       // and locked exclusive for writing
+ params.magorder = 100000000; // transaction can deal with about
+                              // 100 millions of objects
+ db.transactionBegin(params);
+\end{verbatim}
+Refer to the reference manual to get more information about these arguments.
+
+\subsect{Schema and Class Manipulation}
+The \eyedb C++ API provides runtime facilities to manipulate the \eyedb
+classes. In fact, as the class \texttt{class} inherits from the
+class \texttt{object}, \eyedb classes can be manipulated as objects.
+\\
+\\
+A class is composed of a list of attributes, constraints,
+variables, methods, triggers and indexes.
+\\
+\\
+The classes are gathered through a schema instance tied to
+each database.
+\\
+\\
+A class can be a system class, for instance the class \texttt{class}, the
+class \texttt{object}, the class \texttt{agregat} or a user class, for
+instance the class \texttt{Person}, the class \texttt{Employee}.
+\\
+\\
+To illustrate this object model, we are going to show how to display the
+user classes of a given database:
+\verbsize
+\begin{verbatim}
+  eyedb::Database db(dbname);
+  db.open(&conn, eyedb::Database::DBRW);
+
+  db.transactionBegin();
+  eyedb::LinkedListCursor c(db.getSchema()->getClassList());
+  eyedb::Class *cls;
+  while (c.getNext((void*&)cls))
+    if (!cls->isSystem())
+      cout << cls;
+  db.transactionCommit();
+\end{verbatim}
+\normalsize
+As shown here, this code is very simple:
+\be
+\item database opening as we have seen before.
+\item linked list cursor creation on the database schema class list.
+\item display of each class in the list which is not a system class.
+\ee
+For instance, to display all the classes of type \texttt{struct} which contains
+an attribute named \texttt{age}:
+\verbsize
+\begin{verbatim}
+  eyedb::LinkedListCursor c(db.getSchema->getClassList());
+  eyedb::Class *cls;
+  while (c.getNext((void*&)cls))
+    if (cls->asStructClass()) {
+      int attr_cnt;
+      const eyedb::Attribute **attrs = cls->getAttributes(attr_cnt);
+      for (int i = 0; i < attr_cnt; i++)
+        if (!strcmp(attrs[i]->getName(), "age")) {
+          cout << cls;
+          break;
+       }
+     }
+\end{verbatim}
+\normalsize
+\subsect{Object Manipulation}
+There are two types of objects: runtime objects and database objects.
+\\
+Runtime objects are the OML (Object Manipulation Language) objects,
+for instance C++ or Java objects, while the database objects are
+the objects stored in a database.
+\\
+\\
+There are two types of runtime objects: persistent runtime objects and
+transient runtime objects.
+\\
+A runtime object is persistent if it is tied to a database object.
+Otherwise, it is  transient.
+\\
+\\
+Contrary to some other OODBMS, \eyedb does not
+provide an automatic synchronisation between persistent runtime objects
+and database objects.
+\\
+When setting values on a persistent runtime object, we do not modify
+the tied database object.
+We must call the \texttt{store} method on the persistent runtime object
+to update the tied database object.
+\\
+\\
+Note that any persistent runtime object manipulation must be done
+in the scope of a transaction.
+\\
+\\
+To illustrate object manipulations, we introduce a simple concrete
+example.
+This example will be used in the whole continuation of this chapter.
+\\
+\\
+The example is as follows:
+\verbsize
+\begin{verbatim}
+//
+// person.odl
+//
+
+enum CivilState {
+  Lady = 0x10,
+  Sir  = 0x20,
+  Miss = 0x40
+};
+
+class Address {
+  attribute string street;
+  attribute string<32> town;
+  attribute string country;
+};
+
+class Person {
+  attribute string name;
+  attribute int age;
+  attribute Address addr;
+  attribute Address other_addrs[];
+  attribute CivilState cstate;
+  attribute Person * spouse inverse Person::spouse;
+  attribute set<Car *> cars inverse owner;
+  attribute array<Person *> children;
+
+  int change_address(in string street, in string town,
+                     out string oldstreet, out string oldtown);
+
+  static int getPersonCount();
+  index on name;
+};
+
+class Car {
+  attribute string brand;
+  attribute int num;
+  Person *owner inverse cars;
+};
+
+class Employee extends Person {
+  attribute long salary;
+};
+\end{verbatim}
+\normalsize
+This file is located at \emph{prefix}/\texttt{share/doc/eyedb/examples/C++Binding/schema-oriented/share/schema.odl}.
+\subsect{Creating Runtime Objects}
+Using the C++ API, we cannot create directly a database object.
+We must create first a runtime object.
+\\
+To create a runtime object we invoke the \texttt{newObj} method
+of the object class.
+\\
+For instance, to create a runtime \texttt{Person} object, we need
+to invoke the \texttt{newObj} method of the \texttt{Person} runtime class
+as follows:
+\verbsize
+\begin{verbatim}
+  eyedb::Class *cls = db.getSchema()->getClass("Person");
+
+  eyedb::Object *p = cls->newObj(&db);
+\end{verbatim}
+\normalsize
+The \texttt{eyedb::Class::newObj(eyedb::Database * = 0)} is the class instantiation
+method for both persistent and transient object.
+\\
+A transient object is created using the \texttt{newObj} without any argument,
+while a persistent object is created using the same method with
+a valid database runtime pointer.
+\\
+\\
+Note that as long as the \texttt{store} method has not been called,
+the persistent runtime object is not yet tied to a database object.
+\\
+So, if we follow strictly the definition of runtime objects,
+it is not yet a persistent runtime object; but as soon as a runtime
+object is created using the \texttt{newObj} method with a valid database
+pointer, we will say that it is persistent.
+\subsect{Synchronizing Runtime Objects to Database Objects}
+When a persistent object is stored in the database using the
+\texttt{store} method, an unique object identifier \texttt{OID} is allocated
+to this object.
+\\
+This \texttt{OID} can be acceded using the method \texttt{eyedb::Object::getOid()},
+for instance to display the allocated \texttt{OID}:
+\verbsize
+\begin{verbatim}
+  eyedb::Object *p = cls->newObj(&db);
+  cout << "before storing: " << p->getOid() << endl;
+  p->store();
+  cout << "after storing: " << p->getOid() << endl;
+\end{verbatim}
+\normalsize
+The output displayed by the previous code is something as follows:
+\verbsize
+\begin{verbatim}
+before storing: NULL
+after storing: 1456.3.38475637:oid
+\end{verbatim}
+\normalsize
+As shown here, before the first call of the \texttt{store} method, the \texttt{OID} is
+not set; a \texttt{NULL} is displayed.
+\\
+The created \texttt{OID} is composed of three fields:
+\be
+\item the object number : \texttt{1456}
+\item the database identifier : \texttt{3}
+\item a magic number : \texttt{38475637}
+\ee
+The database identifier designates, in an unique way, a database while
+the object number designates, in an unique way, an object within a database.
+\\
+The magic number, which is a random generated number, ensures more security
+in the object identification process.
+\subsect{Setting Attribute Values to a Runtime Object}
+Assume that we want to set a name and a age values to a \texttt{Person} instance.
+Here is a way to do so:
+\verbsize
+\begin{verbatim}
+  eyedb::Class *cls = db.getSchema()->getClass("Person");
+  eyedb::Object *p = cls->newObj(&db);
+
+  // getting attributes from class
+  const eyedb::Attribute *attr_name = cls->getAttribute("name");
+  const eyedb::Attribute *attr_age = cls->getAttribute("age");
+
+  // setting name attribute value
+  attr_name->setSize(p, strlen("john")+1);
+  attr_name->setValue(p, (eyedb::Data)"john", strlen("john")+1, 0);
+
+  // setting age attribute value
+  eyedb::_int32 age = 27;
+  attr_age->setValue(p, (eyedb::Data)&age, 1, 0);
+\end{verbatim}
+\normalsize
+We need to do a few remarks about this code:
+\be
+\item to get specific named attribute within a class,
+we use the method \texttt{eyedb::Class::getAttribute(const char *)}.
+\\
+This method returns a pointer to an \texttt{eyedb::Attribute} which contains
+a complete description of this attribute: type, name, size, position and
+so on.
+\item to set an attribute value for the instance \texttt{p}, we
+use the method \texttt{eyedb::Attribute::setValue(eyedb::Object *o, eyedb::Data data,
+int nb, int from)} whose arguments are as follows:
+\be
+\item \texttt{eyedb::Object *o}: the runtime object pointer to modify.
+\item \texttt{eyedb::Data data}: the pointer to the attribute value to set.
+\item \texttt{int nb}: for an array, the number of values to set.
+\item \texttt{int from}: for an array, the starting index of the values to set.
+\ee
+\item the \texttt{eyedb::Attribute::setSize(eyedb::Object *, eyedb::Size)} method is
+used for the attribute \texttt{name} because this attribute is of variable
+size (remember the schema description : \texttt{string name}).
+\\
+So, before setting the attribute value, we must set the size of this
+attribute value.
+\item remember that the database object tied to this persistent object has not
+been changed in the database: only the transient values have been changed.
+\\
+To change the database object, one needs to use the method
+\texttt{eyedb::Object::store()} as follows:
+\verbsize
+\begin{verbatim}
+  p->store();
+\end{verbatim}
+\normalsize
+The \texttt{store} method allows you to synchonize the transient values
+of a persistent object with the database.
+\\
+\\
+To avoid all this class and attribute manipulation and to deal with
+direct access attribute methods, one needs to use the \texttt{eyedbodl}
+tool which allows you to generate specific C++ code from a specific database
+schema.
+\\
+\\
+For instance, using this tool, the previous code becomes:
+\verbsize
+\begin{verbatim}
+  Person *p = new Person(&db);
+
+  p->setName("john");
+  p->setAge(27);
+
+  p->store();
+\end{verbatim}
+\normalsize
+The class \texttt{Person}, the methods \texttt{setName} and \texttt{setAge}
+have been generated by the \texttt{eyedbodl} tool in a very simple way.
+\\
+Refer to the second part of this chapter \texttt{the Schema-Oriented
+Generated C++ API}.
+\ee
+\subsect{Loading Database Objects}
+To load an object from a database, one needs to give its \texttt{OID} to
+the \texttt{eyedb::Database::loadObject} method, for instance:
+\verbsize
+\begin{verbatim}
+  eyedb::Oid oid("1456.3.38475637:oid");
+  eyedb::Object *o;
+  db.loadObject(oid, o);
+  cout << "object " << oid << " is of class " << o->getClass()->getName()
+       << endl;
+  cout << o;
+\end{verbatim}
+\normalsize
+The previous code loads the object from the database, displays its
+oid and class name and displays the whole object.
+\subsect{Getting Attribute Values from a Runtime Object}
+The process to get attribute values from a runtime object is very similar
+to the process to set attribute values.
+\\
+For instance to get the \texttt{name} and \texttt{age} attribute values of
+the previous loaded object, one can do as follows:
+\verbsize
+\begin{verbatim}
+  eyedb::Oid oid("1456.3.38475637:oid");
+  eyedb::Object *o;
+  db.loadObject(oid, o);
+
+  // getting attributes from class
+  const eyedb::Attribute *attr_name = cls->getAttribute("name");
+  const eyedb::Attribute *attr_age = cls->getAttribute("age");
+
+  // getting name attribute size
+  eyedb::Size name_length;
+  attr_name->getSize(o, name_length);
+
+  // getting name attribute value
+  char *name = new char[name_length];
+  attr_name->getValue(o, (eyedb::Data *)name, name_length, 0);
+  cout << "name is : " << name << endl;
+  delete [] name;
+
+  // getting age attribute value
+  eyedb::_int32 age;
+  attr_age->getValue(o, (eyedb::Data *)&age, 1, 0);
+  cout << "age is : " << age << endl;
+\end{verbatim}
+\normalsize
+To get an attribute value we use the method
+\texttt{eyedb::Attribute::getValue(const eyedb::Object *o, eyedb::Data *data,
+int nb, int from, eyedb::Bool * isnull = 0)} whose arguments are as follows:
+\be
+\item \texttt{eyedb::Object *o}: the runtime object pointer.
+\item \texttt{eyedb::Data data}: the pointer to the attribute value to get: this
+pointer must be allocated correctly according to the returned value type.
+It is why we get first the size of the \texttt{name} attribute value to allocate
+the returned buffer with a valid size.
+\item \texttt{int nb}: for an array, the number of values to get.
+\item \texttt{int from}: for an array, the starting index of the values to get.
+\item \texttt{eyedb::Bool *isnull}: an optionnal boolean to check if the attribute
+value is null (i.e. not initialized).
+\ee
+If we want to get the \texttt{spouse} value of the loaded person,
+we must do something a little bit more complicated:
+\verbsize
+\begin{verbatim}
+  eyedb::Oid oid("1456.3.38475637:oid");
+  eyedb::Object *o;
+  db.loadObject(oid, o);
+
+  // getting spouse attribute from class
+  const eyedb::Attribute *attr_spouse = cls->getAttribute("spouse");
+
+  eyedb::Oid spouse_oid;
+  attr_spouse->getOid(o, &spouse_oid);
+
+  if (spouse_oid.isValid()) {
+    eyedb::Object *spouse;
+    db.loadObject(spouse_oid, spouse);
+    cout << "spouse is: " << spouse;
+  }
+\end{verbatim}
+\normalsize
+To get the \texttt{spouse} attribute value, we need to get first the
+\texttt{spouse OID} using the \texttt{eyedb::Attribute::getOid} method on
+the \texttt{spouse} attribute.
+\\
+Then, if the \texttt{OID} is valid, we load the \texttt{spouse} from the
+found \texttt{OID}.
+\\
+\\
+Once again, using the \texttt{eyedbodl} tool, all the previous code
+becomes very simple:
+\verbsize
+\begin{verbatim}
+  eyedb::Oid oid("1456.3.38475637:oid");
+  eyedb::Object *o;
+  db.loadObject(oid, o);
+  Person *p = Person_c(o);
+
+  cout << "name is : " << p->getName() << endl;
+  cout << "age is : " << p->getAge() << endl;
+
+  cout << "spouse is: " << p->getSpouse();
+\end{verbatim}
+\normalsize
+\subsect{Loading Database Objects using OQL}
+We have seen in the previous section how to load a database object from its
+\texttt{OID}. The problem is that the \texttt{OID} is a rather
+hidden concept and there are very few chances to know an object \texttt{OID}
+before having loaded it.
+\\
+\\
+To load database objects it seems more reasonnable to use a query language
+such as OQL.
+\\
+The \eyedb C++ API allows you to perform any OQL queries using the class
+\texttt{eyedb::OQL}.
+\\
+For instance to get all Person whose age is less than a given value:
+\verbsize
+\begin{verbatim}
+  db.transactionBegin();
+  eyedb::OQL q(&db, "select Person.age < %d", given_age);
+
+  eyedb::ObjectArray obj_arr(eyedb::True);
+  q.execute(obj_arr);
+  for (int i = 0; i < obj_arr.getCount(); i++)
+    cout << obj_arr[i];
+\end{verbatim}
+\normalsize
+A few remarks about this code:
+\be
+\item remember that any persistent runtime object manipulation must be done
+in the scope of a transaction: it is why the first statement is a call
+to the \texttt{transactionBegin} method. In most of the previous code examples,
+we volontary omit this call.
+\item the class \texttt{eyedb::OQL} is used to perform
+any OQL query. The main constructor \texttt{eyedb::OQL(eyedb::Database *db, const char *fmt, ...)} allows you to make an OQL query in a simple way.
+The arguments are as follows:
+\be
+\item the database pointer within which to perform the query.
+\item the format of the query in a \texttt{sprintf} style.
+\item the other arguments are the arguments related to the previous
+format.
+\ee
+\item to get all the objects returned by the query, we use the
+\texttt{eyedb::OQL::execute(eyedb::ObjectArray \&)} method. This method filled
+the object array reference given as input parameter.
+\item the method \texttt{eyedb::ObjectArray::getCount()} returned the number
+of objects contained in an object array.
+\item the \texttt{[] eyedb::ObjectArray} operator has been overloaded to
+allow you to perform direct access to the contained objects: \texttt{obj\_arr[i]} is
+the object \#\texttt{i} within the object array.
+\item the argument \texttt{eyedb::True} to the \texttt{eyedb::ObjectArray} constructor
+means that we want that all the contained objects to be deleted
+when this object array will be deleted.
+\ee
+Sometimes we want to perform a query to get only a part of some objects.
+\\
+For instance, to get the name of all persons whose age is less than
+a given value, there are two ways:
+\be
+\item the first one is to get all the persons whose age is less
+than the given value using an OQL query, and then get their name value
+as follows:
+\verbsize
+\begin{verbatim}
+  eyedb::OQL q(&db, "select Person.age < %d", given_age);
+  eyedb::ObjectArray obj_arr(eyedb::True);
+  q.execute(obj_arr);
+
+  const eyedb::Attribute *attr_name = cls->getAttribute("name");
+  for (int i = 0; i < obj_arr.getCount(); i++) {
+     // getting name attribute size
+    eyedb::Size name_length;
+    attr_name->getSize(obj_arr[i], name_length);
+
+    // getting name attribute value
+    char *name = new char[name_length];
+    attr_name->getValue(obj_arr[i], (eyedb::Data *)name, name_length, 0);
+    cout << "name of #" << i << " is : " << name << endl;
+    delete [] name;
+  }  
+\end{verbatim}
+\normalsize
+\item the second one is to perform directly an appropriate query as follows:
+\verbsize
+\begin{verbatim}
+  eyedb::OQL q(&db, "(select Person.age < %d).name", given_age);
+  eyedb::ValueArray val_arr;
+
+  q.execute(val_arr);
+  for (int i = 0; i < val_arr.getCount(); i++)
+    cout << "name of #" << i << " is : " << val_arr[i].str << endl;
+\end{verbatim}
+\normalsize
+In this case, the returned value are not object values but string values.
+So we cannot use the \texttt{execute(eyedb::ObjectArray\&)} method to get
+these values but the more general form \texttt{execute(eyedb::ValueArray\&)}
+\\
+\\
+An \texttt{eyedb::ValueArray} instance is an array of \texttt{eyedb::Value} instances.
+The \texttt{eyedb::Value} class is the most general form of an OQL returned value.
+It can take the form of a integer, a string, an \texttt{OID}, an object and
+so on.
+\\
+\\
+Note that this second way is more efficient as only the person
+name are returned from the server and not the full object.
+\ee
+
+\subsect{Releasing Runtime Objects}
+All the runtime objects which have been allocated by the client code
+or by a load or query method must be released by the client code.
+\\
+\\
+To release an \texttt{eyedb::Object} or inherited class instance, we must use
+the \texttt{eyedb::Object::release()} method as follows:
+\verbsize
+\begin{verbatim}
+  eyedb::Object *o1 = cls->newObj();
+  // ...
+  o1->release();
+
+  eyedb::Object *o2;
+  db.loadObject(oid, o2);
+  // ...
+  o2->release();
+\end{verbatim}
+\normalsize
+The C++ \texttt{delete} operator is forbiden: if you try to use this operator
+on any \texttt{eyedb::Object} instance, you will get an error message at runtime.
+\\
+\\
+Note that if you release a persistent runtime object you do not release
+the tied database object.
+\\
+\\
+Refer to the section \texttt{Memory Management} to understand the whole
+memory policy of the C++ API.
+\subsect{Removing Database Objects}
+To remove a database object, we need to use the
+\texttt{eyedb::Object::remove()} method or the \texttt{eyedb::Database::removeObject(const eyedb::Oid \&oid)} method, for instance:
+\verbsize
+\begin{verbatim}
+  db.transactionBegin();
+
+  o->remove();
+  o->release();
+
+  db.transactionCommit();
+\end{verbatim}
+\normalsize
+or:
+\verbsize
+\begin{verbatim}
+  db.transactionBegin();
+
+  db.removeObject(oid);
+
+  db.transactionCommit();
+\end{verbatim}
+\normalsize
+When calling one of the previous remove methods, it is not necessary
+to call the store method after.
+
+\sect{The Schema-Oriented Generated C++ API}
+The generic C++ API allows you to manipulate any object within any
+database: this is its force. But, as shown in the previous section,
+object manipulation is sometimes very heavy as the provided methods
+are too much generic.
+\\
+\\
+To enrich the generic API, one introduces a tool to generate specific
+C++ code from a specific ODL schema: the generated API
+is call a schema-oriented API.
+\\
+\\
+The schema-oriented API contains mainly:
+\be
+\item a C++ class for each class defined in the ODL schema.
+\item selector and modifier methods in the C++ class
+for each attribute defined in the ODL class.
+\item user friendly selector and modifier methods for array and
+collection attributes.
+\item a C++ method mapped on each method defined in the ODL class.
+\item a specific C++ database class used to open a database and
+check its schema.
+\item some utilities such as down-casting funtions.
+\ee
+The schema-oriented API is designed so that the object manipulation
+for this schema is the most comfortable as possible.
+
+\subsect{Generating a Schema-Oriented C++ API}
+To generate a schema-oriented C++ API, one needs a well formed ODL
+file describing a schema or a reachable database containing this schema
+and the \texttt{eyedbodl} tool.
+\\
+To generate a schema-oriented C++ API, the minimal \texttt{eyedbodl} invocation
+is as follows:
+\begin{verbatim}
+eyedbodl --gencode=C++ <odlfile>
+\end{verbatim}
+or
+\begin{verbatim}
+eyedbodl --gencode=C++ --package=<package> -d <database>
+\end{verbatim}
+For instance, to generate the schema-oriented C++ API for the \texttt{person.odl}
+schema:
+\begin{verbatim}
+eyedbodl --gencode=C++ person.odl
+\end{verbatim}
+For a given \emph{package}.odl ODL file, the generated files are as follows:
+\bi
+\item \emph{package}.h, \emph{package}.cc: the generated C++ API to be used in
+a client program
+\item template\_\emph{package}.cc: an example of a client program using the generated
+API
+\item Makefile.\emph{package}: an example of Makefile to compile \emph{package}.cc and
+template\_\emph{package}.cc: make -f Makefile.\emph{package} will compile
+and link the generated API and template files
+\item \emph{package}stubsfe.cc, \emph{package}stubsbe.cc: stubs for client and server methods
+\item \emph{package}mthfe-skel.cc, \emph{package}mthbe-skel.cc: skeletons for
+client and server methods
+\ei
+The \texttt{eyedbodl} tool contains a lot of command line options to
+control the generated code.
+\\
+\\
+There is one mandatory option:\\
+\emph{odlfile}\texttt{|}-\texttt{|}\texttt{-d} \emph{dbname}\texttt{|}\texttt{--database=}\emph{dbname} : Input ODL file (or - for standard input) or the database name\\
+and some optionnal options:
+\begin{tabbing}
+\texttt{--gencode-error-policy=exception} \= : \= Exception oriented error policy\kill
+\texttt{--package=}\emph{package}          \> : \> Package name\\
+\texttt{--output-dir=}\emph{dirname}       \> : \> Output directory for generated files\\
+\texttt{--output-file-prefix=}\emph{prefix}\> : \> Ouput file prefix (default is the package name)\\
+\texttt{--class-prefix=}\emph{prefix}     \> : \>  Prefix to be put at the begining of each runtime class\\
+\texttt{--db-class-prefix=}\emph{prefix}  \> : \>  Prefix to be put at the begining of each database class\\
+\texttt{--attr-style=}implicit       \> : \>  Attribute methods have the attribute name\\
+\texttt{--attr-style=}explicit       \> : \>  Attribute methods have the attribute name prefixed by get/set (default)\\
+\texttt{--schema-name=}\emph{schname}     \> : \>  Schema name (default is \emph{package})\\
+\texttt{--export}                    \> : \>  Export class instances in the .h file\\
+\texttt{--dynamic-attr}              \> : \>  Uses a dynamic fetch for attributes in the get and set methods\\
+\texttt{--down-casting=yes}          \> : \>  Generates the down casting methods (the default)\\
+\texttt{--down-casting=no}           \> : \>  Does not generate the down casting methods\\
+\texttt{--attr-cache=yes}            \> : \>  Use a second level cache for attribute value\\
+\texttt{--attr-cache=no}             \> : \>  Does not use a second level cache for attribute value (the default)\\
+\texttt{--namespace=}\emph{namespace}     \> : \>  Define classes with the namespace \emph{namespace}\\
+\texttt{--c-suffix=}\emph{suffix}         \> : \>  Use \emph{suffix} as the C file suffix\\
+\texttt{--h-suffix=}\emph{suffix}         \> : \>  Use \emph{suffix} as the H file suffix\\
+\texttt{--gen-class-stubs}           \> : \>  Generates a file class\_stubs.h for each class\\
+\texttt{--class-enums=yes}           \> : \>  Generates enums within a class\\
+\texttt{--class-enums=no}            \> : \>  Do not generate enums within a class (default)\\
+\texttt{--gencode-error-policy=status}\> : \> Status oriented error policy (the default)\\
+\texttt{--gencode-error-policy=exception} \> : \> Exception oriented error policy\\
+\texttt{--rootclass=}\emph{rootclass}     \> : \>  Use \emph{rootclass} name for the root class instead of the package name\\
+\texttt{--no-rootclass}           \> : \>     Does not use any root class\\
+\end{tabbing}
+For instance to generate a schema-oriented C++ API in the directory
+\texttt{tmp}, prefixing the runtime classes with \texttt{pp},
+suffixing C++ files with \texttt{.cpp}, we invoke \texttt{eyedbodl} as follows:
+\begin{verbatim}
+eyedbodl --gencode C++ --output-dir=tmp --class-prefix=pp \
+         --c-suffix=.cpp person.odl
+\end{verbatim}
+\subsect{The Generated Code}
+Seven files are generated:
+\be
+\item the header C++ file: \emph{package}\texttt{.h}
+ (for instance \texttt{person.h})
+\item the core C++ file: \emph{package}\texttt{.cc}
+(for instance \texttt{person.cc})
+\item files for frontend and backend user method support:
+\be
+\item stubs: \emph{package}\texttt{stubsfe.h}
+and  \emph{package}\texttt{stubsbe.h}
+\item skeleton: \emph{package}\texttt{mthfe-skel.h}
+and  \emph{package}\texttt{mthbe-skel.h}
+\item a template Makefile:
+\texttt{Makefile.}\emph{package}
+\ee
+(for instance \texttt{Makefile.person})
+\ee
+The use of the generated files for the user methods are introduced in the
+chapter \texttt{Methods and Triggers}.
+\\
+\\
+The header file contains C++ class declarations and function prototypes.
+\\
+The following classes are generated:
+\be
+\item the package class whose name is the package name and which contains
+a static init method, a static release method and two methods for
+schema update within a database, for instance:
+\verbsize
+\begin{verbatim}
+class person {
+ public:
+  static void init();
+  static void release();
+  static eyedb::Status updateSchema(eyedb::Database *db);
+  static eyedb::Status updateSchema(eyedb::Schema *m);
+};
+\end{verbatim}
+\normalsize
+\be
+\item the \texttt{person::init()} method must be called before any use of
+the schema-oriented API.
+\item the \texttt{person::release()} should be called after any use
+of this API, but this call is not mandatory as this method only
+release allocated runtime memory.
+\item the \texttt{person::updateSchema()} methods are not generally called
+directly by client code.
+\ee
+\item the database class whose name is \emph{package}Database inherited
+from the generic \texttt{eyedb::Database} class.
+\\
+This class overloads two inherited methods: the \texttt{open} and the
+\texttt{loadObject\_realize} methods.
+\\
+The overloaded \texttt{open} method has two purposes:
+\bi
+\item database opening.
+\item schema checking: it checks that the opened database schema is strictly
+identical to the runtime schema.
+\ei
+The \texttt{loadObject\_realize} method has one purpose:
+\bi
+\item runtime object construction: for any object loaded from the database
+whose class is one of the generated classes
+(for instance \texttt{Person}, \texttt{Car}), it call the generated
+class constructor. For instance if an object loaded is of class \texttt{Person}
+it will perform a \texttt{new Person(db)} to construct correctly
+the loaded object.
+\ei
+Note that to use the generated schema-oriented API it is not mandatory
+to use the generated database class: you can use the genetic \texttt{eyedb::Database}
+class; there is a lot of cases where you will get no trouble.
+But to avoid any potential trouble, it is strongly recommended to use the
+generated database class.
+\item a root class which is the superclass of
+all generated classes, except the package and the database classes.
+\\
+This class is used to facilitate the down casting process.
+\\
+If the command line option \texttt{-no-rootclass} is specified, the root
+class is not generated.
+\\
+Unless its name is given using the command line option \texttt{-rootclass name},
+its name is \texttt{Root}.
+\item for each ODL class, a C++ class is generated with the same name
+possibly prefixed by a string if specified by the command line option
+\texttt{-class-prefix}.
+This class is inherited from the root class.
+\\
+\\
+The generated class contains the following method families:
+\be
+\item constructors.
+\item down casting methods.
+\item selector attribute methods.
+\item modifier attribute methods.
+\item methods mapped from ODL backend or frontend methods.
+\item client stubs.
+\item the destructor.
+\ee
+\ee
+\subsect{Constructors and Copy Operator}
+For each C++ class, two constructors and the assignment operator are
+generated:
+\verbsize
+\begin{verbatim}
+  Person(eyedb::Database * = 0);
+  Person(const Person& x);
+
+  Person& operator=(const Person& x);
+\end{verbatim}
+\normalsize
+\bi
+\item The first constructor is used to instantiate transient or persistent objects.
+\\
+The following code:
+\verbsize
+\begin{verbatim}
+  Person *p = new Person(&db);
+\end{verbatim}
+\normalsize
+does nearly the same things as:
+\verbsize
+\begin{verbatim}
+  eyedb::Class *cls = db.getSchema()->getClass("Person");
+  eyedb::Object *o = cls->newObj(&db);
+\end{verbatim}
+\normalsize
+The major difference is that in the second case, an \texttt{eyedb::Object} instance
+(in fact an \texttt{eyedb::Struct} instance) is created while in the first case
+an \texttt{Person} (which inherits from \texttt{eyedb::Struct}) instance is created.
+\\
+But in both cases, you can use the instantiated object to set and get
+\texttt{Person} attribute values and to synchronize the runtime object with
+the database.
+\\
+To set or get attribute values in the second case, you need to use
+the \texttt{eyedb::Attribute::setValue} or \texttt{eyedb::Attribute::getValue} methods
+while in the first case, you may use the generated selector and modifier
+methods such as \texttt{Person::setName} or \texttt{Person::getAge}.
+\item The second constructor is the copy constructor. For instance:
+\verbsize
+\begin{verbatim}
+  Person *p1 = new Person(&db);
+
+  Person p2 = *p1;
+\end{verbatim}
+\normalsize
+\item At last, the assignment operator can be used as follows:
+\verbsize
+\begin{verbatim}
+  Person *p1 = new Person(&db);
+  Person *p2 = new Person(&db);
+
+  *p2 = *p1;
+\end{verbatim}
+\normalsize
+\ei
+
+\subsect{Down Casting Methods and Functions}
+Unless the command line option \texttt{-down-casting no} has been used,
+down casting methods and functions have been generated.
+\\
+For instance, the following methods have been generated for the \texttt{Person} class:
+\verbsize
+\begin{verbatim}
+class Person : public Root {
+  // ...
+  virtual Person *asPerson() {return this;}
+  virtual const Person *asPerson() const {return this;}
+  virtual Employee *asEmployee() {return (Employee *)0;}
+  virtual const Employee *asEmployee() const {return (const Employee *)0;}
+  // ...
+};
+\end{verbatim}
+\normalsize
+These methods are very useful to process safe down casting.
+The down casting may be used in several cases.
+For instance, if you instantiate an \texttt{Employee} object as follows:
+\verbsize
+\begin{verbatim}
+  extern void display(Person *);
+
+  Employee *empl = new Employee(&db);
+  display(empl);
+\end{verbatim}
+\normalsize
+the display function expects a \texttt{Person} instance: when calling
+it with an \texttt{Employee} instance, we do not make any mistake as
+the \texttt{Employee} class inherits from the \texttt{Person} class.
+\\
+Assume now, that the display function displays the name and the age
+of the \texttt{Person} instance and its salary if the instance is an
+employee. Using the down casting method \texttt{Person::asEmployee()},
+one can do as follows:
+\verbsize
+\begin{verbatim}
+void display(Person *p)
+{
+  cout << "name : " << p->getName() << endl;
+  cout << "age : " << p->getAge() << endl;
+  if (p->asEmployee())
+    cout << "salary : " << p->asEmployee()->getSalary() << endl;
+\end{verbatim}
+\normalsize
+Note that the call to this down casting method cost nearly nothing.
+Without the help of the down casting method, the previous code becomes:
+\verbsize
+\begin{verbatim}
+void display(Person *p)
+{
+  cout << "name : " << p->getName() << endl;
+  cout << "age : " << p->getAge() << endl;
+  if (!strcmp(p->getClass()->getName(), "Employee"))
+    cout << "salary : " << ((Employee *)p)->getSalary() << endl;
+\end{verbatim}
+\normalsize
+which is rather less efficient and less elegant.
+\\
+\\
+There is another case to use down casting methods and functions is when
+loading a database object.
+\\
+When loading a database object (for instance a \texttt{Person} database object)
+using the \texttt{eyedb::Database::loadObject}, we get a generic \texttt{eyedb::Object}
+instance, not a \texttt{Person} instance nor a \texttt{Employee} instance.
+\\
+Nevertheless, in the case of a \texttt{Person} database object has been
+loaded, a \texttt{Person} persistent runtime object has been correctly
+constructed by the generated API.
+\\
+So, it is legitimate to down cast the loaded \texttt{eyedb::Object} instance
+to a \texttt{Person} instance as follows:
+\verbsize
+\begin{verbatim}
+  eyedb::OQL q(&db, "select Person.age < %d", given_age);
+
+  eyedb::ObjectArray obj_arr(eyedb::True);
+  q.execute(obj_arr);
+  for (int i = 0; i < obj_arr.getCount(); i++)
+   {
+     Person *p = (Person *)obj_arr[i];
+     cout << "name: " << p->getName() << endl;
+   }
+\end{verbatim}
+\normalsize
+The cast:
+\verbsize
+\begin{verbatim}
+     Person *p = (Person *)obj_arr[i];
+\end{verbatim}
+\normalsize
+is legal according to the context but is not safe because neither static
+(i.e. compiler level) check nor runtime check is performed.
+\\
+Safe down casting functions are generated by \texttt{eyedbodl} as follows:
+\verbsize
+\begin{verbatim}
+inline Person *Person_c(eyedb::Object *o)
+{
+  Root *x = personDatabase::asRoot(o);
+  if (!x) return (Person *)0;
+  return x->asPerson();
+}
+\end{verbatim}
+\normalsize
+This function allows you to perform compiler and runtime check as follows:
+\verbsize
+\begin{verbatim}
+  for (int i = 0; i < obj_arr.getCount(); i++)
+   {
+     Person *p = Person_c(obj_arr[i]);
+     if (p) 
+       cout << "name: " << p->getName() << endl;
+   }
+\end{verbatim}
+\normalsize
+in the case of the loaded object is not a real \texttt{Person} instance,
+the \texttt{Person\_c} function returns a null pointer.
+\\
+\\
+It is strongly recommended to make use of these safe down casting methods
+and functions instead of performing manual down casting.
+\subsect{Selector Methods}
+For each attribute in the ODL class, \texttt{eyedbodl} generates one or more
+selector methods.
+\\
+The number and the form of the selector methods depends on the type
+of the attribute.
+\\
+An attribute type is a combination of:
+\be
+\item a primitive type which can take the form of a:
+\be
+\item basic type: for instance \texttt{int32}, \texttt{char} or \texttt{double}.
+\item system type: for instance \texttt{class}, \texttt{object}, \texttt{image}.
+\item user type: for instance \texttt{Person}, \texttt{Employee},
+\texttt{set<Car *>}.
+\item user enum: for instance \texttt{CivilState}.
+\ee
+\item the literal or object property:
+\be
+\item the literal property means that the attribute value has no identifier
+(i.e. \texttt{OID}).
+\item the object property means that the attribute value has an identifier.
+\ee
+\item an optional array modifier:
+\be
+\item multi-dimensionnal and variable size array are supported.
+\ee
+\ee
+For instance, the attribute:
+\verbsize
+\begin{verbatim}
+  attribute Address addr;
+\end{verbatim}
+\normalsize
+can be described as
+\{primitive type = \texttt{Address}, property = \texttt{literal}, array = \texttt{nil}\}
+%\\
+%\\
+%while the following attribute:
+%\verbsize
+%\begin{verbatim}
+%  attribute array<Person *> children;
+%\end{verbatim}
+%\normalsize
+%can be described as
+%\{primitive type = \texttt{Person}, property = \texttt{object}, array = \texttt{[]}\}
+\\
+\\
+The form of the selector methods are designed according to the
+following attribute type family:
+\begin{tabbing}
+\mbox{ }\mbox{ }\mbox{ }\=4. {\bf object basic, user or system type} \= : \texttt{Person *spouse},\kill
+\>1. {\bf literal basic or user enum type} \>: \texttt{int32 age}, \texttt{CivilState cstate}.\\
+\>2. {\bf literal string} \>: \texttt{string<32> town}, \texttt{string name},
+\texttt{string country}.\\
+\>3. {\bf literal user type} \>: \texttt{Address addr}\\
+\>4. {\bf object basic, user or system type} \>: \texttt{Person *spouse}\\
+\>5. {\bf object collection type}\>: \texttt{array<Person *> children}, \texttt{set<Car *>> cars}.\\
+\end{tabbing}
+All those type families support in an orthogonal way an multi-dimenstion
+array modifier.
+%%Concerning the form of the selector methods, the array modifier is orthogonal
+%%to those family types.
+\subsubsect{Literal Basic or User Enum Type}
+The selector method is under the form:
+\verbsize
+\begin{verbatim}
+<attribute primitive type> get<attribute name>(eyedb::Bool *isnull = 0,
+                                               eyedb::Status *status = 0) const
+\end{verbatim}
+\normalsize
+for instance for the \texttt{age} attribute:
+\verbsize
+\begin{verbatim}
+  eyedb::_int32 getAge(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) const;
+\end{verbatim}
+\normalsize
+Every selector method has the two following optional arguments:
+\be
+\item \texttt{isnull} : a pointer to a \texttt{eyedb::Bool} value.\\
+If this pointer is not null, the selector method assigns it to \texttt{eyedb::False}
+if the attribute value is not null, otherwise it assigns it to \texttt{eyedb::True}.
+\item \texttt{status} : a pointer to a \texttt{eyedb::Status} value.\\
+If this pointer is not null, the selector method assigns to \texttt{eyedb::Success}
+is the operation is successul, otherwise is assigns to the error status.
+Note that if you are using the exception error policy (the recommended
+one), this argument is not useful. If you have generated the schema-oriented
+C++ API using the \texttt{-error-policy exception} option, the
+\texttt{status} argument will not be generated.
+\ee
+\subsubsect{Literal String}
+The selector methods are under the form:
+\verbsize
+\begin{verbatim}
+const char *get<attribute name>(eyedb::Bool *isnull = 0,
+                                eyedb::Status *status = 0) const
+char get<attribute name>(unsigned int a0,
+                         eyedb::Bool *isnull = 0,
+                         eyedb::Status *status = 0) const
+\end{verbatim}
+\normalsize
+for instance for the \texttt{name} attribute:
+\verbsize
+\begin{verbatim}
+  const char *getName(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) const;
+  char getName(unsigned int a0, eyedb::Bool *isnull = 0, eyedb::Status *status = 0)  const;
+\end{verbatim}
+\normalsize
+The first selector method is to get the full string value of the attribute
+while the second one is to get a specific character within this string value.
+The argument \texttt{a0} is the number of the character.
+\subsubsect{Literal User Type}
+The selector methods are under the form:
+\verbsize
+\begin{verbatim}
+  <attribute primitive type>* get<attribute name>(eyedb::Bool *isnull = 0,
+                                                  eyedb::Status *status = 0)
+  const <attribute primitive type>* get<attribute name>(eyedb::Bool *isnull = 0,
+                                                        eyedb::Status *status = 0) const
+\end{verbatim}
+\normalsize
+for instance for the \texttt{addr} attribute:
+\verbsize
+\begin{verbatim}
+  Address *getAddr(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) ;
+  const Address *getAddr(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) const;
+\end{verbatim}
+\normalsize
+Note than the returned value cannot be a null pointer as this is literal
+attribute fully included in the instance.
+\subsubsect{Object Basic, User or System Type}
+The selector methods are under the form:
+\verbsize
+\begin{verbatim}
+  <attribute primitive type>* get<attribute name>(eyedb::Bool *isnull = 0,
+                                                  eyedb::Status *status = 0)
+  const <attribute primitive type>* get<attribute name>(eyedb::Bool *isnull = 0,
+                                                        eyedb::Status *status = 0) const
+\end{verbatim}
+\normalsize
+for instance for the \texttt{spouse} attribute:
+\verbsize
+\begin{verbatim}
+  Person *getSpouse(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) ;
+  const Person *getSpouse(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) const;
+  eyedb::Oid getSpouseOid(eyedb::Status *status = 0);
+\end{verbatim}
+\normalsize
+Note that:
+\be
+\item the returned value can be a null pointer as this a is
+an object attribute with its own life.
+\item for this same reason, there is a method to get the identifier of this
+object without loading it.
+\item this selector method automatically loads the related object attribute
+when called.
+\ee
+\subsubsect{Object Collection Type}
+As introduced in previous chapter, there are two main types of collections:
+ordered (or indexed) collections - \texttt{array} and \texttt{list} - and not
+ordered collections - \texttt{set} and \texttt{bag}.
+The generated methods for these two main types are similar but a
+little bit different.
+\\
+For the not ordered collections, the selector method are as follows:
+\verbsize
+\begin{verbatim}
+  <collection type>* get<attribute name>Coll(eyedb::Bool *isnull = 0,
+                                             eyedb::Status *status = 0) ;
+  unsigned int get<attribute name>Count(eyedb::Bool *isnull = 0,
+                                        eyedb::Status *status = 0) const;
+  const <collection type>* get<attribute name>Coll(eyedb::Bool *isnull = 0,
+                                                   eyedb::Status *status = 0) const;
+  eyedb::Oid get<attribute name>Oid(eyedb::Status *status = 0);
+  const <collection object type>* get<attribute name>At(unsigned int ind,
+                                                        eyedb::Bool *isnull = 0,
+                                                        eyedb::Status *status = 0) const;
+  <collection object type>* get<attribute name>At(unsigned int ind,
+                                                  eyedb::Bool *isnull = 0,
+                                                  eyedb::Status *status = 0);
+  eyedb::Oid get<attribute name>OidAt(unsigned int ind,
+                                      eyedb::Status *status = 0) const;
+\end{verbatim}
+\normalsize
+where \texttt{<collection type>} can be:
+\be
+\item \texttt{eyedb::CollSet} for a collection set
+\item \texttt{eyedb::CollBag} for a collection bag
+%\item \texttt{eyedb::CollArray} for a collection array
+\ee
+and where \texttt{<collection object type>} is the type which is composing
+the collection.
+\\
+\\
+Note that if the collection is not a literal but an object, the following
+extra method returning the collection oid is generated:
+\verbsize
+\begin{verbatim}
+  eyedb::Oid get<attribute name>Oid(eyedb::Status *status = 0);
+\end{verbatim}
+\normalsize
+For the \texttt{cars} attribute the following code is generated:
+\verbsize
+\begin{verbatim}
+  eyedb::CollSet *getCarsColl(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) ;
+  unsigned int getCarsCount(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) const;
+  const eyedb::CollSet *getCarsColl(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) const;
+  const Car *getCarsAt(unsigned int ind, eyedb::Bool *isnull = 0,
+                       eyedb::Status *status = 0) const;
+  Car *getCarsAt(unsigned int ind, eyedb::Bool *isnull = 0, eyedb::Status *status = 0);
+  eyedb::Oid getCarsOidAt(unsigned int ind, eyedb::Status *status = 0) const;
+\end{verbatim}
+\normalsize
+Let have a look to each method:
+\be
+\item
+\verbsize
+\begin{verbatim}
+eyedb::CollSet *getCarsColl(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) ;
+const eyedb::CollSet *getCarsColl(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) const;
+\end{verbatim}
+\normalsize
+returns the collection object (const and not const methods).
+\item
+\verbsize
+\begin{verbatim}
+unsigned int getCarsCount(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) const;
+\end{verbatim}
+\normalsize
+returns the collection item count.
+\verbsize
+\item
+\verbsize
+\begin{verbatim}
+const Car *getCarsAt(unsigned int ind, eyedb::Bool *isnull = 0,
+                     eyedb::Status *status = 0) const;
+Car *getCarsAt(unsigned int ind, eyedb::Bool *isnull = 0, eyedb::Status *status = 0);
+\end{verbatim}
+\normalsize
+returns the \#\texttt{ind} element in the collection. As the collection
+is not ordered, the index of the element to get depends on the
+load ordering and is not specified. These array-oriented methods
+are generated for user convenience because it is somewhat easier to
+scan an array that to scan an unordered set.
+\item
+\verbsize
+\begin{verbatim}
+eyedb::Oid getCarsOidAt(unsigned int ind, eyedb::Status *status = 0) const;
+\end{verbatim}
+\normalsize
+returns the \#\texttt{ind} oid in the collection.
+The remark about the index of the element is the same as above.
+\ee
+For the ordered collections, the selector method are as follows:
+\verbsize
+\begin{verbatim}
+  <collection type>* get<attribute name>Coll(eyedb::Bool *isnull = 0,
+                                             eyedb::Status *status = 0) ;
+  unsigned int get<attribute name>Count(eyedb::Bool *isnull = 0,
+                                        eyedb::Status *status = 0) const;
+  const <collection type>* get<attribute name>Coll(eyedb::Bool *isnull = 0,
+                                                   eyedb::Status *status = 0) const;
+  eyedb::Oid get<attribute name>Oid(eyedb::Status *status = 0);
+  const <collection object type>* retrieve<attribute name>At(unsigned int ind,
+                                                             eyedb::Bool *isnull = 0,
+                                                             eyedb::Status *status = 0) const;
+  <collection object type>* retrieve<attribute name>At(unsigned int ind,
+                                                       eyedb::Bool *isnull = 0,
+                                                       eyedb::Status *status = 0);
+  eyedb::Oid retrieve<attribute name>OidAt(unsigned int ind,
+                                           eyedb::Status *status = 0) const;
+\end{verbatim}
+\normalsize
+where \texttt{<collection type>} can be:
+\be
+\item \texttt{eyedb::CollArray} for a collection array
+\item \texttt{eyedb::CollList} for a collection list\\
+\emph{Note that the collection list are currently not implemented in
+\eyedb}.
+\ee
+and where \texttt{<collection object type>} is the type which is composing
+the collection.
+\\
+\\
+Note that if the collection is not a literal but an object, the following
+extra method returning the collection oid is generated:
+\verbsize
+\begin{verbatim}
+  eyedb::Oid get<attribute name>Oid(eyedb::Status *status = 0);
+\end{verbatim}
+\normalsize
+For the \texttt{children} attribute the following code is generated:
+\verbsize
+\begin{verbatim}
+  eyedb::CollArray *getChildrenColl(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) ;
+  unsigned int getChildrenCount(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) const;
+  const eyedb::CollArray *getChildrenColl(eyedb::Bool *isnull = 0, eyedb::Status *status = 0) const;
+  const Person *retrieveChildrenAt(unsigned int ind, eyedb::Bool *isnull = 0,
+                                   eyedb::Status *status = 0) const;
+  Person *retrieveChildrenAt(unsigned int ind, eyedb::Bool *isnull = 0,
+                             eyedb::Status *status = 0);
+  eyedb::Oid retrievedChildrenOidAt(unsigned int ind, eyedb::Status *status = 0) const;
+\end{verbatim}
+\normalsize
+Only the last three method templates differ from the corresponding
+\texttt{Car} method templates:
+\be
+\item
+\verbsize
+\begin{verbatim}
+const Person *retrievedChildrenAt(unsigned int ind, eyedb::Bool *isnull = 0,
+                                  eyedb::Status *status = 0) const;
+Person *retrievedChildrenAt(unsigned int ind, eyedb::Bool *isnull = 0,
+                            eyedb::Status *status = 0);
+\end{verbatim}
+\normalsize
+returns the \#\texttt{ind} element in the collection.
+As this collection is ordered, the index of the element to get is fully
+pertinent.
+\item
+\verbsize
+\begin{verbatim}
+eyedb::Oid retrievedChildrenOidAt(unsigned int ind, eyedb::Status *status = 0) const;
+\end{verbatim}
+\normalsize
+returns the \#\texttt{ind} oid in the collection.
+As this collection is ordered, the index of the element to get is fully
+pertinent.
+\ee
+\subsubsect{Array Modifier}
+When an array modifier is present for an attribute, all the previous
+selector methods change in the same way: for each dimension in the
+array, an index argument is added at the begining of the selector method.
+\\
+For instance, for an attribute \texttt{int x[23][12]}, the selector methods
+becomes:
+\verbsize
+\begin{verbatim}
+  eyedb::_int32 getX(unsigned int a0, unsigned int a1,
+                     eyedb::Bool *isnull = 0, eyedb::Status *status = 0) const;
+\end{verbatim}
+\normalsize
+A call to \texttt{getX(1, 3)} returns the attribute value \texttt{x[1][3]}.
+\\
+If the left dimension is variable, for instance \texttt{int x[][12]},
+the following extra method is generated:
+\verbsize
+\begin{verbatim}
+  unsigned int getXCount(eyedb::Status * = 0) const;
+\end{verbatim}
+\normalsize
+For instance,
+for the \texttt{other\_addrs} literal user type attribute, the following
+code is generated:
+\verbsize
+\begin{verbatim}
+  Address *getOtherAddrs(unsigned int a0, eyedb::Bool *isnull = 0, eyedb::Status * = 0) ;
+  const Address *getOtherAddrs(unsigned int a0, eyedb::Bool *isnull = 0,
+                               eyedb::Status * = 0) const;
+  unsigned int getOtherAddrsCount(eyedb::Status * = 0) const;
+\end{verbatim}
+\normalsize
+% EXAMPLE OF  other_addrs
+%
+%For instance, the \texttt{children} attribute has the following selector
+%methods:
+%\verbsize
+%\begin{verbatim}
+%  Person *getChildrenAt(unsigned int a0, eyedb::Bool *isnull = 0, eyedb::Status * = 0) ;
+%  const Person *getChildrenAt(unsigned int a0, eyedb::Bool *isnull = 0, eyedb::Status * = 0) const;
+%  eyedb::Oid getChildrenOid(unsigned int a0, eyedb::Status * = 0);
+%  unsigned int getChildrenCount(eyedb::Status * = 0) const;
+%\end{verbatim}
+%\normalsize
+%The two first method returns the \texttt{children} object at position \#\texttt{a0}, while
+%the third method returns the \texttt{children} \texttt{OID} at position \#\texttt{a0}.
+%\\
+%The last one returns the number of children in the variable dimension array.
+\subsect{Modidier Methods}
+The modifier methods are very similar to the selector methods.
+Their forms and their number depends on the same attribute type characteristics
+as the modifier methods.
+
+\subsubsect{Literal Basic or User Enum Type}
+The modifier method is under the form:
+\verbsize
+\begin{verbatim}
+eyedb::Status set<attribute name>(<attribute primitive type>);
+\end{verbatim}
+\normalsize
+for instance for the \texttt{age} attribute:
+\verbsize
+\begin{verbatim}
+  eyedb::Status setAge(eyedb::_int32);
+\end{verbatim}
+\normalsize
+\subsubsect{Literal String}
+The modifier methods are under the form:
+\verbsize
+\begin{verbatim}
+  eyedb::Status set<attribute name>(const char *);
+  eyedb::Status set<attribute name>(unsigned int a0, char);
+\end{verbatim}
+\normalsize
+for instance for the \texttt{name} attribute:
+\verbsize
+\begin{verbatim}
+  eyedb::Status setName(const char *);
+  eyedb::Status setName(unsigned int a0, char);
+\end{verbatim}
+\normalsize
+
+\subsubsect{Literal User Type}
+The modifier methods are under the form:
+\verbsize
+\begin{verbatim}
+eyedb::Status set<attribute name>(<attribute primitive type>*);
+\end{verbatim}
+\normalsize
+for instance for the \texttt{addr} attribute:
+\verbsize
+\begin{verbatim}
+  eyedb::Status setAddr(Address*);
+\end{verbatim}
+\normalsize
+
+\subsubsect{Object Basic, User or System Type}
+The modifier methods are under the form:
+\verbsize
+\begin{verbatim}
+eyedb::Status set<attribute name>(<attribute primitive type>*);
+eyedb::Status set<attribute name>Oid(const eyedb::Oid &);
+\end{verbatim}
+\normalsize
+for instance for the \texttt{spouse} attribute:
+\verbsize
+\begin{verbatim}
+  eyedb::Status setSpouse(Person*);
+  eyedb::Status setSpouseOid(const eyedb::Oid &);
+\end{verbatim}
+\normalsize
+
+\subsubsect{Object Collection Type}
+For unordered collection types, the modifier methods are under the form:
+\verbsize
+\begin{verbatim}
+  eyedb::Status set<attribute name>Coll(<collection type>*);
+  eyedb::Status set<attribute name>Oid(const eyedb::Oid &);
+  eyedb::Status addTo<attribute name>Coll(<collection object type>*,
+                                          unsigned int magorder = 0);
+  eyedb::Status rmvFrom<attribute name>Coll(<collection object type>*);
+  eyedb::Status addTo<attribute name>Coll(const eyedb::Oid &,
+                                          unsigned int magorder = 0);
+  eyedb::Status rmvFrom<attribute name>Coll(const eyedb::Oid &);
+\end{verbatim}
+\normalsize
+where \texttt{<collection type>} can be:
+\be
+\item \texttt{eyedb::CollSet} for a collection set
+\item \texttt{eyedb::CollBag} for a collection bag
+\ee
+and where \texttt{<collection object type>} is the type which composing
+the collection.
+\\
+\\
+Note that if the collection is not a literal but an object, the following
+extra method setting the collection oid is generated:
+\verbsize
+\begin{verbatim}
+  eyedb::Status set<attribute name>Oid(const eyedb::Oid &);
+\end{verbatim}
+\normalsize
+For the \texttt{cars} attribute, the following code is generated:
+\verbsize
+\begin{verbatim}
+  eyedb::Status setCarsColl(eyedb::CollSet*);
+  eyedb::Status addToCarsColl(Car*, unsigned int magorder = 0);
+  eyedb::Status addToCarsColl(const eyedb::Oid &, unsigned int magorder = 0);
+  eyedb::Status rmvFromCarsColl(Car*);
+  eyedb::Status rmvFromCarsColl(const eyedb::Oid &);
+\end{verbatim}
+\normalsize
+Let have a look to each method:
+\be
+\item
+\verbsize
+\begin{verbatim}
+eyedb::Status setCarsColl(eyedb::CollSet *coll);
+\end{verbatim}
+\normalsize
+sets the \texttt{cars} attribute collection to the input argument
+\texttt{coll}.
+\item
+\verbsize
+\begin{verbatim}
+eyedb::Status addToCarsColl(Car *car, unsigned int magorder = 0);
+\end{verbatim}
+\normalsize
+adds the \texttt{car} instance to the collection attribute \texttt{cars}.
+If the collection is not yet created, this method call will create one
+using the \texttt{magorder} argument for its magnitude order value.
+\item
+\verbsize
+\begin{verbatim}
+eyedb::Status addToCarsColl(const eyedb::Oid &car_oid, unsigned int magorder = 0);
+\end{verbatim}
+\normalsize
+adds the instance of \texttt{Car} whose oid is \texttt{car\_oid}
+to the collection attribute \texttt{cars}.
+If the collection is not yet created, this method call will create one
+using the \texttt{magorder} argument for its magnitude order value.
+\item
+\verbsize
+\begin{verbatim}
+eyedb::Status rmvFromCarsColl(Car *car);
+\end{verbatim}
+\normalsize
+removes the \texttt{car} instance from the collection attribute \texttt{cars}.
+If the instance is not found, an error is raised.
+\item
+\verbsize
+\begin{verbatim}
+eyedb::Status rmvFromCarsColl(const eyedb::Oid &car_oid);
+\end{verbatim}
+\normalsize
+removes the instance of \texttt{Car} whose oid is \texttt{car\_oid}
+from the collection attribute \texttt{cars}.
+If the instance is not found, an error is raised.
+\ee
+For ordered collection types, the modifier methods are under the form:
+\verbsize
+\begin{verbatim}
+  eyedb::Status set<attribute name>Coll(<collection type>*);
+  eyedb::Status set<attribute name>Oid(const eyedb::Oid &);
+  eyedb::Status setIn<attribute name>CollAt(int where, <collection object type>*,
+                                            unsigned int magorder = 0);
+  eyedb::Status setIn<attribute name>CollAt(int where, const eyedb::Oid &,
+                                            unsigned int magorder = 0);
+  eyedb::Status unsetIn<attribute name>CollAt(int where);
+\end{verbatim}
+\normalsize
+where \texttt{<collection type>} can be:
+\be
+\item \texttt{eyedb::CollArray} for a collection array
+\item \texttt{eyedb::CollList} for a collection list\\
+\emph{Note that the collection list are currently not implemented in
+\eyedb}.
+\ee
+and where \texttt{<collection object type>} is the type which composing
+the collection.
+\\
+\\
+Note that if the collection is not a literal but an object, the following
+extra method setting the collection oid is generated:
+\verbsize
+\begin{verbatim}
+  eyedb::Status set<attribute name>Oid(const eyedb::Oid &);
+\end{verbatim}
+\normalsize
+For the \texttt{children} attribute, the following code is generated:
+\verbsize
+\begin{verbatim}
+  eyedb::Status setChildrenColl(eyedb::CollArray*);
+  eyedb::Status setChildrenOid(const eyedb::Oid &);
+  eyedb::Status setInChildrenCollAt(int where, Person*, unsigned int magorder = 0);
+  eyedb::Status unsetInChildrenCollAt(int where);
+  eyedb::Status setInChildrenCollAt(int where, const eyedb::Oid &,
+                                    unsigned int magorder = 0);
+\end{verbatim}
+\normalsize
+Let have a look to each method:
+\be
+\item
+\verbsize
+\begin{verbatim}
+eyedb::Status setChildrenColl(eyedb::CollSet *coll);
+\end{verbatim}
+\normalsize
+sets the \texttt{children} attribute collection to the input argument
+\texttt{coll}.
+\item
+\verbsize
+\begin{verbatim}
+eyedb::Status setInChildrenCollAt(int where, Person *person,
+                                  unsigned int magorder = 0);
+\end{verbatim}
+\normalsize
+adds the \texttt{person} instance to the collection attribute \texttt{children} at position \texttt{where}.
+If the collection is not yet created, this method call will create one
+using the \texttt{magorder} argument for its magnitude order value.
+\item
+\verbsize
+\begin{verbatim}
+eyedb::Status setInChildrenCollAt(int where, const eyedb::Oid &person_oid,
+                                  unsigned int magorder = 0);
+\end{verbatim}
+\normalsize
+adds the instance of \texttt{Person} whose oid is \texttt{person\_oid}
+to the collection attribute \texttt{children} at position \texttt{where}..
+If the collection is not yet created, this method call will create one
+using the \texttt{magorder} argument for its magnitude order value.
+\item
+\verbsize
+\begin{verbatim}
+eyedb::Status unsetInChildrenCollAt(int where);
+\end{verbatim}
+\normalsize
+removes the instance found at position \texttt{where}
+from the collection attribute \texttt{children}.
+\ee
+\subsubsect{Array Modifier}
+When an array modifier is present for an attribute, all the previous
+modifier methods change in the same way: for each dimension in the
+array, an index argument is added at the begining of the selector method.
+\\
+For instance, for an attribute \texttt{int x[32][64]}, the modifier methods
+becomes:
+\verbsize
+\begin{verbatim}
+  eyedb::Status setX(unsigned int a0, unsigned int a1, eyedb::_int32);
+\end{verbatim}
+\normalsize
+A call to \texttt{setX(2, 24)} sets the attribute value \texttt{x[2][24]}.
+\\
+\\
+For instance,
+for the \texttt{other\_addrs} literal user type attribute, the following
+code is generated:
+\verbsize
+\begin{verbatim}
+  eyedb::Status setOtherAddrs(unsigned int a0, Address *);
+  eyedb::Status setOtherAddrsCount(unsigned int count);
+\end{verbatim}
+\normalsize
+\subsubsect{Methods mapped from ODL methods}
+For each ODL class method, there is a generated C++ method with
+the same name and the corresponding type.
+\\
+The generated methods in our example is as follows:
+\verbsize
+\begin{verbatim}
+  virtual eyedb::Status change_address(const char * street, const char * town,
+                                       char * &oldstreet, char * &oldtown,
+                                       eyedb::_int32 &retarg);
+
+  static eyedb::Status getPersonCount(eyedb::Database *db, eyedb::_int32 &retarg);
+\end{verbatim}
+\normalsize
+
+%%\subsubsect{Client Stubs}
+
+\subsect{Initialization}
+The minimal \eyedb C++ program using a generated schema-oriented API
+is as follows (using our example):
+\verbsize
+\begin{verbatim}
+#include "person.h"
+
+int
+main(int argc, char *argv[])
+{
+  eyedb::init(argc, argv);
+  person::init();
+  // ...
+  person::release();
+  eyedb::release();
+  return 0;
+}
+\end{verbatim}
+\normalsize
+A few remarks about this code:
+\be
+\item the file \texttt{person.h} contains the whole generated C++ API and
+includes the generic \eyedb API.
+\item the \eyedb C++ layer must be initialized using one of the static method
+\texttt{init} method of the class \texttt{EyeDB}.
+\item the generated C++ layer must be initialized using the static method
+\texttt{init} of the class \emph{package}.
+\item the last statements \texttt{person::release()} and \texttt{eyedb::release()}
+allow you to release all the allocated resources and to close opened databases
+and connections.
+\\
+Note that this statement is optionnal as all allocated resources,
+opened databases and connections will be automatically released or closed
+in the \texttt{exit()} function.
+\ee
+
+\subsect{Database Opening}
+As shown in a previous section, it is recommended to use the generated
+C++ database class to open a database with the template schema.
+\\
+For instance:
+\verbsize
+\begin{verbatim}
+  eyedb::Connection conn;
+  conn.open();
+
+  const char *dbname = argv[1];
+
+  person::Database db(dbname);
+  db.open(&conn, eyedb::Database::DBRW);
+\end{verbatim}
+\normalsize
+%% Topics to introduce:
+%%  - the class hierarchy and the underlying object model
+%%     Object/Instance/Agregat/Struct/Enum/Basic/Collection/CollXxxx
+%%     Object/Class/AgregatClass/StructClass/EnumClass/BasicClass/CollectionClass
+%%     Database
+%%     Schema
+%%     -> briefly the main methods for instantiation and schema browsing
+%%     -> the main methods for each class family
+%%  - transactions
+%%  - creating and updating objects
+%%     -> eyedb::RecMode
+%%     -> eyedb::Database::storeOnCommit(), xxxRegister(), storeObjects()
+%%  - loading objects
+%%     -> eyedb::RecMode
+%%  - removing objects
+%%     -> eyedb::RecMode
+%%  - cache management
+%%     -> first level cache => mechanisms + eyedb::Database::xxxx
+%%     -> schema-oriented second level 
+%%  - schema-oriented calling methods
+%%  - collections: all the methods
+%%  - complex queries: eyedb::Value
+%%  - schema && class manipulation: eyedb::Class, eyedb::Attribute, eyedb::Schema
+%%  - schema generation: eyedb::Schema::genXXX()
+%%  - memory management
+%%  - error management
+
+%%\subsect{Object Manipulation}
+
+%%\subsect{Creating Runtime Objects}
+
+%%\subsect{Object Loading}
+
+%%\subsect{Calling Methods}
+
+%%\sect{Error Management}
+
+%%\sect{Cache Management}
+
+%%\sect{Memory Management}
+
+%%\sect{The Class Hierarchy}
+
+\sect{Examples}
+This section introduces a few complete simple examples that can be found
+in the directory
+\emph{prefix}\texttt{/share/doc/eyedb/examples}.
+The \texttt{README} file describes the way to compile and run these examples.
+\\
+The first two programs listed here introduce the generic C++ API of
+\eyedb while the two following programs presents the
+generated schema-oriented C++ API through the simple schema example introduced
+in this chapter. The last example shows \texttt{EYEDBDBM} instance
+manipulation.
+\subsect{Generic Query Example}
+This example introduces a simple query program which takes
+two arguments: the database name and an OQL construct. It executes
+the OQL construct and displays on its standard output the returned
+atoms.
+\verbsize
+\begin{verbatim}
+// examples/C++Binding/generic/query/query.cc
+
+#include <eyedb/eyedb.h>
+
+using namespace std;
+
+int
+main(int argc, char *argv[])
+{
+  eyedb::init(argc, argv);
+
+  if (argc != 3) {
+    fprintf(stderr, "usage: %s <dbname> <query>\n", argv[0]);
+    return 1;
+  }
+
+  eyedb::Exception::setMode(eyedb::Exception::ExceptionMode);
+
+  try {
+    eyedb::Connection conn;
+    // connecting to the eyedb server
+    conn.open();
+
+    eyedb::Database db(argv[1]);
+
+    // opening database argv[1]
+    db.open(&conn, eyedb::Database::DBRW);
+
+    // beginning a transaction
+    db.transactionBegin();
+
+    // performing the OQL query argv[2] using the eyedb::OQL interface
+    eyedb::OQL q(&db, argv[2]);
+
+    eyedb::ValueArray arr;
+    q.execute(arr);
+
+    cout << "###### Performing the OQL query " << argv[2] <<
+      " using the eyedb::OQL interface" << endl;
+
+    // for each value returned in the query, display it:
+    for (int i = 0; i < arr.getCount(); i++) {
+      // in case of the returned value is an oid, load it first:
+      if (arr[i].type == eyedb::Value::OID) {
+        eyedb::Object *o;
+        db.loadObject(arr[i].oid, &o);
+        cout << o;
+        o->release();
+      }
+      else
+        cout << arr[i] << endl;
+    }
+
+    // performing the same query using eyedb::OQLIterator interface
+    // [1]: getting all returned values
+
+    cout << "\n###### Performing the same query using eyedb::OQLIterator "
+      "interface: getting all returned values" << endl;
+
+    eyedb::OQLIterator iter(&db, argv[2]);
+    eyedb::Value val;
+
+    while (iter.next(val)) {
+      // in case of the returned value is an oid, load it first:
+      if (val.getType() == eyedb::Value::OID) {
+        eyedb::Object *o;
+        db.loadObject(val.oid, &o);
+        cout << o;
+
+        // in case of the returned object is a collection, display its
+        // contents
+        if (o->asCollection()) {
+          eyedb::CollectionIterator citer(o->asCollection());
+          cout << "contents BEGIN\n";
+          eyedb::Object *co;
+          while(citer.next(co)) {
+            cout << co;
+            co->release();
+          }
+          cout << "contents END\n\n";
+        }
+        // in case of the returned object is a class, display its
+        // extent
+        else if (o->asClass()) {
+          eyedb::ClassIterator citer(o->asClass());
+          cout << "extent BEGIN\n";
+          eyedb::Object *co;
+          while(citer.next(co)) {
+            cout << co;
+            co->release();
+          }
+          cout << "extent END\n\n";
+        }
+
+        o->release();
+      }
+      else
+        cout << val << endl;
+    }
+
+    // [2]: getting only returned objects
+
+    cout << "\n###### Performing the same query using eyedb::OQLIterator "
+      "interface: getting only returned objects" << endl;
+
+    eyedb::OQLIterator iter2(&db, argv[2]);
+    eyedb::Object *o;
+
+    while (iter2.next(o)) {
+      cout << o;
+      o->release();
+    }
+
+    // committing the transaction
+    db.transactionCommit();
+  }
+
+  catch(eyedb::Exception &e) {
+    cerr << argv[0] << ": " << e;
+    eyedb::release();
+    return 1;
+  }
+
+  eyedb::release();
+
+  return 0;
+}
+\end{verbatim}
+For instance:
+\begin{verbatim}
+./query person "select Person"
+./query EYEDBDBM "select class"
+\end{verbatim}
+\normalsize
+\subsect{Generic Storing Example}
+This example introduces a simple store program which takes
+three arguments: the database name, a person name and a person age. It
+creates a new instance of person using the given name and age.
+\verbsize
+\begin{verbatim}
+// examples/C++Binding/generic/store/store.cc
+
+#include <eyedb/eyedb.h>
+
+using namespace std;
+
+int
+main(int argc, char *argv[])
+{
+  eyedb::init(argc, argv);
+
+  if (argc != 4) {
+    fprintf(stderr, "usage: %s <dbname> <person_name> <person_age>\n",
+            argv[0]);
+    return 1;
+  }
+
+  eyedb::Exception::setMode(eyedb::Exception::ExceptionMode);
+
+  try {
+    eyedb::Connection conn;
+    // connecting to the eyedb server
+    conn.open();
+
+    eyedb::Database db(argv[1]);
+
+    // opening database argv[1]
+    db.open(&conn, eyedb::Database::DBRW);
+
+    // beginning a transaction
+    db.transactionBegin();
+
+    // looking for class 'Person'
+    eyedb::Class *personClass = db.getSchema()->getClass("Person");
+
+    // looking for the attribute 'name' and 'age' in the class 'Person'
+    const eyedb::Attribute *name_attr = personClass->getAttribute("name");
+    if (!name_attr) {
+      fprintf(stderr, "cannot find name attribute in database\n");
+      return 1;
+    }
+
+    const eyedb::Attribute *age_attr = personClass->getAttribute("age");
+
+    if (!age_attr) {
+      fprintf(stderr, "cannot find age attribute in database\n");
+      return 1;
+    }
+
+    // instanciating a 'Person' object
+    eyedb::Object *p = personClass->newObj(&db);
+
+    // setting the name argv[2] to the new Person instance
+    name_attr->setSize(p, strlen(argv[2])+1);
+    name_attr->setValue(p, (eyedb::Data)argv[2], strlen(argv[2])+1, 0);
+
+    // setting the age argv[3] to the new Person instance
+    int age = atoi(argv[3]);
+    age_attr->setValue(p, (eyedb::Data)&age, 1, 0);
+    p->store();
+
+    // committing the transaction
+    db.transactionCommit();
+  }
+
+  catch(eyedb::Exception &e) {
+    cerr << e;
+    eyedb::release();
+    return 1;
+  }
+
+  eyedb::release();
+
+  return 0;
+}
+\end{verbatim}
+For instance:
+\begin{verbatim}
+./store person john 32
+./store person mary 28
+\end{verbatim}
+
+\normalsize
+\subsect{Schema-Oriented Query Example}
+This example introduces a simple schema-oriented query program which takes
+two arguments: the database name and an OQL construct. It executes
+the OQL construct and displays on its standard output the returned
+atoms.
+\verbsize
+\begin{verbatim}
+// examples/C++Binding/schema-oriented/query/query.cc
+
+#include "person.h"
+
+using namespace std;
+
+int
+main(int argc, char *argv[])
+{
+  eyedb::init(argc, argv);
+  person::init();
+
+  if (argc != 3) {
+    fprintf(stderr, "usage: %s <dbname> <query>\n", argv[0]);
+    return 1;
+  }
+
+  eyedb::Exception::setMode(eyedb::Exception::ExceptionMode);
+
+  try {
+    eyedb::Connection conn;
+    // connecting to the eyedb server
+    conn.open();
+
+    // opening database argv[1] using 'personDatabase' class
+    personDatabase db(argv[1]);
+    db.open(&conn, eyedb::Database::DBRW);
+
+    // beginning a transaction
+    db.transactionBegin();
+
+    // performing the OQL query argv[2]
+    eyedb::OQL q(&db, argv[2]);
+
+    eyedb::ObjectArray arr;
+    q.execute(arr);
+
+    // for each Person returned in the query, display its name and age,
+    // its address, its spouse name and age and its cars
+    for (int i = 0; i < arr.getCount(); i++) {
+      Person *p = Person_c(arr[i]);
+      if (p) {
+        cout << "name:    " << p->getName() << endl;
+        cout << "age:     " << p->getAge() << endl;
+
+        if (p->getAddr()->getStreet().size())
+          cout << "street:  " << p->getAddr()->getStreet() << endl;
+
+        if (p->getAddr()->getTown().size())
+          cout << "town:    " << p->getAddr()->getTown() << endl;
+
+        if (p->getSpouse()) {
+          cout << "spouse_name: " << p->getSpouse()->getName() << endl;
+          cout << "spouse_age:  " << p->getSpouse()->getAge() << endl;
+        }
+
+        eyedb::CollectionIterator iter(p->getCarsColl());
+        Car *car;
+        while (iter.next((eyedb::Object *&)car)) {
+          cout << "car: #" << i << ": " <<
+            car->getBrand() << ";" <<
+            car->getNum() << endl;
+        }
+      }
+    }
+
+    // committing the transaction
+    db.transactionCommit();
+  }
+
+  catch(eyedb::Exception &e) {
+    cerr << argv[0] << ": " << e;
+    eyedb::release();
+    return 1;
+  }
+
+  eyedb::release();
+
+  return 0;
+}
+\end{verbatim}
+For instance:
+\begin{verbatim}
+./query person "select Person"
+\end{verbatim}
+\normalsize
+\subsect{Schema-Oriented Storing Example}
+This example introduces a simple schema-oriented store program which takes
+four arguments: the database name, a person name, a person age and the
+name of its spouse. It
+creates a new instance of person using the given name and age and mary
+this person to the spouse whose name is given.
+\verbsize
+\begin{verbatim}
+// examples/C++Binding/schema-oriented/store/store.cc
+
+#include "person.h"
+
+int
+main(int argc, char *argv[])
+{
+  // initializing the EyeDB layer
+  eyedb::init(argc, argv);
+
+  // initializing the person package
+  person::init();
+
+  if (argc != 5) {
+    fprintf(stderr, "usage: %s <dbname> <person name> <person age> "
+            "<spouse name>\n", argv[0]);
+    return 1;
+  }
+
+  const char *dbname = argv[1];
+  const char *name = argv[2];
+  int age = atoi(argv[3]);
+  const char *spouse_name = argv[4];
+
+  eyedb::Exception::setMode(eyedb::Exception::ExceptionMode);
+
+  try {
+    eyedb::Connection conn;
+
+    // connecting to the EyeDB server
+    conn.open();
+
+    // opening database dbname using 'personDatabase' class
+    personDatabase db(dbname);
+    db.open(&conn, eyedb::Database::DBRW);
+
+    // beginning a transaction
+    db.transactionBegin();
+
+    // first looking for spouse
+    eyedb::OQL q(&db, "select Person.name = \"%s\"", spouse_name);
+
+    eyedb::ObjectArray arr;
+    q.execute(arr);
+
+    // if not found, returns an error
+    if (!arr.getCount()) {
+      fprintf(stderr, "cannot find spouse '%s'\n", spouse_name);
+      return 1;
+    }
+
+    // (safe!) casting returned object
+    Person *spouse = Person_c(arr[0]);
+
+    // creating a Person
+    Person *p = new Person(&db);
+
+    p->setCstate(Sir);
+    p->setName(name);
+    p->setAge(age);
+
+    p->setSpouse(spouse);
+
+    // spouse is no more necessary: releasing it
+    spouse->release();
+
+    p->getAddr()->setStreet("voltaire");
+    p->getAddr()->setTown("paris");
+
+    // creating two cars
+    Car *car1 = new Car(&db);
+    car1->setBrand("renault");
+    car1->setNum(18374);
+
+    Car *car2 = new Car(&db);
+    car2->setBrand("ford");
+    car2->setNum(233491);
+
+    // adding the cars to the created person
+    p->addToCarsColl(car1);
+    p->addToCarsColl(car2);
+
+    // car pointers are no more necessary: releasing them
+    car1->release();
+    car2->release();
+
+    // creating ten children
+    for (int i = 0; i < 10; i++) {
+      Person *c = new Person(&db);
+      char tmp[64];
+
+      c->setAge(i);
+      sprintf( tmp, "%d", i);
+      c->setName( (std::string(name) + std::string("_") + std::string(tmp)).c_str() );
+      p->setInChildrenCollAt(i, c);
+      c->release();
+    }
+
+    // storing all in database
+    p->store(eyedb::RecMode::FullRecurs);
+
+    // committing the transaction
+    db.transactionCommit();
+
+    // releasing p
+    p->release();
+  }
+
+  catch(eyedb::Exception &e) {
+    std::cerr << argv[0] << ": " << e;
+    eyedb::release();
+    return 1;
+  }
+
+  // releasing the EyeDB layer: this is not mandatory
+  eyedb::release();
+
+  return 0;
+}
+\end{verbatim}
+\begin{verbatim}
+./store person wayne 34
+./store person poppins 51
+\end{verbatim}
+\normalsize
+
+\subsect{Simple Administration Example}
+This simple example introduces the way to manipulate objects in the
+\texttt{EYEDBDBM} database. This program:
+\be
+\item displays the schema of the \texttt{EYEDBDBM} database,
+\item displays the \eyedb user names,
+\item for each database, it displays the name, the database file and
+the user access information.
+\ee
+\verbsize
+\begin{verbatim}
+// examples/C++Binding/schema-oriented/admin/admin.cc
+
+#include <eyedb/eyedb.h>
+
+using namespace std;
+
+static const char *
+get_string_mode(eyedb::DBAccessMode mode)
+{
+  if (mode == eyedb::NoDBAccessMode)
+    return "eyedb::NoDBAccessMode";
+  if (mode == eyedb::ReadDBAccessMode)
+    return "eyedb::ReadDBAccessMode";
+  if (mode == eyedb::WriteDBAccessMode)
+    return "eyedb::WriteDBAccessMode";
+  if (mode == eyedb::ExecDBAccessMode)
+    return "eyedb::ExecDBAccessMode";
+  if (mode == eyedb::ReadWriteDBAccessMode)
+    return "eyedb::ReadWriteDBAccessMode";
+  if (mode == eyedb::ReadExecDBAccessMode)
+    return "eyedb::ReadExecDBAccessMode";
+  if (mode == eyedb::ReadWriteExecDBAccessMode)
+    return "eyedb::ReadWriteExecDBAccessMode";
+  if (mode == eyedb::AdminDBAccessMode)
+    return "eyedb::AdminDBAccessMode";
+
+  return NULL;
+}
+
+int
+main(int argc, char *argv[])
+{
+  // initializing the eyedb layer
+  eyedb::init(argc, argv);
+
+  eyedb::Exception::setMode(eyedb::Exception::ExceptionMode);
+
+  try {
+    eyedb::Connection conn;
+
+    // connecting to the eyedb server
+    conn.open();
+
+    // opening the database EYEDBDBM using 'dbmDataBase' class
+    eyedb::DBMDatabase db("EYEDBDBM");
+    db.open(&conn, eyedb::Database::DBRead);
+
+    // beginning a transaction
+    db.transactionBegin();
+
+    // display the scheme on stdout
+    cout << db.getSchema() << endl;
+
+    // looking for all user
+    eyedb::OQL q_user(&db, "select User");
+
+    eyedb::ObjectArray user_arr;
+    q_user.execute(user_arr);
+
+    cout << "User List {" << endl;
+    for (int i = 0; i < user_arr.getCount(); i++) {
+      eyedb::UserEntry *user = (eyedb::UserEntry *)user_arr[i];
+      cout << "\t" << user->name() << endl;
+    }
+    cout << "}\n" << endl;
+
+    // looking for all database entry
+    eyedb::OQL q_db(&db, "select eyedb::DBEntry");
+
+    eyedb::ObjectArray db_arr;
+    q_db.execute(db_arr);
+
+    cout << "Database List {" << endl;
+
+    for (int i = 0; i < db_arr.getCount(); i++) {
+      eyedb::DBEntry *dbentry = (eyedb::DBEntry *)db_arr[i];
+      cout << "\t" << dbentry->dbname() << " -> " << dbentry->dbfile() << endl;
+      // looking for all user which has any permission on this
+      // database
+      eyedb::OQL q_useraccess(&db,
+                              "select eyedb::DBUserAccess->dbentry->dbname = \"%s\"",
+                              dbentry->dbname().c_str());
+      eyedb::ObjectArray useraccess_arr;
+      q_useraccess.execute(useraccess_arr);
+      if (useraccess_arr.getCount()) {
+        cout << "\tUser Access {" << endl;
+        for (int j = 0; j < useraccess_arr.getCount(); j++) {
+          eyedb::DBUserAccess *ua = (eyedb::DBUserAccess *)useraccess_arr[j];
+          cout << "\t\t" << ua->user()->name() << " -> " <<
+            get_string_mode(ua->mode()) << endl;
+        }
+        cout << "\t}" << endl;
+      }
+      cout << endl;
+      useraccess_arr.garbage();
+    }
+
+    cout << "}" << endl;
+
+    // releasing runtime pointers
+    db_arr.garbage();
+    user_arr.garbage();
+  }
+
+  catch(eyedb::Exception &e) {
+    cerr << argv[0] << ": " << e;
+    eyedb::release();
+    return 1;
+  }
+
+  // releasing the eyedb layer: this is not mandatory
+  eyedb::release();
+
+  return 0;
+}
+\end{verbatim}
+\normalsize
+
+%%\subsect{Method Call}
+
+\end{document}

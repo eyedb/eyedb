@@ -1,0 +1,7 @@
+class Person {
+  string firstname;
+
+  index <propagate=on> on firstname;
+};
+class Employee extends Person {
+};

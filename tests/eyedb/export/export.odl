@@ -1,0 +1,24 @@
+
+class C0 {
+  int id;
+};
+
+class C1 {
+  int id;
+};
+
+class C2 {
+  int id;
+};
+
+class C3 {
+  int id;
+};
+
+class C4 {
+  int id;
+};
+
+class C5 {
+  int id;
+};

@@ -1,0 +1,52 @@
+
+#define UPDATE
+
+class Person {
+  string<10> name;
+  int32 age;
+  int32 ii[3];
+  int64 jj;
+  Person *parent;
+#ifdef UPDATE
+  set<Car *> cars;
+#endif
+  //int32 alpha[];
+};
+
+class Test {
+  ostring str;
+  class *cls;
+  //  URL url;
+};
+
+#ifdef UPDATE
+class Car {
+  string brand;
+  string num;
+};
+#endif
+
+class AColl {
+  string id;
+
+  set<Person> lit_c_lit;
+  set<Person *> lit_c_ref;
+  set<Person> *ref_c_lit;
+  set<Person *> *ref_c_r;
+
+  /*
+  array<Person> lit_c_lit_arr;
+  array<Person *> lit_c_ref_arr;
+  */
+
+  set<int32> lit_c_int32;
+  set<int64> lit_c_int64;
+
+  set<char[32]> lit_c_char_32;
+
+  set<int32 *> lit_c_ref_int32;
+  set<int64 *> lit_c_ref_int64;
+
+  set<set<int32> > coll_coll1;
+  set<bag<Person> > coll_coll2;
+};

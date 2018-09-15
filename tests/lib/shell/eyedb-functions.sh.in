@@ -1,0 +1,45 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+abs_top_builddir=@abs_top_builddir@
+top_builddir=@top_builddir@
+eyedb_databasedir=@eyedb_databasedir@
+eyedb_pipedir=@eyedb_pipedir@
+eyedb_tmpdir=@eyedb_tmpdir@
+
+function create_database() {
+    DATABASE=$1
+    SCHEMA=$2
+
+    if [ -f $eyedb_databasedir/$DATABASE.dbs ]
+    then
+	$abs_top_builddir/src/eyedb/commands/admin/eyedbadmin database delete $DATABASE
+    fi
+    $abs_top_builddir/src/eyedb/commands/admin/eyedbadmin database create $DATABASE
+    $abs_top_builddir/src/eyedb/eyedbodl --update --database=$DATABASE $SCHEMA
+}
+
+function start_server() {
+    $abs_top_builddir/src/eyedb/eyedbctl start
+}
+
+function stop_server() {
+    $abs_top_builddir/src/eyedb/eyedbctl stop
+}
+
+function init_dbm() {
+    [ -f $eyedb_databasedir/dbmdb.dbs ] && return 0
+
+    [ ! -d $eyedb_databasedir ] && mkdir -p $eyedb_databasedir
+    [ ! -d $eyedb_pipedir ] && mkdir -p $eyedb_pipedir
+    [ ! -d $eyedb_tmpdir ] && mkdir -p $eyedb_tmpdir
+    chmod a+w $eyedb_tmpdir
+
+    $abs_top_builddir/src/eyedb/eyedbctl start --creating-dbm --nod
+
+    sleep 4
+
+    $abs_top_builddir/src/eyedb/commands/server/eyedbinitdbm
+
+    $abs_top_builddir/src/eyedb/eyedbctl stop
+}
