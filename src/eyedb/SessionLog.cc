@@ -142,7 +142,7 @@ namespace eyedb {
 #else
     //vd = (void *)calloc(sizeof(eyedbsm::DbDescription), 1);
     // fix compilation for now (see issue #2)
-    vd = NULL;
+    vd = (void *)calloc(10000, 1);
 #endif
     islocked = False;
     addr_connlog = 0;
