@@ -75,6 +75,11 @@ AC_ARG_ENABLE(swig,
 		AS_HELP_STRING([--enable-swig],
 				[enable SWIG bindings generation [default=no]]),,
 		enable_swig="no")
+# Location of eyedbsm installation
+AC_ARG_WITH(eyedbsm-prefix, 
+	     AS_HELP_STRING([--with-eyedbsm-prefix=PREFIX],[give Eyedb-SM installation prefix (if none given, guessed by configure]),
+	     ac_eyedbsm_prefix="$withval",
+	     ac_eyedbsm_prefix="guess")
 # Semaphore policy
 AC_ARG_WITH( semaphore-policy, 
 	     AS_HELP_STRING([--with-semaphore-policy=(posix|sysv_ipc)],[force semaphore implementation (if none given, is found by configure.in)]),
@@ -112,6 +117,28 @@ AC_ARG_WITH(readline,
 
 # by default we install in /usr/local/eyedb
 AC_PREFIX_DEFAULT(/usr/local/eyedb)
+
+# search eyedb-sm installation prefix
+AC_MSG_CHECKING(for Eyedb-SM pkg-config)
+case "$ac_eyedbsm_prefix" in
+guess)
+	# if a prefix is given to this configure.in, look into it, otherwise do nothing
+	if test -f "$prefix/lib/pkgconfig/eyedbsm.pc" ; then
+		PKG_CONFIG_PATH="$prefix/lib/pkgconfig"
+		export PKG_CONFIG_PATH
+		AC_MSG_RESULT($PKG_CONFIG_PATH)
+	else
+		AC_MSG_RESULT(none given, will use standard loccation)
+	fi
+	;;
+*)
+	# set the PKG_CONFIG_PATH environment variable
+	PKG_CONFIG_PATH="$ac_eyedbsm_prefix/lib/pkgconfig"
+	export PKG_CONFIG_PATH
+	AC_MSG_RESULT($PKG_CONFIG_PATH)
+	;;
+esac
+
 
 # check for GNU make
 CHECK_GNU_MAKE
