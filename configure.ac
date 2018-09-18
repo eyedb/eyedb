@@ -77,7 +77,7 @@ AC_ARG_ENABLE(swig,
 		enable_swig="no")
 # Location of eyedbsm installation
 AC_ARG_WITH(eyedbsm-prefix, 
-	     AS_HELP_STRING([--with-eyedbsm-prefix=PREFIX],[give Eyedb-SM installation prefix (if none given, guessed by configure]),
+	     AS_HELP_STRING([--with-eyedbsm-prefix=PREFIX],[give Eyedb-SM installation prefix (if none given, guessed by configure)]),
 	     ac_eyedbsm_prefix="$withval",
 	     ac_eyedbsm_prefix="guess")
 # Semaphore policy
