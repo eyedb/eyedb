@@ -265,9 +265,9 @@ help()
 #else
   fprintf(stderr, "\nThe following options can be added when an ODLFILE is set:\n");
 #endif
-  fprintf(stderr, "--cpp                         Preprocess the ODL file with the C preprocessor\n");
-  fprintf(stderr, "--cpp-cmd=CPP                 Uses CPP preprocessor instead of the default one (%s)\n", default_cpp_cmd);
-  fprintf(stderr, "--cpp-flags=CPP_FLAGS         Adds CPP_FLAGS to the preprocessing command\n");
+  fprintf(stderr, "--cpp                         Preprocess the ODL file with the C preprocessor (default: no)\n");
+  fprintf(stderr, "--cpp-cmd=CPP                 Specify CPP preprocessor command to use (default: %s)\n", default_cpp_cmd);
+  fprintf(stderr, "--cpp-flags=CPP_FLAGS         Specify CPP command flags (default: %s)\n", default_cpp_flags);
   //fprintf(stderr, "\nThe following options can be added when the -d DBNAME|--database=DBNAME is used:,\n");
 
   print_use_help(cerr);
