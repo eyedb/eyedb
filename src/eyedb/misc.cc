@@ -242,81 +242,72 @@ namespace eyedb {
   }
 
   FILE *
-  run_cpp(FILE *fd, const char *cpp_cmd, const char *cpp_flags,
-	  const char *file)
+  run_cpp(FILE *fd, const char *cpp_cmd, const char *cpp_flags, const char *file)
   {
     if (!cpp_cmd)
-      cpp_cmd = eyedb::ClientConfig::getCValue("cpp_cmd");
+      return fd;
 
-    if (!cpp_flags || !*cpp_flags)
-      cpp_flags = eyedb::ClientConfig::getCValue("cpp_flags");
+    fprintf(stderr, "running C preprocessor with command line:\n%s %s\n", cpp_cmd, cpp_flags);
 
-    if (!cpp_flags)
-      cpp_flags = "";
+    fclose(fd);
 
-    if (cpp_cmd) {
-      fclose(fd);
+    char *tmpfile_1, *tmpfile_2;
 
-      char *tmpfile_1, *tmpfile_2;
+    char templ1[] =  "/tmp/eyedb-cpp.XXXXXX";
+    tmpfile_1 = mktemp(templ1);
 
-      char templ1[] =  "/tmp/eyedb-cpp.XXXXXX";
-      tmpfile_1 = mktemp(templ1);
+    char cmd[512];
 
-      char cmd[512];
-
-      // 12/01/99 all those commands are rather fragile!!!
+    // 12/01/99 all those commands are rather fragile!!!
       
-      // first pass: because the C preprocessor does not
-      // deal well with C++ the comments '//'
-      sprintf(cmd, "sed -e 's|//.*||' %s | %s %s - > %s", file, cpp_cmd,
-	      cpp_flags, tmpfile_1);
+    // first pass: because the C preprocessor does not
+    // deal well with C++ the comments '//'
+    sprintf(cmd, "sed -e 's|//.*||' %s | %s %s - > %s", file, cpp_cmd,
+	    cpp_flags, tmpfile_1);
 
-      if (system(cmd)) {
-	fprintf(stderr, "command '%s' failed. Perharps the C preprocessor command '%s%s%s' is not correct\n", cmd, cpp_cmd,
-		(cpp_flags && *cpp_flags ? " " : ""), cpp_flags); 
-	clean(tmpfile_1, "");
-	return 0;
-      }
-
-      // second pass: to substitute the "<stdin>" file directive
-      // to the true file directive
-      char templ2[] = "/tmp/eyedb-cpp.out.XXXXXX";
-      tmpfile_2 = mktemp(templ2);
-
-      sprintf(cmd, "sed -e 's|<stdin>|%s|g' %s > %s",
-	      file, tmpfile_1, tmpfile_2);
-
-      if (system(cmd)) {
-	clean(tmpfile_1, tmpfile_2);
-	return 0;
-      }
-
-      // third pass: to deal well with the ## preprocessor directive
-      // and to transform ': :' to '::'
-      sprintf(cmd, "sed -e 's/ ## //g' -e 's/## //g' -e 's/ ##//g' "
-	      "-e 's/# \\([a-zA-Z_][a-zA-Z_0-9]*\\)/\"\\1\"/g' "
-	      "-e 's/^\\\\#/#/' -e 's/##//g' -e 's/: :/::/g' %s | "
-	      "grep -v \"^#ident\" | grep -v \"^#pragma\" > %s",
-	      tmpfile_2, tmpfile_1);
-	      
-      if (system(cmd)) {
-	clean(tmpfile_1, tmpfile_2);
-	return 0;
-      }
-	      
-      FILE *odlin = fopen(tmpfile_1, "r");
-
-      clean(tmpfile_1, tmpfile_2);
-      if (!odlin) {
-	fprintf(stderr,
-		"eyedbodl: cannot open file '%s' for reading\n",
-		tmpfile);
-	return 0;
-      }
-
-      return odlin;
+    if (system(cmd)) {
+      fprintf(stderr, "command '%s' failed. Perharps the C preprocessor command '%s%s%s' is not correct\n", cmd, cpp_cmd,
+	      (cpp_flags && *cpp_flags ? " " : ""), cpp_flags); 
+      clean(tmpfile_1, "");
+      return 0;
     }
 
-    return fd;
+    // second pass: to substitute the "<stdin>" file directive
+    // to the true file directive
+    char templ2[] = "/tmp/eyedb-cpp.out.XXXXXX";
+    tmpfile_2 = mktemp(templ2);
+
+    sprintf(cmd, "sed -e 's|<stdin>|%s|g' %s > %s",
+	    file, tmpfile_1, tmpfile_2);
+
+    if (system(cmd)) {
+      clean(tmpfile_1, tmpfile_2);
+      return 0;
+    }
+
+    // third pass: to deal well with the ## preprocessor directive
+    // and to transform ': :' to '::'
+    sprintf(cmd, "sed -e 's/ ## //g' -e 's/## //g' -e 's/ ##//g' "
+	    "-e 's/# \\([a-zA-Z_][a-zA-Z_0-9]*\\)/\"\\1\"/g' "
+	    "-e 's/^\\\\#/#/' -e 's/##//g' -e 's/: :/::/g' %s | "
+	    "grep -v \"^#ident\" | grep -v \"^#pragma\" > %s",
+	    tmpfile_2, tmpfile_1);
+	      
+    if (system(cmd)) {
+      clean(tmpfile_1, tmpfile_2);
+      return 0;
+    }
+	      
+    FILE *odlin = fopen(tmpfile_1, "r");
+
+    clean(tmpfile_1, tmpfile_2);
+    if (!odlin) {
+      fprintf(stderr,
+	      "eyedbodl: cannot open file '%s' for reading\n",
+	      tmpfile);
+      return 0;
+    }
+
+    return odlin;
   }
 }

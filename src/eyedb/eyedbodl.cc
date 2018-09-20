@@ -38,6 +38,54 @@ namespace eyedb {
 extern void
 rootclass_manage(odlAgregSpec agreg_spec);
 
+static char *package = NULL;
+static char *module = NULL;
+static char *prefix = (char*)"";/*@@@@warning cast*/
+static char *db_prefix = (char*)"";/*@@@@warning cast*/
+static char *c_namespace = NULL;
+static char *schname = 0;
+static Bool _export = False;
+static const char *prog;
+static char *odlfile = 0;
+
+static Bool update = False;
+static Bool diff = False;
+static Bool checkfile = False;
+static unsigned int open_flags;
+static const char *dbname = NULL;
+static Bool orbix_gen = False;
+static Bool orbacus_gen = False;
+#ifdef SUPPORT_CORBA
+static Bool idl_gen = False;
+#endif
+static Bool odl_gen = False;
+static Bool cplus_gen = False;
+static Bool java_gen = False;
+static GenCodeHints *hints;
+static char *imdlfile = NULL;
+#ifdef SUPPORT_CORBA
+static char *idltarget = NULL;
+#endif
+static Schema *m;
+static Database *db = NULL;
+static char *ofile = NULL;
+#ifdef SUPPORT_CORBA
+static char *generic_idl = NULL;
+static Bool no_generic_idl = False;
+static Bool no_factory = False;
+static Bool no_factory_set = False;
+#endif
+static Bool comments = True;
+static const char *odl_tmpfile;
+
+static Bool no_rootclass = False;
+
+static Bool with_cpp = False;
+static const char *default_cpp_cmd = "gcc";
+static const char *cpp_cmd = NULL;
+static const char *default_cpp_flags = "-E -P";
+static std::string cpp_flags;
+
 static int
 usage(const char *msg = 0, const char *etc = 0)
 {
@@ -51,7 +99,7 @@ usage(const char *msg = 0, const char *etc = 0)
   if (msg) {
     fprintf(stderr, "%seyedbodl: ", sep);
     fprintf(stderr, msg, etc);
-    fprintf(stderr, "\n", sep);
+    fprintf(stderr, "\n");
     return 1;
   }
 
@@ -71,7 +119,7 @@ usage(const char *msg = 0, const char *etc = 0)
   fprintf(stderr, "%s[--down-casting=yes|no] [--gencode-error-policy=status|exception]%s",
 	  sp, nl);
   fprintf(stderr, "%s[--attr-cache=yes|no] [--rootclass=ROOTCLASS] [--no-rootclass]%s", sp, nl);
-  fprintf(stderr, "%s[--cpp=CPP] [--cpp-flags=FLAGS] [--no-cpp]%s%sODLFILE|-|-d DBNAME|--database=DBNAME [OPENFLAGS]\n", sp, nl, sp);
+  fprintf(stderr, "%s[--cpp] [--cpp-cmd=CPP] [--cpp-flags=FLAGS]%s%sODLFILE|-|-d DBNAME|--database=DBNAME [OPENFLAGS]\n", sp, nl, sp);
 
  
   fprintf(stderr, "\n%s--gencode=Java --package=PACKAGE%s", us, nl);
@@ -84,7 +132,7 @@ usage(const char *msg = 0, const char *etc = 0)
   fprintf(stderr, "%s[--dynamic-attr]%s", sp, nl);
   fprintf(stderr, "%s[--down-casting=yes|no] [--gencode-error-policy=status|exception]%s",
 	  sp, nl);
-  fprintf(stderr, "%s[--cpp=CPP] [--cpp-flags=FLAGS] [--no-cpp]%s%sODLFILE|-|-d DBNAME|--database=DBNAME [OPENFLAGS]\n", sp, nl, sp);
+  fprintf(stderr, "%s[--cpp] [--cpp-cmd=CPP] [--cpp-flags=FLAGS]%s%sODLFILE|-|-d DBNAME|--database=DBNAME [OPENFLAGS]\n", sp, nl, sp);
 
 #ifdef SUPPORT_CORBA
   fprintf(stderr, "\n%s--gencode Orbix|Orbacus|IDL --package PACKAGE -idl-module MODULE\n", us);
@@ -98,13 +146,13 @@ usage(const char *msg = 0, const char *etc = 0)
 
   fprintf(stderr, "\n%s--gencode=ODL -d DBNAME|--database=DBNAME [--system-class] [-o ODLFILE] [OPENFLAGS]%s", us, nl);
   fprintf(stderr, "\n%s--diff -d DBNAME|--database=DBNAME [--system-class] [OPENFLAGS]%s", us, nl);
-  fprintf(stderr, "%s[--cpp=CPP] [--cpp-flags=FLAGS] [--no-cpp] ODLFILE|-\n",
+  fprintf(stderr, "%s[--cpp] [--cpp-cmd=CPP] [--cpp-flags=FLAGS] ODLFILE|-\n",
 	  sp);
 
   fprintf(stderr, "\n%s-u|-update -d DBNAME|--database=DBNAME%s", us, nl);
   fprintf(stderr, "%s[--db-class-prefix=DBPREFIX] [OPENFLAGS]%s", sp, nl);
   fprintf(stderr, "%s[--schema-name=SCHNAME] [--rmv-undef-attrcomp=yes|no]%s%s[--update-index=yes|no]%s", sp, nl, sp, nl);
-  fprintf(stderr, "%s[--cpp=CPP] [--cpp-flags=FLAGS] [--no-cpp]%s%s[--rmcls=CLASS...] [--rmsch] [ODLFILE|-]\n",
+  fprintf(stderr, "%s[--cpp] [--cpp-cmd=CPP] [--cpp-flags=FLAGS]%s%s[--rmcls=CLASS...] [--rmsch] [ODLFILE|-]\n",
 	  sp, nl, sp);
   fprintf(stderr, "\n%s--checkfile ODLFILE|-\n", us);
 
@@ -217,9 +265,9 @@ help()
 #else
   fprintf(stderr, "\nThe following options can be added when an ODLFILE is set:\n");
 #endif
-  fprintf(stderr, "--cpp=CPP                     Uses CPP preprocessor instead of the default one\n");
+  fprintf(stderr, "--cpp                         Preprocess the ODL file with the C preprocessor\n");
+  fprintf(stderr, "--cpp-cmd=CPP                 Uses CPP preprocessor instead of the default one (%s)\n", default_cpp_cmd);
   fprintf(stderr, "--cpp-flags=CPP_FLAGS         Adds CPP_FLAGS to the preprocessing command\n");
-  fprintf(stderr, "--no-cpp                      Does not use any preprocessor\n");
   //fprintf(stderr, "\nThe following options can be added when the -d DBNAME|--database=DBNAME is used:,\n");
 
   print_use_help(cerr);
@@ -227,48 +275,6 @@ help()
   fflush(stderr);
 }
 
-static char *package = NULL;
-static char *module = NULL;
-static char *prefix = (char*)"";/*@@@@warning cast*/
-static char *db_prefix = (char*)"";/*@@@@warning cast*/
-static char *c_namespace = NULL;
-static char *schname = 0;
-static Bool _export = False;
-static const char *prog;
-static char *odlfile = 0;
-
-static Bool update = False;
-static Bool diff = False;
-static Bool checkfile = False;
-static unsigned int open_flags;
-static const char *dbname = NULL;
-static Bool orbix_gen = False;
-static Bool orbacus_gen = False;
-#ifdef SUPPORT_CORBA
-static Bool idl_gen = False;
-#endif
-static Bool odl_gen = False;
-static Bool cplus_gen = False;
-static Bool java_gen = False;
-static GenCodeHints *hints;
-static char *imdlfile = NULL;
-#ifdef SUPPORT_CORBA
-static char *idltarget = NULL;
-#endif
-static Schema *m;
-static Database *db = NULL;
-static char *ofile = NULL;
-#ifdef SUPPORT_CORBA
-static char *generic_idl = NULL;
-static Bool no_generic_idl = False;
-static Bool no_factory = False;
-static Bool no_factory_set = False;
-#endif
-static Bool comments = True;
-static const char *odl_tmpfile;
-static const char *cpp_cmd = "cc -E";
-static Bool no_rootclass = False;
-static std::string cpp_flags;
 #define MISSING "missing argument after "
 #define OPTION  " option"
 
@@ -290,54 +296,44 @@ getOpts(int argc, char *argv[], Bool &dirname_set)
     char *s = argv[n];
 
     string value;
+
     if (GetOpt::parseLongOpt(s, "output-dir", &value)) {
       hints->setDirName(value.c_str());
       dirname_set = True;
-    }
-    else if (GetOpt::parseLongOpt(s, "output-file-prefix", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "output-file-prefix", &value)) {
       hints->setFilePrefix(value.c_str());
-    }
-    else if (GetOpt::parseLongOpt(s, "package", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "package", &value)) {
       package = strdup(value.c_str());
-    }
-    else if (GetOpt::parseLongOpt(s, "gendate", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "gendate", &value)) {
       if (!strcasecmp(value.c_str(), "yes"))
 	hints->gen_date = True;
       else if (!strcasecmp(value.c_str(), "no"))
 	hints->gen_date = False;
       else
 	return usage("needs `yes' or `no' after --gendate option");
-    }
-    else if (GetOpt::parseLongOpt(s, "schema-name", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "schema-name", &value)) {
       schname = strdup(value.c_str());
-    }
-    else if (!strcmp(s, "--export")) {
+    } else if (!strcmp(s, "--export")) {
       _export = True;
-    }
-    else if (GetOpt::parseLongOpt(s, "comments", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "comments", &value)) {
       if (!strcasecmp(value.c_str(), "yes"))
 	comments = True;
       else if (!strcasecmp(value.c_str(), "no"))
 	comments = False;
       else
 	return usage("needs `yes' or `no' after --comments option");
-    }
-    else if (!strcmp(s, "--admin")) {
+    } else if (!strcmp(s, "--admin")) {
       open_flags |= _DBAdmin;
-    }
-    else if (!strcmp(s, "--local")) {
+    } else if (!strcmp(s, "--local")) {
       open_flags |= _DBOpenLocal;
-    }
-    else if (!strcmp(s, "--dynamic-attr")) {
+    } else if (!strcmp(s, "--dynamic-attr")) {
       odl_dynamic_attr = True;
-    }
-    else if (GetOpt::parseLongOpt(s, "attr-style", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "attr-style", &value)) {
       if (!strcmp(value.c_str(), "implicit")) {
 	hints->attr_style = GenCodeHints::ImplicitAttrStyle;
 	// backward compatibility
 	hints->setStyle("implicit");
-      }
-      else if (!strcmp(value.c_str(), "explicit")) {
+      } else if (!strcmp(value.c_str(), "explicit")) {
 	hints->attr_style = GenCodeHints::ExplicitAttrStyle;
 	// backward compatibility
 	hints->setStyle("explicit");
@@ -349,14 +345,11 @@ getOpts(int argc, char *argv[], Bool &dirname_set)
 	  return 1;
 	}
       }
-    }
-    else if (GetOpt::parseLongOpt(s, "class-prefix", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "class-prefix", &value)) {
       prefix = strdup(value.c_str());
-    }
-    else if (GetOpt::parseLongOpt(s, "namespace", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "namespace", &value)) {
       c_namespace = strdup(value.c_str());
-    }
-    else if (GetOpt::parseLongOpt(s, "use-smart-pointers", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "use-smart-pointers", &value)) {
       const char *s = value.c_str();
       if (!strcasecmp(s, "yes"))
 	odl_smartptr = True;
@@ -364,23 +357,19 @@ getOpts(int argc, char *argv[], Bool &dirname_set)
 	odl_smartptr = False;
       else
 	return usage("must set yes or no behind --use-smart-pointers");
-    }
-    else if (GetOpt::parseLongOpt(s, "db-class-prefix", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "db-class-prefix", &value)) {
       db_prefix = strdup(value.c_str());
-    }
-    else if (GetOpt::parseLongOpt(s, "rmv-undef-attrcomp", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "rmv-undef-attrcomp", &value)) {
       cerr << "warning: --rmv-undef-attrcomp option is not yet implemented\n";
       return 1;
-    }
-    else if (GetOpt::parseLongOpt(s, "update-index", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "update-index", &value)) {
       if (!strcasecmp(value.c_str(), "yes"))
 	odl_update_index = True;
       else if (!strcasecmp(value.c_str(), "no"))
 	odl_update_index = False;
       else
 	return usage("yes or no is expected after --update-index option");
-    }
-    else if (GetOpt::parseLongOpt(s, "rmcls", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "rmcls", &value)) {
       // must split classname with ','
       char *p = strdup(value.c_str());
       for (;;) {
@@ -394,14 +383,11 @@ getOpts(int argc, char *argv[], Bool &dirname_set)
 	  break;
 	p = q+1;
       }
-    }
-    else if (!strcmp(s, "--rmsch")) {
+    } else if (!strcmp(s, "--rmsch")) {
       odl_sch_rm = True;
-    }
-    else if (!strcmp(s, "--gen-class-stubs")) {
+    } else if (!strcmp(s, "--gen-class-stubs")) {
       hints->gen_class_stubs = True;
-    }
-    else if (GetOpt::parseLongOpt(s, "class-enums", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "class-enums", &value)) {
       if (!strcasecmp(value.c_str(), "yes"))
 	hints->class_enums = True;
       else if (!strcasecmp(value.c_str(), "no"))
@@ -409,112 +395,88 @@ getOpts(int argc, char *argv[], Bool &dirname_set)
       else
 	return usage("yes or no is expected after --class-enums option");
 
-    }
-    else if (GetOpt::parseLongOpt(s, "c-suffix", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "c-suffix", &value)) {
       hints->setCSuffix(value.c_str());
-    }
-    else if (GetOpt::parseLongOpt(s, "h-suffix", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "h-suffix", &value)) {
       hints->setHSuffix(value.c_str());
-    }
-    else if (GetOpt::parseLongOpt(s, "down-casting", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "down-casting", &value)) {
       if (!strcasecmp(value.c_str(), "yes"))
 	hints->gen_down_casting = True;
       else if (!strcasecmp(value.c_str(), "no"))
 	hints->gen_down_casting = False;
       else
 	return usage("yes or no is expected after --down-casting option");
-    }
-    else if (GetOpt::parseLongOpt(s, "attr-cache", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "attr-cache", &value)) {
       if (!strcasecmp(value.c_str(), "yes"))
 	hints->attr_cache = True;
       else if (!strcasecmp(value.c_str(), "no"))
 	hints->attr_cache = False;
       else
 	return usage("yes or no is expected after --attr-cache option");
-    }
-    else if (GetOpt::parseLongOpt(s, "gencode-error-policy", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "gencode-error-policy", &value)) {
       if (!strcasecmp(value.c_str(), "status"))
 	hints->error_policy = GenCodeHints::StatusErrorPolicy;
       else if (!strcasecmp(value.c_str(), "exception"))
 	hints->error_policy = GenCodeHints::ExceptionErrorPolicy;
       else
 	return usage("status or exception is expected after --error-policy option");
-    }
-    else if (GetOpt::parseLongOpt(s, "gencode", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "gencode", &value)) {
       if (!strcasecmp(value.c_str(), "c++")) {
 	cplus_gen = True;
 	odl_lang = ProgLang_C;
-      }
-      else if (!strcasecmp(value.c_str(), "java")) {
+      } else if (!strcasecmp(value.c_str(), "java")) {
 	java_gen = True;
 	odl_lang = ProgLang_Java;
-      }
-      else if (!strcasecmp(value.c_str(), "odl"))
+      } else if (!strcasecmp(value.c_str(), "odl"))
 	odl_gen = True;
       else
 	return usage("C++, Java or ODL is expected after --gencode");
-    }
-    else if (GetOpt::parseLongOpt(s, "database", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "database", &value)) {
       if (!dbname)
 	dbname = strdup(value.c_str());
       else
 	return usage("cannot specified two databases");
-    }
-    else if (!strcmp(s, "-d")) {
+    } else if (!strcmp(s, "-d")) {
       if (n+1 >= argc)
 	return usage("missing argument after -d");
       if (!dbname) {
 	dbname = strdup(argv[n+1]);
 	n++;
-      }
-      else
+      } else
 	return usage("cannot specified two databases");
-    }
-    else if (GetOpt::parseLongOpt(s, "cpp", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "cpp_cmd", &value)) {
       cpp_cmd = strdup(value.c_str());
-    }
-    else if (GetOpt::parseLongOpt(s, "nocpp", &value)) {
-      cpp_cmd = 0;
-    }
-    else if (GetOpt::parseLongOpt(s, "no-rootclass")) {
-      no_rootclass = True;
-    }
-    else if (GetOpt::parseLongOpt(s, "rootclass", &value)) {
-      odl_rootclass = strdup(value.c_str());
-    }
-    else if (GetOpt::parseLongOpt(s, "cpp-flags", &value)) {
+    } else if (GetOpt::parseLongOpt(s, "cpp", NULL)) {
+      with_cpp = True;
+    } else if (GetOpt::parseLongOpt(s, "cpp-flags", &value)) {
       cpp_flags = strdup(value.c_str());
-    }
-    else if (!strcmp(s, "-o")) {
+    } else if (GetOpt::parseLongOpt(s, "no-rootclass")) {
+      no_rootclass = True;
+    } else if (GetOpt::parseLongOpt(s, "rootclass", &value)) {
+      odl_rootclass = strdup(value.c_str());
+    } else if (!strcmp(s, "-o")) {
       if (n+1 >= argc)
 	return usage("missing argument after -o");
       ofile = strdup(argv[n+1]);
       n++;
-    }
-    else if (!strcmp(s, "--update") || !strcmp(s, "-u")) {
+    } else if (!strcmp(s, "--update") || !strcmp(s, "-u")) {
       update = True;
-    }
-    else if (!strcmp(s, "--diff")) {
+    } else if (!strcmp(s, "--diff")) {
       diff = True;
       no_rootclass = True;
-    }
-    else if (!strcmp(s, "--checkfile")) {
+    } else if (!strcmp(s, "--checkfile")) {
       checkfile = True;
-    }
-    else if (!strcmp(s, "--help") || !strcmp(s, "-h")) {
+    } else if (!strcmp(s, "--help") || !strcmp(s, "-h")) {
       usage();
       fprintf(stderr, "\n");
       help();
       exit(0);
-    }
-    else if (!strcmp(s, "--system-class")) { // internal use only!
+    } else if (!strcmp(s, "--system-class")) { // internal use only!
       odl_system_class = True;
-    }
-    else if (!strcmp(s, "-") || (!odlfile && s[0] != '-')) {
+    } else if (!strcmp(s, "-") || (!odlfile && s[0] != '-')) {
       if (!odlfile)
 	odlfile = argv[n];
-    }
-    else
+    } else
       return usage();
   }
 
@@ -753,10 +715,12 @@ realize(int argc, char *argv[])
   const char *x;
 
   x = eyedb::ClientConfig::getCValue("cpp_cmd");
-  if (x) cpp_cmd = eyedb::ClientConfig::getCValue("cpp_cmd");
+  if (x)
+    default_cpp_cmd = x;
 
   x = eyedb::ClientConfig::getCValue("cpp_flags");
-  if (x) cpp_flags = x;
+  if (x)
+    default_cpp_flags = x;
 
   hints = new GenCodeHints();
 
@@ -775,6 +739,13 @@ realize(int argc, char *argv[])
 
   if (checkDb()) // on doit faire seulement une partie de ca
     return 1;
+
+  if (with_cpp) {
+    if (cpp_cmd == NULL)
+      cpp_cmd = default_cpp_cmd;
+    if (cpp_flags.empty())
+      cpp_flags = default_cpp_flags;
+  }
 
   Status s = Success;
 
