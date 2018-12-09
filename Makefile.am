@@ -6,7 +6,7 @@ endif
 
 # FD CHECK
 #SUBDIRS=src include scripts install pkg-config examples tests $(DOC_SRC_DIR) 
-SUBDIRS=src include scripts install pkg-config tests
+SUBDIRS=src include scripts install pkg-config 
 
 ACLOCAL_AMFLAGS=-I m4
 
