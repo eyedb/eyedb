@@ -702,6 +702,55 @@ src/www/Makefile dnl
 src/www/eyedb.conf dnl
 src/www/html/Makefile dnl
 src/www/icons/Makefile dnl
+tests/bugs/Makefile
+tests/bugs/odl-remove-schema/Makefile
+tests/bugs/oql-triggers/Makefile
+tests/examples/C++Binding/generic/basic/Makefile
+tests/examples/C++Binding/generic/Makefile
+tests/examples/C++Binding/generic/query/Makefile
+tests/examples/C++Binding/generic/schema/Makefile
+tests/examples/C++Binding/generic/store/Makefile
+tests/examples/C++Binding/Makefile
+tests/examples/C++Binding/schema-oriented/admin/Makefile
+tests/examples/C++Binding/schema-oriented/Makefile
+tests/examples/C++Binding/schema-oriented/methods/Makefile
+tests/examples/C++Binding/schema-oriented/query/Makefile
+tests/examples/C++Binding/schema-oriented/share/Makefile
+tests/examples/C++Binding/schema-oriented/store/Makefile
+tests/examples/GettingStarted/Makefile
+tests/examples/JavaBinding/generic/appli/basic/Makefile
+tests/examples/JavaBinding/generic/appli/collections/Makefile
+tests/examples/JavaBinding/generic/appli/Makefile
+tests/examples/JavaBinding/generic/appli/query/Makefile
+tests/examples/JavaBinding/generic/appli/schema/Makefile
+tests/examples/JavaBinding/generic/appli/store/Makefile
+tests/examples/JavaBinding/generic/Makefile
+tests/examples/JavaBinding/Makefile
+tests/examples/JavaBinding/schema-oriented/Makefile
+tests/examples/JavaBinding/schema-oriented/share/Makefile
+tests/examples/JavaBinding/schema-oriented/store/Makefile
+tests/examples/Makefile
+tests/eyedb/admin/collection/Makefile
+tests/eyedb/admin/database/Makefile
+tests/eyedb/admin/datafile/Makefile
+tests/eyedb/admin/dataspace/Makefile
+tests/eyedb/admin/index/Makefile
+tests/eyedb/admin/Makefile
+tests/eyedb/admin/user/Makefile
+tests/eyedb/collections/basic/Makefile
+tests/eyedb/collections/litcoll/Makefile
+tests/eyedb/collections/Makefile
+tests/eyedb/dataspace/dspsch/Makefile
+tests/eyedb/dataspace/Makefile
+tests/eyedb/export/Makefile
+tests/eyedb/Makefile
+tests/init/Makefile
+tests/lib/Makefile
+tests/lib/python/eyedb/Makefile
+tests/lib/python/eyedb/test/Makefile
+tests/lib/python/Makefile
+tests/lib/shell/Makefile
+tests/Makefile
 )
 AC_OUTPUT
 

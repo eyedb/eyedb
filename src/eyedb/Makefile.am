@@ -252,7 +252,7 @@ EYEDBSVLIBS=libeyedb.la @EYEDBSM_LIBS@
 
 #FD CHECK
 #EYEDBCLLIBS=libeyedb.la $(top_builddir)/src/lib/libeyedbrpcfe.la $(top_builddir)/src/eyedbsm/libeyedbsm.la $(top_builddir)/src/lib/libeyedbutils.la
-EYEDBCLLIBS=libeyedb.la  @EYEDBSM_LIBS@
+EYEDBCLLIBS=libeyedb.la @EYEDBSM_LIBS@
 
 eyedbd_SOURCES= eyedbd.cc serv.cc serv_lib.cc rpc_lib.cc misc.cc
 eyedbd_LDADD= $(EYEDBSVLIBS)
