@@ -16,8 +16,6 @@ datafile_list_6.py \
 datafile_delete_database_1.py 
 
 TESTS=\
-$(top_srcdir)/tests/lib/python/eyedb/test/test_start_server.py \
-$(DIRECTORY_TESTS) \
-$(top_srcdir)/tests/lib/python/eyedb/test/test_stop_server.py
+$(DIRECTORY_TESTS) 
 
 noinst_PYTHON= $(DIRECTORY_TESTS)

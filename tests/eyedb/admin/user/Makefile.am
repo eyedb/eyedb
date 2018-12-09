@@ -16,8 +16,6 @@ user_delete_usage.py \
 user_delete_1.py 
 
 TESTS=\
-$(top_srcdir)/tests/lib/python/eyedb/test/test_start_server.py \
-$(DIRECTORY_TESTS) \
-$(top_srcdir)/tests/lib/python/eyedb/test/test_stop_server.py
+$(DIRECTORY_TESTS) 
 
 noinst_PYTHON= $(DIRECTORY_TESTS)
