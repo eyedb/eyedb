@@ -8,7 +8,7 @@ endif
 #SUBDIRS=src include scripts install pkg-config examples tests $(DOC_SRC_DIR) 
 SUBDIRS=src include scripts install pkg-config
 
-ACLOCAL_AMFLAGS=-I m4/java -I m4/swig -I m4/python -I m4/extras
+ACLOCAL_AMFLAGS=-I m4
 
 docdir=$(datadir)/doc/$(PACKAGE)
 doc_DATA=AUTHORS COPYING COPYING.LESSER README

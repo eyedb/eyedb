@@ -26,7 +26,7 @@ AC_SUBST(EYEDB_NUMVERSION)
 
 AC_CONFIG_AUX_DIR([.])
 AM_CONFIG_HEADER(eyedbconfig.h)
-AC_CONFIG_MACRO_DIRS([m4/java m4/swig m4/python m4/extras])
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([include/eyedb/eyedb.h])
 
 AM_INIT_AUTOMAKE(foreign)
