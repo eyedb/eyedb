@@ -1,3 +1,3 @@
-DIST_SUBDIRS=bugs examples eyedb eyedbsm init lib
+DIST_SUBDIRS=bugs examples eyedb init lib
 SUBDIRS=eyedb examples
 
