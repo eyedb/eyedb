@@ -3,7 +3,6 @@
 Copyright (c) SYSRA, 1995-1999,2004-2008, 2018
 
 ## Introduction
-------------
 
 EyeDB is an Object Database Management System (ODBMS).
 
