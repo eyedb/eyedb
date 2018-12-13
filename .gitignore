@@ -20,3 +20,4 @@ py-compile
 src/java/src/org/eyedb/dbm/DBM.odl
 src/java/src/org/eyedb/syscls/syscls.odl
 src/java/src/org/eyedb/utils/utils.odl
+include/eyedb/oqlctb.h
