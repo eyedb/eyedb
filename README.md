@@ -58,8 +58,8 @@ apt-get install -y autoconf libtool make g++ pkg-config flex bison
 
 #### Prerequisites installation for CentOS/Fedora
 
-yum -y install git autoconf libtool make gcc-c++ pkgconfig flex bison
 ```
+yum -y install git autoconf libtool make gcc-c++ pkgconfig flex bison
 ```
 
 ### Compiling
@@ -98,7 +98,6 @@ Examples and tests programs, located in sub-directories `examples/` and
 
 
 ### Installing EyeDB
-----------------
 
 After compiling EyeDB, you can install it with the usual:
 
@@ -132,7 +131,6 @@ installation will not work
 * if you want to change the configuration defaults
 
 ## Upgrading EyeDB
----------------
 
 If you are upgrading EyeDB and have an existing working installation of 
 EyeDB with databases that you want to keep, you must not run the 
@@ -140,7 +138,6 @@ post-install script.
 
 
 ## Running EyeDB
--------------
 
 To run EyeDB, you need first to start the server by:
 
