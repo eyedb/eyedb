@@ -64,33 +64,53 @@ yum -y install git autoconf libtool make gcc-c++ pkgconfig flex bison
 
 ### Compiling
 
-To compile EyeDB, just run:
+Then, run `configure` script:
 
 ```
 ./configure
-make
 ```
 
-configure script takes the following useful options:
+`configure` script takes the following useful options:
 
 ```
---prefix=PREFIX         to specify EyeDB installation root directory 
-                        (default is /usr)
---enable-debug          to compile with debug (default is no)
---enable-optimize=flag  to compile with given optimization flag, for 
-                        instance --enable-optimize=-O2 (default is no 
-                        optimization)
---enable-swig           to generate various languages bindings with SWIG 
-                        (default is no)
+--prefix=PREFIX
+            to specify installation root directory 
+            (default is /usr)
+--with-eyedbsm-prefix=EYEDBSM_PREFIX
+            give EyedbSM installation prefix
+             if none given, guessed by configure
+--enable-debug
+            to compile with debug (default is no)
+--enable-optimize=FLAG
+            to compile with given optimization flag, for 
+            instance --enable-optimize=-O2
+            (default is no optimization)
+--enable-swig
+            to generate various languages bindings with SWIG 
+            (default is no)
 --with-readline=(readline|editline)
-                        use GNU readline or BSD editline for line editing
-                        (default is readline if available)
+            use GNU readline or BSD editline for line editing
+            (default is readline if available)
 ```
 
-Full description of configure options can be obtained with:
+Full description of `configure` options can be obtained with:
 
 ```
 ./configure --help
+```
+
+Compiling EyeDB requires having already compiled EyeDBSM (EyeDB Storage Manager). Refer to https://github.com/eyedb/eyedbsm for instructions.
+
+EyeDB compilation uses `pkg-config` and therefore needs to locate `eyedbsm.pc`, the definition file for EyeDBSM. The `configure` script will try to locate it:
+
+* if using the `--with-eyedbsm-prefix` option of `configure`, in `EYEBSM_PREFIX/lib/pkgconfig` 
+* otherwise in `PREFIX/lib/pkgconfig/` where `PREFIX` is the installation prefix of EyeDB, either passed to `configure` or default one
+* otherwise rely on default locations (see `pkg-config` man page for more information)
+
+Once `configure` script executed, compilation can be launched by:
+
+```
+make
 ```
 
 Examples and tests programs, located in sub-directories `examples/` and
