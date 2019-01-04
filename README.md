@@ -62,9 +62,19 @@ apt-get install -y autoconf libtool make g++ pkg-config flex bison
 yum -y install git autoconf libtool make gcc-c++ pkgconfig flex bison
 ```
 
+#### Prerequisites installation for macos
+
+First, install Howebrew (https://brew.sh/)
+
+```
+brew install automake libtool pkg-config
+```
+
 ### Compiling
 
-Then, run `configure` script:
+#### Configuring
+
+Run `configure` script:
 
 ```
 ./configure
@@ -85,6 +95,8 @@ Then, run `configure` script:
             to compile with given optimization flag, for 
             instance --enable-optimize=-O2
             (default is no optimization)
+--enable-java
+            enable Java code compilation [default=yes]
 --enable-swig
             to generate various languages bindings with SWIG 
             (default is no)
@@ -106,6 +118,15 @@ EyeDB compilation uses `pkg-config` and therefore needs to locate `eyedbsm.pc`, 
 * if using the `--with-eyedbsm-prefix` option of `configure`, in `EYEBSM_PREFIX/lib/pkgconfig` 
 * otherwise in `PREFIX/lib/pkgconfig/` where `PREFIX` is the installation prefix of EyeDB, either passed to `configure` or default one
 * otherwise rely on default locations (see `pkg-config` man page for more information)
+
+
+**NOTE for macos**: compilation of Java code is currently broken. It is therefore required to run `configure` script disabling Java binding compilation, as in:
+
+```
+./configure --enable-java=no
+```
+
+#### Compiling
 
 Once `configure` script executed, compilation can be launched by:
 
