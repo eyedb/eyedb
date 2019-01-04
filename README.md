@@ -119,6 +119,7 @@ EyeDB compilation uses `pkg-config` and therefore needs to locate `eyedbsm.pc`, 
 * otherwise in `PREFIX/lib/pkgconfig/` where `PREFIX` is the installation prefix of EyeDB, either passed to `configure` or default one
 * otherwise rely on default locations (see `pkg-config` man page for more information)
 
+The simplest and recommended option is therefore to use the same installation `PREFIX` for EyeDBSM and for EyeDB; the configure script will then locate automatically `eyedbsm.pc`.
 
 **NOTE for macos**: compilation of Java code is currently broken. It is therefore required to run `configure` script disabling Java binding compilation, as in:
 
