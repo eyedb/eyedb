@@ -161,7 +161,10 @@ Status Agregat::trace_realize(FILE *fd, int indent, unsigned int flags,
   if (((AgregatClass *)getClass())->asUnionClass())
     {
       const Attribute *item;
-      if ((item = ((const Union *)this)->getCurrentItem()) >= 0)
+      // FD
+      //was: if ((item = ((const Union *)this)->getCurrentItem()) >= 0)
+      // compile error on macos
+      if ((item = ((const Union *)this)->getCurrentItem()) != 0)
 	status = item->trace(this, fd, &indent, flags, rcm);
     }
   else
