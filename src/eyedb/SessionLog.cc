@@ -108,8 +108,9 @@ namespace eyedb {
   Status
   SessionLog::init_sems()
   {
-    vd = (void *)calloc(sizeof(eyedbsm::DbDescription), 1);
-    int *semkeys = (int *)((eyedbsm::DbDescription *)vd)->semkeys;
+    eyedbsm::DbDescription *vd = (eyedbsm::DbDescription *)calloc(eyedbsm::dbDescriptionSize(), 1);
+    int *semkeys = eyedbsm::dbDescriptionSemkeys(vd);
+
     smdcli_conn_t *conn = smdcli_open(smd_get_port());
     if (!conn)
       return Exception::make(IDB_ERROR, "sessionlog: cannot connect to eyedbsmd ");
